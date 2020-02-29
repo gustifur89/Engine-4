@@ -14,6 +14,7 @@ protected:
 	
 	std::vector<GLuint> bufferAttribs;
 	bool hasBound;
+
 public:
 	Mesh();
 	~Mesh();
@@ -21,6 +22,8 @@ public:
 	void render();
 	void recalculateBounds();
 	void setUpVAO();
+
+	std::vector<std::shared_ptr<MeshTriangle>> getTrianglesFromMesh(glm::mat4 transform);
 
 	GLuint VertexArrayID;
 	GLuint elementbufferID;
@@ -45,6 +48,7 @@ public:
 	
 	void bindArrays();
 
+	static std::shared_ptr<ColorMesh> meshFromTriangles(std::vector<std::shared_ptr<MeshTriangle>>& triangleList, int r, int g, int b, float thickness = 0.0);
 	static std::shared_ptr<ColorMesh> triangle();
 	static std::shared_ptr<ColorMesh> loadFromFile(std::string fileName);
 	static std::shared_ptr<ColorMesh> applyMatrixToMesh(std::shared_ptr<ColorMesh> & mesh, glm::mat4 matrix);

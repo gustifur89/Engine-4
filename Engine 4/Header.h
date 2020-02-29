@@ -15,6 +15,7 @@
 #include <thread>
 #include <queue>
 #include <stack>
+#include <algorithm>
 
 #include <GL/glew.h>
 

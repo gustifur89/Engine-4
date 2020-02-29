@@ -13,10 +13,10 @@ collisionManifold Physics::collideCapsuleCapsule(std::shared_ptr<GameObject> obj
     collisionManifold colInfo;
     std::shared_ptr<Capsule> capA = std::dynamic_pointer_cast<Capsule>(objectA->collider);
     std::shared_ptr<Capsule> capB = std::dynamic_pointer_cast<Capsule>(objectB->collider);
-    
+
     //std::shared_ptr<B> bp = std::dynamic_pointer_cast<B>(ap);
     glm::vec3 ptA, ptB;
-    
+
     CollisionFunctions::getClosestPoints(objectA->transform.getTransformMatrix(), capA, objectB->transform.getTransformMatrix(), capB, &ptA, &ptB);
 
     //glm::vec3 ptA = capA->getClosestPointTo(objectA->transform.getTransformMatrix(), objectB->transform.getTransformMatrix(), capB);
@@ -31,7 +31,7 @@ collisionManifold Physics::collideCapsuleCapsule(std::shared_ptr<GameObject> obj
     if (doesCollide)
     {
         colInfo.normal = glm::normalize(dif);
-        colInfo.contactPoint = ptA + ( capA->radius / (capA->radius + capB->radius) ) * dif;
+        colInfo.contactPoint = ptA + (capA->radius / (capA->radius + capB->radius)) * dif;
         colInfo.sepDepth = capA->radius + capB->radius - dist;
     }
 
@@ -51,7 +51,7 @@ collisionManifold Physics::collideAABBAABB(std::shared_ptr<GameObject> objectA, 
     glm::vec3 posB = objectB->transform.getPosition();
 
     colInfo.doesCollide = false;
-    
+
     glm::vec3 maxA = posA + scaleA;
     glm::vec3 minA = posA - scaleA;
     glm::vec3 maxB = posB + scaleB;
@@ -251,7 +251,7 @@ collisionManifold Physics::collideCapsuleAABB(std::shared_ptr<GameObject> object
 {
     //collide from capsule to AABB
     collisionManifold colInfo;
-    
+
     colInfo.doesCollide = false;
 
     std::shared_ptr<Capsule> capA = std::dynamic_pointer_cast<Capsule>(objectA->collider);
@@ -292,7 +292,6 @@ collisionManifold Physics::collideCapsuleAABB(std::shared_ptr<GameObject> object
                 colInfo.normal = glm::vec3(-1, 0, 0);
             else
                 colInfo.normal = glm::vec3(1, 0, 0);
-
             colInfo.sepDepth = overlap.x;
         }
         else if (overlap.y < overlap.z)
@@ -302,7 +301,6 @@ collisionManifold Physics::collideCapsuleAABB(std::shared_ptr<GameObject> object
                 colInfo.normal = glm::vec3(0, -1, 0);
             else
                 colInfo.normal = glm::vec3(0, 1, 0);
-
             colInfo.sepDepth = overlap.y;
         }
         else
@@ -311,25 +309,24 @@ collisionManifold Physics::collideCapsuleAABB(std::shared_ptr<GameObject> object
                 colInfo.normal = glm::vec3(0, 0, -1);
             else
                 colInfo.normal = glm::vec3(0, 0, 1);
-
             colInfo.sepDepth = overlap.z;
         }
        // */
 
-        //need to see if colliding from the top or sides...
-        //bool onTop = posA.x <= maxB.x && posA.x >= minB.x && posA.z <= maxB.z && posA.z >= maxB.z;
-        //If on top, we collide the closest point 
+       //need to see if colliding from the top or sides...
+       //bool onTop = posA.x <= maxB.x && posA.x >= minB.x && posA.z <= maxB.z && posA.z >= maxB.z;
+       //If on top, we collide the closest point 
 
-        //we just need to collide the AABB with a sphere made from the closest point on the capsule to the center of the AABB.
-       // /*
+       //we just need to collide the AABB with a sphere made from the closest point on the capsule to the center of the AABB.
+      // /*
         glm::vec3 ptA;
 
         CollisionFunctions::getClosestPointToPoint(objectA->transform.getTransformMatrix(), capA, posB, &ptA);
 
-       // ptA = objectA->transform.getPosition();
+        // ptA = objectA->transform.getPosition();
 
-        //Now it is just like a sphere vs AABB collision:
-         //Center of AABB + projection of sphere onto surface
+         //Now it is just like a sphere vs AABB collision:
+          //Center of AABB + projection of sphere onto surface
         glm::vec3 projection = glm::clamp(ptA - posB, -scaleB, scaleB);
 
         glm::vec3 mag = glm::abs(projection / scaleB);
@@ -363,7 +360,7 @@ collisionManifold Physics::collideCapsuleAABB(std::shared_ptr<GameObject> object
                 boundaryPt.z = posB.z + glm::sign(projection.z) * scaleB.z;
             }
         }
-        
+
         //Now we collide like a sphere...
         glm::vec3 dif = boundaryPt - ptA;
         float dist = glm::length(dif);
@@ -429,7 +426,7 @@ collisionManifold Physics::collideSphereAABB(std::shared_ptr<GameObject> objectA
     // SAT test for bounding boxes
     if (overlap.x > 0 && overlap.y > 0 && overlap.z > 0)
     {
-    
+
         //Now we get the closest point in box to circle..
 
         //Center of AABB + projection of sphere onto surface
@@ -439,7 +436,7 @@ collisionManifold Physics::collideSphereAABB(std::shared_ptr<GameObject> objectA
 
         //This should renormalize so that it goes back to the boundary.
         float maxVal = fmax(mag.x, fmax(mag.y, mag.z));
-       // if (maxVal < 1.0f) std::cout << "yeet\n";
+        // if (maxVal < 1.0f) std::cout << "yeet\n";
         bool insideTag = maxVal < 1.0f;
         //std::cout << projection.x << " : " << projection.y << " : " << projection.z << "\n";
         glm::vec3 boundaryPt = posB + projection;
@@ -650,13 +647,13 @@ void Physics::bounceBoundary(std::shared_ptr<GameObject> object)
     glm::vec3 pos = object->transform.getPosition();
     glm::vec3 vel = object->velocity;
 
-    if ((pos.x < -boundary.x && vel.x < 0.0) || (pos.x > boundary.x && vel.x > 0.0))
+    if ((pos.x < -boundary.x && vel.x < 0.0) || (pos.x > boundary.x&& vel.x > 0.0))
         object->applyImpulse(object->mass * glm::vec3(-2 * vel.x, 0, 0), pos);
 
-    if ((pos.y < -boundary.y && vel.y < 0.0) || (pos.y > boundary.y && vel.y > 0.0))
+    if ((pos.y < -boundary.y && vel.y < 0.0) || (pos.y > boundary.y&& vel.y > 0.0))
         object->applyImpulse(object->mass * glm::vec3(0, -2 * vel.y, 0), pos);
 
-    if ((pos.z < -boundary.z && vel.z < 0.0) || (pos.z > boundary.z && vel.z > 0.0))
+    if ((pos.z < -boundary.z && vel.z < 0.0) || (pos.z > boundary.z&& vel.z > 0.0))
         object->applyImpulse(object->mass * glm::vec3(0, 0, -2 * vel.z), pos);
 
 }
@@ -673,7 +670,7 @@ bool Physics::killBoundary(std::shared_ptr<GameObject> object)
         return true;
     }
     */
-       
+
 
     if (pos.y < -boundary.y)
     {
@@ -687,7 +684,7 @@ bool Physics::killBoundary(std::shared_ptr<GameObject> object)
 void Physics::physicsStep(float dt, int iterations)
 {
     dt = dt / iterations;
-    
+
     for (int iters = 0; iters < iterations; iters++)
     {
 
@@ -735,5 +732,6 @@ void Physics::physicsStep(float dt, int iterations)
                 object->force = glm::vec3(0.0);
             }
         }
-    }    
+    }
 }
+

@@ -1,31 +1,238 @@
 #pragma once
 #include "Headers.h"
 
+class MeshTriangle
+{
+private:
+	glm::vec3 calculateNormal(glm::vec3 vert0, glm::vec3 vert1, glm::vec3 vert2)
+	{
+		return glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+	}
+
+	const float EPSILON = 0.001;
+
+public:
+	MeshTriangle(glm::vec3 vert0, glm::vec3 vert1, glm::vec3 vert2, glm::vec3 n0, glm::vec3 n1, glm::vec3 n2)
+	{
+		this->vert0 = vert0;
+		this->vert1 = vert1;
+		this->vert2 = vert2;
+		this->n0 = n0;
+		this->n1 = n1;
+		this->n2 = n2;
+		this->normal = calculateNormal(vert0, vert1, vert2);
+	}
+
+	glm::vec3 vert0, vert1, vert2;
+	glm::vec3 n0, n1, n2;
+	glm::vec3 normal;
+
+	bool rayUnder(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* w0, glm::vec3* w1)
+	{
+		//need to expand the plane by the radius;
+		// plane equation: dot( (p - v0), normal) = 0
+		// extruded equation: dot( (p - v0 + radius * normal), normal) = 0
+
+		//TODO: rework to be more efficient. A lot can be shortened. Lots of redundant checks.
+
+		//side:
+		float side0 = glm::dot(v0 - vert0, normal);
+		float side1 = glm::dot(v1 - vert0, normal);
+
+		if (side0 >= 0 && side1 >= 0)
+		{
+			//both on the colliding side:
+			*w0 = v0;
+			*w1 = v1;
+			return true;
+		}
+		else if (side0 < 0 && side1 < 0)
+		{
+			//not colliding. ignore
+			return false;
+		}
+		else
+		{
+			//interesting case. It transects the plane
+			glm::vec3 dir01 = v1 - v0;
+
+			float denom = glm::dot(dir01, normal);
+
+			if (denom == 0.0) // parallel
+			{
+				return false;
+			}
+			else
+			{
+				float t = glm::dot(vert0 + radius * normal - v0, normal) / denom;
+				glm::vec3 intP = v0 + t * dir01;
+
+				if (t < 0 || t > 1.0) // segment doesn't intersect the plane... (this may be unneeded because of the above checks... maybe fix);
+				{
+					return false;
+				}
+				else if (isPointInTriangle(v0 + t * dir01, radius))
+				{
+					//w0, w1
+					//see which side is on the top:
+
+					//check to see if moving towards the triangle?
+					*w0 = v0;
+					*w1 = v0 + t * dir01;
+
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	bool collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out)
+	{
+		//need to expand the plane by the radius;
+		// plane equation: dot( (p - v0), normal) = 0
+		// extruded equation: dot( (p - v0 + radius * normal), normal) = 0
+
+		//TODO: rework to be more efficient. A lot can be shortened. Lots of redundant checks.
+
+		//side:
+		float side0 = glm::dot(v0 - vert0, normal);
+		float side1 = glm::dot(v1 - vert0, normal);
+
+		if (side0 >= 0 && side1 >= 0)
+		{
+			//both on the colliding side: So no collision
+			//*out = v0;
+			return false;
+		}
+		else if (side0 < 0 && side1 < 0)
+		{
+			//not colliding. ignore
+			//*out = v0;
+			return false;
+		}
+		else
+		{
+			//interesting case. It transects the plane
+			glm::vec3 dir01 = v1 - v0;
+
+			float denom = glm::dot(dir01, normal);
+
+			if (denom == 0.0) // parallel Not sure this can happen.... ??? 
+			{
+				//*out = v0;
+				return false;
+			}
+			else
+			{
+				float t = glm::dot(vert0 + radius * normal - v0, normal) / denom; // I'm like 90% sure this will always be valid here due to above checks ( valid :=  t<=1.0 && t >+ 0.0 )
+				glm::vec3 intP = v0 + t * dir01;
+				
+				
+				if (isPointInTriangle(v0 + t * dir01, radius))
+				{
+					//w0, w1
+					//see which side is on the top:
+
+					//check to see if moving towards the triangle?
+					*out = v0 + t * dir01;// +EPSILON * normal;
+					return true;
+				}
+				else
+				{
+					//*out = v1;
+					return false;
+				}
+			}
+		}
+	}
+
+	bool isPointInTriangle(glm::vec3 p, float radius)
+	{
+		//need to offset the geometry properly...
+		float v0Offset = radius / glm::dot(n0, normal);
+		float v1Offset = radius / glm::dot(n1, normal);
+		float v2Offset = radius / glm::dot(n2, normal);
+
+		glm::vec3 m0 = (vert1 + v1Offset * n1) - (vert0 + v0Offset * n0), m1 = (vert2 + v2Offset * n2) - (vert0 + v0Offset * n0), m2 = p - (vert0 + v0Offset * n0);
+		float d00 = glm::dot(m0, m0);
+		float d01 = glm::dot(m0, m1);
+		float d11 = glm::dot(m1, m1);
+		float d20 = glm::dot(m2, m0);
+		float d21 = glm::dot(m2, m1);
+		float denom = d00 * d11 - d01 * d01;
+		float v = (d11 * d20 - d01 * d21) / denom;
+		float w = (d00 * d21 - d01 * d20) / denom;
+		float u = 1.0f - v - w;
+		return (v >= 0.0 && v <= 1.0 && w >= 0.0 && w <= 1.0 && u >= 0.0 && u <= 1.0);
+	}
+
+	MeshTriangle applyMatrix(glm::mat4 matrix, glm::mat4 normalMatrix)
+	{
+		glm::vec4 vert0_ = matrix * glm::vec4(vert0, 1);
+		glm::vec4 vert1_ = matrix * glm::vec4(vert1, 1);
+		glm::vec4 vert2_ = matrix * glm::vec4(vert2, 1);
+
+		glm::vec4 n0_ = normalMatrix * glm::vec4(n0, 0);
+		glm::vec4 n1_ = normalMatrix * glm::vec4(n1, 0);
+		glm::vec4 n2_ = normalMatrix * glm::vec4(n2, 0);
+		
+		return MeshTriangle(vert0_, vert1_, vert2_, n0_, n1_, n2_);
+	}
+
+	void thicken(float radius)
+	{
+		//need to offset the geometry properly...
+		float v0Offset = radius / glm::dot(n0, normal);
+		float v1Offset = radius / glm::dot(n1, normal);
+		float v2Offset = radius / glm::dot(n2, normal);
+
+		vert0 += v0Offset * n0;
+		vert1 += v1Offset * n1;
+		vert2 += v2Offset * n2;
+	}
+
+	void applyMatrixSelf(glm::mat4 matrix, glm::mat4 normalMatrix)
+	{
+		vert0 = matrix * glm::vec4(vert0, 1);
+		vert1 = matrix * glm::vec4(vert1, 1);
+		vert2 = matrix * glm::vec4(vert2, 1);
+
+		n0 = normalMatrix * glm::vec4(n0, 0);
+		n1 = normalMatrix * glm::vec4(n1, 0);
+		n2 = normalMatrix * glm::vec4(n2, 0);
+		normal = normalMatrix * glm::vec4(normal, 0);
+	}
+};
+
 class Triangle
 {
 private:
-	glm::vec3 calculateNormal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
+	glm::vec3 calculateNormal(glm::vec3 vert0, glm::vec3 vert1, glm::vec3 vert2)
 	{
-		return glm::normalize(glm::cross(p2 - p1, p3 - p1));
+		return glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
 	}
 
 public:
-	Triangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
+	Triangle(glm::vec3 vert0, glm::vec3 vert1, glm::vec3 vert2)
 	{
-		this->p1 = p1;
-		this->p2 = p2;
-		this->p3 = p3;
-		pos = glm::vec3((p1.x + p2.x + p3.x) / 3, (p1.y + p2.y + p3.y) / 3, (p1.z + p2.z + p3.z) / 3);
-		this->normal = calculateNormal(p1, p2, p3);
+		this->vert0 = vert0;
+		this->vert1 = vert1;
+		this->vert2 = vert2;
+		pos = glm::vec3((vert0.x + vert1.x + vert2.x) / 3, (vert0.y + vert1.y + vert2.y) / 3, (vert0.z + vert1.z + vert2.z) / 3);
+		this->normal = calculateNormal(vert0, vert1, vert2);
 		d = -glm::dot(normal, pos);
 	}
 
-	Triangle(glm::vec3 &p1, glm::vec3 &p2, glm::vec3 &p3, glm::vec3 &n)
+	Triangle(glm::vec3 &vert0, glm::vec3 &vert1, glm::vec3 &vert2, glm::vec3 &n)
 	{
-		this->p1 = p1;
-		this->p2 = p2;
-		this->p3 = p3;
-		pos = glm::vec3((p1.x + p2.x + p3.x) / 3, (p1.y + p2.y + p3.y) / 3, (p1.z + p2.z + p3.z) / 3);
+		this->vert0 = vert0;
+		this->vert1 = vert1;
+		this->vert2 = vert2;
+		pos = glm::vec3((vert0.x + vert1.x + vert2.x) / 3, (vert0.y + vert1.y + vert2.y) / 3, (vert0.z + vert1.z + vert2.z) / 3);
 		this->normal = n;
 		d = -glm::dot(n, pos);
 	}
@@ -33,31 +240,31 @@ public:
 	/** /
 	inline Triangle operator+(const glm::vec3& offSet)
 	{
-		p1 += offSet;
-		p2 += offSet;
-		p3 += offSet;
+		vert0 += offSet;
+		vert1 += offSet;
+		vert2 += offSet;
 		pos += offSet;
 		return this;
 	}*/
 
 	Triangle& operator+(const glm::vec3& offSet)
 	{
-		p1 += offSet;
-		p2 += offSet;
-		p3 += offSet;
+		vert0 += offSet;
+		vert1 += offSet;
+		vert2 += offSet;
 		pos += offSet;
 		return *this;
 	}
 	
 	Triangle applyMatrix(glm::mat4 matrix)
 	{
-		glm::vec4 p1_ = glm::vec4(p1, 1);
-		glm::vec4 p2_ = glm::vec4(p2, 1);
-		glm::vec4 p3_ = glm::vec4(p3, 1);
-		p1_ = matrix * p1_;
-		p2_ = matrix * p2_;
-		p3_ = matrix * p3_;
-		Triangle nTri(p1_ / p1_.w, p2_ / p2_.w, p3_ / p3_.w);
+		glm::vec4 vert0_ = glm::vec4(vert0, 1);
+		glm::vec4 vert1_ = glm::vec4(vert1, 1);
+		glm::vec4 vert2_ = glm::vec4(vert2, 1);
+		vert0_ = matrix * vert0_;
+		vert1_ = matrix * vert1_;
+		vert2_ = matrix * vert2_;
+		Triangle nTri(vert0_ / vert0_.w, vert1_ / vert1_.w, vert2_ / vert2_.w);
 		return nTri;
 	}
 
@@ -75,9 +282,9 @@ public:
 	}
 
 	//parameters
-	glm::vec3 p1;
-	glm::vec3 p2;
-	glm::vec3 p3;
+	glm::vec3 vert0;
+	glm::vec3 vert1;
+	glm::vec3 vert2;
 	glm::vec3 pos;
 	glm::vec3 normal;
 	float d;
@@ -88,12 +295,12 @@ class Bounds
 private:
 	bool boundingBoxCheck(std::shared_ptr<Triangle> triangle)
 	{
-		double maxX = fmax(triangle->p1.x, fmax(triangle->p2.x, triangle->p3.x));
-		double minX = fmin(triangle->p1.x, fmin(triangle->p2.x, triangle->p3.x));
-		double maxY = fmax(triangle->p1.y, fmax(triangle->p2.y, triangle->p3.y));
-		double minY = fmin(triangle->p1.y, fmin(triangle->p2.y, triangle->p3.y));
-		double maxZ = fmax(triangle->p1.z, fmax(triangle->p2.z, triangle->p3.z));
-		double minZ = fmin(triangle->p1.z, fmin(triangle->p2.z, triangle->p3.z));
+		double maxX = fmax(triangle->vert0.x, fmax(triangle->vert1.x, triangle->vert2.x));
+		double minX = fmin(triangle->vert0.x, fmin(triangle->vert1.x, triangle->vert2.x));
+		double maxY = fmax(triangle->vert0.y, fmax(triangle->vert1.y, triangle->vert2.y));
+		double minY = fmin(triangle->vert0.y, fmin(triangle->vert1.y, triangle->vert2.y));
+		double maxZ = fmax(triangle->vert0.z, fmax(triangle->vert1.z, triangle->vert2.z));
+		double minZ = fmin(triangle->vert0.z, fmin(triangle->vert1.z, triangle->vert2.z));
 
 		if (maxX >= low.x && minX <= high.x && maxY >= low.y && minY <= high.y && maxZ >= low.z && minZ <= high.z)
 			return true;
@@ -105,72 +312,72 @@ private:
 		return px >= lowX && px <= highX && py >= lowY && py <= highY;
 	}
 
-	bool lineIntersectsBoundaries(glm::vec3 p1, glm::vec3 p2)
+	bool lineIntersectsBoundaries(glm::vec3 vert0, glm::vec3 vert1)
 	{
 		//check all the planes...
 
 		//Z:
-		double zSlope = p2.z - p1.z;
+		double zSlope = vert1.z - vert0.z;
 		if (zSlope != 0.0)
 		{
 			//TOP
-			double t1 = (high.z - p1.z) / zSlope;
+			double t1 = (high.z - vert0.z) / zSlope;
 			if (t1 >= 0.0 && t1 <= 1.0)
 			{
-				double x = p1.x + t1 * (p2.x - p1.x);
-				double y = p1.y + t1 * (p2.y - p1.y);
+				double x = vert0.x + t1 * (vert1.x - vert0.x);
+				double y = vert0.y + t1 * (vert1.y - vert0.y);
 				if (x >= low.x && x <= high.x && y >= low.y && y <= high.y) return true;
 			}
 			//BOTTOM
-			double t2 = (low.z - p1.z) / zSlope;
+			double t2 = (low.z - vert0.z) / zSlope;
 			if (t2 >= 0.0 && t2 <= 1.0)
 			{
-				double x = p1.x + t2 * (p2.x - p1.x);
-				double y = p1.y + t2 * (p2.y - p1.y);
+				double x = vert0.x + t2 * (vert1.x - vert0.x);
+				double y = vert0.y + t2 * (vert1.y - vert0.y);
 				if (x >= low.x && x <= high.x && y >= low.y && y <= high.y) return true;
 			}
 		}
 
 		//X:
-		double xSlope = p2.x - p1.x;
+		double xSlope = vert1.x - vert0.x;
 		if (xSlope != 0.0)
 		{
 			//TOP
-			double t1 = (high.x - p1.x) / xSlope;
+			double t1 = (high.x - vert0.x) / xSlope;
 			if (t1 >= 0.0 && t1 <= 1.0)
 			{
-				double z = p1.z + t1 * (p2.z - p1.z);
-				double y = p1.y + t1 * (p2.y - p1.y);
+				double z = vert0.z + t1 * (vert1.z - vert0.z);
+				double y = vert0.y + t1 * (vert1.y - vert0.y);
 				if (z >= low.z && z <= high.z && y >= low.y && y <= high.y) return true;
 			}
 			//BOTTOM
-			double t2 = (low.x - p1.x) / xSlope;
+			double t2 = (low.x - vert0.x) / xSlope;
 			if (t2 >= 0.0 && t2 <= 1.0)
 			{
-				double z = p1.z + t2 * (p2.z - p1.z);
-				double y = p1.y + t2 * (p2.y - p1.y);
+				double z = vert0.z + t2 * (vert1.z - vert0.z);
+				double y = vert0.y + t2 * (vert1.y - vert0.y);
 				if (z >= low.z && z <= high.z && y >= low.y && y <= high.y) return true;
 			}
 		}
 
 		//Y:
-		double ySlope = p2.y - p1.y;
+		double ySlope = vert1.y - vert0.y;
 		if (ySlope != 0.0)
 		{
 			//TOP
-			double t1 = (high.y - p1.y) / ySlope;
+			double t1 = (high.y - vert0.y) / ySlope;
 			if (t1 >= 0.0 && t1 <= 1.0)
 			{
-				double z = p1.z + t1 * (p2.z - p1.z);
-				double x = p1.x + t1 * (p2.x - p1.x);
+				double z = vert0.z + t1 * (vert1.z - vert0.z);
+				double x = vert0.x + t1 * (vert1.x - vert0.x);
 				if (z >= low.z && z <= high.z && x >= low.x && x <= high.x) return true;
 			}
 			//BOTTOM
-			double t2 = (low.y - p1.y) / ySlope;
+			double t2 = (low.y - vert0.y) / ySlope;
 			if (t2 >= 0.0 && t2 <= 1.0)
 			{
-				double z = p1.z + t2 * (p2.z - p1.z);
-				double x = p1.x + t2 * (p2.x - p1.x);
+				double z = vert0.z + t2 * (vert1.z - vert0.z);
+				double x = vert0.x + t2 * (vert1.x - vert0.x);
 				if (z >= low.z && z <= high.z && x >= low.x && x <= high.x) return true;
 			}
 		}
@@ -179,18 +386,18 @@ private:
 
 	bool triangleIntersectsBoundaries(std::shared_ptr<Triangle> triangle)
 	{
-		if (lineIntersectsBoundaries(triangle->p1, triangle->p2) ||
-			lineIntersectsBoundaries(triangle->p2, triangle->p3) ||
-			lineIntersectsBoundaries(triangle->p3, triangle->p1)) return true;
+		if (lineIntersectsBoundaries(triangle->vert0, triangle->vert1) ||
+			lineIntersectsBoundaries(triangle->vert1, triangle->vert2) ||
+			lineIntersectsBoundaries(triangle->vert2, triangle->vert0)) return true;
 		return false;
 	}
 
 	/*
-	bool pointInTriangle(float px, float py, float p0x, float p0y, float p1x, float p1y, float p2x, float p2y)
+	bool pointInTriangle(float px, float py, float p0x, float p0y, float vert0x, float vert0y, float vert1x, float vert1y)
 	{
-	float Area = (float)(0.5 *(-p1y * p2x + p0y * (-p1x + p2x) + p0x * (p1y - p2y) + p1x * p2y));
-	float s = 1 / (2 * Area)*(p0y*p2x - p0x * p2y + (p2y - p0y)*px + (p0x - p2x)*py);
-	float t = 1 / (2 * Area)*(p0x*p1y - p0y * p1x + (p0y - p1y)*px + (p1x - p0x)*py);
+	float Area = (float)(0.5 *(-vert0y * vert1x + p0y * (-vert0x + vert1x) + p0x * (vert0y - vert1y) + vert0x * vert1y));
+	float s = 1 / (2 * Area)*(p0y*vert1x - p0x * vert1y + (vert1y - p0y)*px + (p0x - vert1x)*py);
+	float t = 1 / (2 * Area)*(p0x*vert0y - p0y * vert0x + (p0y - vert0y)*px + (vert0x - p0x)*py);
 	return s >= 0 && t >= 0 && 1.0f - s - t >= 0;
 	}
 	*/
@@ -201,11 +408,11 @@ private:
 		*y = (f - ((d*c) / a)) / (e - ((d*b) / a));
 	}
 
-	bool pointInTriangle(float x, float y, float p0x, float p0y, float p1x, float p1y, float p2x, float p2y)
+	bool pointInTriangle(float x, float y, float p0x, float p0y, float vert0x, float vert0y, float vert1x, float vert1y)
 	{
 		double t = 0.0;
 		double s = 0.0;
-		solveSystem(p1x - p0x, p2x - p0x, x - p0x, p1y - p0y, p2y - p0y, y - p0y, &t, &s);
+		solveSystem(vert0x - p0x, vert1x - p0x, x - p0x, vert0y - p0y, vert1y - p0y, y - p0y, &t, &s);
 		if (t >= 0.0 && s >= 0.0 && t + s <= 1.0) return true;
 		return false;
 	}
@@ -219,54 +426,54 @@ private:
 		return false;
 	}
 
-	bool triangleIntersectsLine(float p0x, float p0y, float p1x, float p1y, float p2x, float p2y, float A1x, float A1y, float A2x, float A2y)
+	bool triangleIntersectsLine(float p0x, float p0y, float vert0x, float vert0y, float vert1x, float vert1y, float A1x, float A1y, float A2x, float A2y)
 	{
-		if (lineInteresectsLine(p0x, p0y, p1x, p1y, A1x, A1y, A2x, A2y) ||
-			lineInteresectsLine(p1x, p1y, p2x, p2y, A1x, A1y, A2x, A2y) ||
-			lineInteresectsLine(p2x, p2y, p0x, p0y, A1x, A1y, A2x, A2y)) return true;
+		if (lineInteresectsLine(p0x, p0y, vert0x, vert0y, A1x, A1y, A2x, A2y) ||
+			lineInteresectsLine(vert0x, vert0y, vert1x, vert1y, A1x, A1y, A2x, A2y) ||
+			lineInteresectsLine(vert1x, vert1y, p0x, p0y, A1x, A1y, A2x, A2y)) return true;
 		return false;
 	}
 
-	bool triangleIntersectsRect(float p0x, float p0y, float p1x, float p1y, float p2x, float p2y, float lowX, float highX, float lowY, float highY)
+	bool triangleIntersectsRect(float p0x, float p0y, float vert0x, float vert0y, float vert1x, float vert1y, float lowX, float highX, float lowY, float highY)
 	{
-		if (triangleIntersectsLine(p0x, p0y, p1x, p1y, p2x, p2y, lowX, lowY, highX, lowY) ||
-			triangleIntersectsLine(p0x, p0y, p1x, p1y, p2x, p2y, highX, lowY, highX, highY) ||
-			triangleIntersectsLine(p0x, p0y, p1x, p1y, p2x, p2y, highX, highY, lowX, highY) ||
-			triangleIntersectsLine(p0x, p0y, p1x, p1y, p2x, p2y, lowX, highY, lowX, lowY)) return true;
+		if (triangleIntersectsLine(p0x, p0y, vert0x, vert0y, vert1x, vert1y, lowX, lowY, highX, lowY) ||
+			triangleIntersectsLine(p0x, p0y, vert0x, vert0y, vert1x, vert1y, highX, lowY, highX, highY) ||
+			triangleIntersectsLine(p0x, p0y, vert0x, vert0y, vert1x, vert1y, highX, highY, lowX, highY) ||
+			triangleIntersectsLine(p0x, p0y, vert0x, vert0y, vert1x, vert1y, lowX, highY, lowX, lowY)) return true;
 		return false;
 	}
 
-	bool triangleInRect(float p0x, float p0y, float p1x, float p1y, float p2x, float p2y, float lowX, float highX, float lowY, float highY)
+	bool triangleInRect(float p0x, float p0y, float vert0x, float vert0y, float vert1x, float vert1y, float lowX, float highX, float lowY, float highY)
 	{
 		//check all triangle verts in rect
 		if (pointInRect(p0x, p0y, lowX, highX, lowY, highY)) return true;
-		if (pointInRect(p1x, p1y, lowX, highX, lowY, highY)) return true;
-		if (pointInRect(p2x, p2y, lowX, highX, lowY, highY)) return true;
+		if (pointInRect(vert0x, vert0y, lowX, highX, lowY, highY)) return true;
+		if (pointInRect(vert1x, vert1y, lowX, highX, lowY, highY)) return true;
 		//check all rect verts in triangle
-		if (pointInTriangle(lowX, lowY, p0x, p0y, p1x, p1y, p2x, p2y)) return true;
-		if (pointInTriangle(lowX, highY, p0x, p0y, p1x, p1y, p2x, p2y)) return true;
-		if (pointInTriangle(highX, lowY, p0x, p0y, p1x, p1y, p2x, p2y)) return true;
-		if (pointInTriangle(highX, highY, p0x, p0y, p1x, p1y, p2x, p2y)) return true;
+		if (pointInTriangle(lowX, lowY, p0x, p0y, vert0x, vert0y, vert1x, vert1y)) return true;
+		if (pointInTriangle(lowX, highY, p0x, p0y, vert0x, vert0y, vert1x, vert1y)) return true;
+		if (pointInTriangle(highX, lowY, p0x, p0y, vert0x, vert0y, vert1x, vert1y)) return true;
+		if (pointInTriangle(highX, highY, p0x, p0y, vert0x, vert0y, vert1x, vert1y)) return true;
 		//check if the triangle intersects the boundary of the rectangle
-		if (triangleIntersectsRect(p0x, p0y, p1x, p1y, p2x, p2y, lowX, highX, lowY, highY)) return true;
+		if (triangleIntersectsRect(p0x, p0y, vert0x, vert0y, vert1x, vert1y, lowX, highX, lowY, highY)) return true;
 		return false;
 	}
 
-	bool rectInTriangle(float p0x, float p0y, float p1x, float p1y, float p2x, float p2y, float lowX, float highX, float lowY, float highY)
+	bool rectInTriangle(float p0x, float p0y, float vert0x, float vert0y, float vert1x, float vert1y, float lowX, float highX, float lowY, float highY)
 	{
 		//check all rect verts in triangle
-		if (pointInTriangle(lowX, lowY, p0x, p0y, p1x, p1y, p2x, p2y)) return true;
-		if (pointInTriangle(lowX, highY, p0x, p0y, p1x, p1y, p2x, p2y)) return true;
-		if (pointInTriangle(highX, lowY, p0x, p0y, p1x, p1y, p2x, p2y)) return true;
-		if (pointInTriangle(highX, highY, p0x, p0y, p1x, p1y, p2x, p2y)) return true;
+		if (pointInTriangle(lowX, lowY, p0x, p0y, vert0x, vert0y, vert1x, vert1y)) return true;
+		if (pointInTriangle(lowX, highY, p0x, p0y, vert0x, vert0y, vert1x, vert1y)) return true;
+		if (pointInTriangle(highX, lowY, p0x, p0y, vert0x, vert0y, vert1x, vert1y)) return true;
+		if (pointInTriangle(highX, highY, p0x, p0y, vert0x, vert0y, vert1x, vert1y)) return true;
 		return false;
 	}
 
 	bool boundsInTriangle(std::shared_ptr<Triangle> triangle)
 	{
-		if (rectInTriangle(triangle->p1.x, triangle->p1.y, triangle->p2.x, triangle->p2.y, triangle->p3.x, triangle->p3.y, low.x, high.x, low.y, high.y) &&
-			rectInTriangle(triangle->p1.y, triangle->p1.z, triangle->p2.y, triangle->p2.z, triangle->p3.y, triangle->p3.z, low.y, high.y, low.z, high.z) &&
-			rectInTriangle(triangle->p1.z, triangle->p1.x, triangle->p2.z, triangle->p2.x, triangle->p3.z, triangle->p3.x, low.z, high.z, low.x, high.x)) return true;
+		if (rectInTriangle(triangle->vert0.x, triangle->vert0.y, triangle->vert1.x, triangle->vert1.y, triangle->vert2.x, triangle->vert2.y, low.x, high.x, low.y, high.y) &&
+			rectInTriangle(triangle->vert0.y, triangle->vert0.z, triangle->vert1.y, triangle->vert1.z, triangle->vert2.y, triangle->vert2.z, low.y, high.y, low.z, high.z) &&
+			rectInTriangle(triangle->vert0.z, triangle->vert0.x, triangle->vert1.z, triangle->vert1.x, triangle->vert2.z, triangle->vert2.x, low.z, high.z, low.x, high.x)) return true;
 		return false;
 	}
 
@@ -277,18 +484,18 @@ private:
 		if (boundingBoxCheck(triangle))
 		{
 			//better one...
-	//		if (pointInBounds(triangle->p1) ||
-	//			pointInBounds(triangle->p2) ||
-	//			pointInBounds(triangle->p3)) return true;
+	//		if (pointInBounds(triangle->vert0) ||
+	//			pointInBounds(triangle->vert1) ||
+	//			pointInBounds(triangle->vert2)) return true;
 
 	//		if (boundsInTriangle(triangle)) return true;
 
 	//		if (triangleIntersectsBoundaries(triangle)) return true;
 			//check projections: (true for all)
 			//	See if the vertexes of triangle are in the rectangle
-			//	if (triangleInRect(triangle.p1.x, triangle.p1.y, triangle.p2.x, triangle.p2.y, triangle.p3.x, triangle.p3.y, low.x, high.x, low.y, high.y) &&
-			//		triangleInRect(triangle.p1.y, triangle.p1.z, triangle.p2.y, triangle.p2.z, triangle.p3.y, triangle.p3.z, low.y, high.y, low.z, high.z) &&
-			//		triangleInRect(triangle.p1.z, triangle.p1.x, triangle.p2.z, triangle.p2.x, triangle.p3.z, triangle.p3.x, low.z, high.z, low.x, high.x)) return true;
+			//	if (triangleInRect(triangle.vert0.x, triangle.vert0.y, triangle.vert1.x, triangle.vert1.y, triangle.vert2.x, triangle.vert2.y, low.x, high.x, low.y, high.y) &&
+			//		triangleInRect(triangle.vert0.y, triangle.vert0.z, triangle.vert1.y, triangle.vert1.z, triangle.vert2.y, triangle.vert2.z, low.y, high.y, low.z, high.z) &&
+			//		triangleInRect(triangle.vert0.z, triangle.vert0.x, triangle.vert1.z, triangle.vert1.x, triangle.vert2.z, triangle.vert2.x, low.z, high.z, low.x, high.x)) return true;
 			return true;
 			//maybe good enough
 		}
@@ -375,35 +582,35 @@ public:
 		
 		if (triangles.size() == 0) return bounds;
 
-		bounds.low.x =	triangles[0]->p1.x;
-		bounds.high.x = triangles[0]->p1.x;
-		bounds.low.y =	triangles[0]->p1.y;
-		bounds.high.y = triangles[0]->p1.y;
-		bounds.low.z =	triangles[0]->p1.z;
-		bounds.high.z = triangles[0]->p1.z;
+		bounds.low.x =	triangles[0]->vert0.x;
+		bounds.high.x = triangles[0]->vert0.x;
+		bounds.low.y =	triangles[0]->vert0.y;
+		bounds.high.y = triangles[0]->vert0.y;
+		bounds.low.z =	triangles[0]->vert0.z;
+		bounds.high.z = triangles[0]->vert0.z;
 
 		for (int i = 0; i < triangles.size(); i++)
 		{
-			if (triangles[i]->p1.x < bounds.low.x) bounds.low.x =	triangles[i]->p1.x;
-			if (triangles[i]->p1.x > bounds.high.x) bounds.high.x = triangles[i]->p1.x;
-			if (triangles[i]->p1.y < bounds.low.y) bounds.low.y =	triangles[i]->p1.y;
-			if (triangles[i]->p1.y > bounds.high.y) bounds.high.y = triangles[i]->p1.y;
-			if (triangles[i]->p1.z < bounds.low.z) bounds.low.z =	triangles[i]->p1.z;
-			if (triangles[i]->p1.z > bounds.high.z) bounds.high.z = triangles[i]->p1.z;
+			if (triangles[i]->vert0.x < bounds.low.x) bounds.low.x =	triangles[i]->vert0.x;
+			if (triangles[i]->vert0.x > bounds.high.x) bounds.high.x = triangles[i]->vert0.x;
+			if (triangles[i]->vert0.y < bounds.low.y) bounds.low.y =	triangles[i]->vert0.y;
+			if (triangles[i]->vert0.y > bounds.high.y) bounds.high.y = triangles[i]->vert0.y;
+			if (triangles[i]->vert0.z < bounds.low.z) bounds.low.z =	triangles[i]->vert0.z;
+			if (triangles[i]->vert0.z > bounds.high.z) bounds.high.z = triangles[i]->vert0.z;
 
-			if (triangles[i]->p2.x < bounds.low.x) bounds.low.x =	triangles[i]->p2.x;
-			if (triangles[i]->p2.x > bounds.high.x) bounds.high.x = triangles[i]->p2.x;
-			if (triangles[i]->p2.y < bounds.low.y) bounds.low.y =	triangles[i]->p2.y;
-			if (triangles[i]->p2.y > bounds.high.y) bounds.high.y = triangles[i]->p2.y;
-			if (triangles[i]->p2.z < bounds.low.z) bounds.low.z =	triangles[i]->p2.z;
-			if (triangles[i]->p2.z > bounds.high.z) bounds.high.z = triangles[i]->p2.z;
+			if (triangles[i]->vert1.x < bounds.low.x) bounds.low.x =	triangles[i]->vert1.x;
+			if (triangles[i]->vert1.x > bounds.high.x) bounds.high.x = triangles[i]->vert1.x;
+			if (triangles[i]->vert1.y < bounds.low.y) bounds.low.y =	triangles[i]->vert1.y;
+			if (triangles[i]->vert1.y > bounds.high.y) bounds.high.y = triangles[i]->vert1.y;
+			if (triangles[i]->vert1.z < bounds.low.z) bounds.low.z =	triangles[i]->vert1.z;
+			if (triangles[i]->vert1.z > bounds.high.z) bounds.high.z = triangles[i]->vert1.z;
 
-			if (triangles[i]->p3.x < bounds.low.x) bounds.low.x =	triangles[i]->p3.x;
-			if (triangles[i]->p3.x > bounds.high.x) bounds.high.x = triangles[i]->p3.x;
-			if (triangles[i]->p3.y < bounds.low.y) bounds.low.y =	triangles[i]->p3.y;
-			if (triangles[i]->p3.y > bounds.high.y) bounds.high.y = triangles[i]->p3.y;
-			if (triangles[i]->p3.z < bounds.low.z) bounds.low.z =	triangles[i]->p3.z;
-			if (triangles[i]->p3.z > bounds.high.z) bounds.high.z = triangles[i]->p3.z;
+			if (triangles[i]->vert2.x < bounds.low.x) bounds.low.x =	triangles[i]->vert2.x;
+			if (triangles[i]->vert2.x > bounds.high.x) bounds.high.x = triangles[i]->vert2.x;
+			if (triangles[i]->vert2.y < bounds.low.y) bounds.low.y =	triangles[i]->vert2.y;
+			if (triangles[i]->vert2.y > bounds.high.y) bounds.high.y = triangles[i]->vert2.y;
+			if (triangles[i]->vert2.z < bounds.low.z) bounds.low.z =	triangles[i]->vert2.z;
+			if (triangles[i]->vert2.z > bounds.high.z) bounds.high.z = triangles[i]->vert2.z;
 		}
 		return bounds;
 	}
@@ -473,9 +680,9 @@ public:
 		return a + f * (b - a);
 	}
 
-	static glm::vec3 calculateNormal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3)
+	static glm::vec3 calculateNormal(glm::vec3 vert0, glm::vec3 vert1, glm::vec3 vert2)
 	{
-		return glm::normalize(glm::cross(p2 - p1, p3 - p1));
+		return glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
 	}
 
 };

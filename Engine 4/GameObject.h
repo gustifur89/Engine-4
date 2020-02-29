@@ -59,9 +59,10 @@ public:
 	GameObjectColor() : GameObjectColor(NULL, NULL) {}
 	glm::mat4 colorMatrix;
 	float shininess;
+	std::shared_ptr<ColorShader> shader;
 
 	void setShininess(float shininess);
 	void setFillColor(int r, int g, int b);
 	void renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform);
-	std::shared_ptr<ColorShader> shader;
+	
 };

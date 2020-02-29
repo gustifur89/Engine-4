@@ -1,6 +1,8 @@
 #pragma once
 #include "Header.h"
 
+// ========== Legacy stuff ==========
+
 class Collider
 {
 public:

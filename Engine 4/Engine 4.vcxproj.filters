@@ -57,6 +57,9 @@
     <ClCompile Include="SSAOShader.cpp">
       <Filter>Specific</Filter>
     </ClCompile>
+    <ClCompile Include="Octree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Header.h">
@@ -100,6 +103,12 @@
     </ClInclude>
     <ClInclude Include="SSAOShader.h">
       <Filter>Specific</Filter>
+    </ClInclude>
+    <ClInclude Include="Geometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Octree.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

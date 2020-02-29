@@ -31,6 +31,82 @@ void Mesh::setUpVAO()
 	glBindVertexArray(VertexArrayID);
 }
 
+std::vector<std::shared_ptr<MeshTriangle>> Mesh::getTrianglesFromMesh(glm::mat4 transform)
+{
+	std::vector<std::shared_ptr<MeshTriangle>> faces;
+
+	std::vector<glm::vec3> avgNorms; // for corners of shared pts.
+	std::vector<std::vector<glm::vec3>> normsList; // for corners of shared pts.
+	std::vector<glm::vec3> nonDupedVerts;
+	std::vector<int> normalIndex(indexBuffer.size(), 0);
+
+	for (int i = 0; i < vertexBuffer.size(); i+=3)
+	{
+		glm::vec3 vert(vertexBuffer[i + 0], vertexBuffer[i + 1], vertexBuffer[i + 2]);
+		glm::vec3 norm(normalBuffer[i + 0], normalBuffer[i + 1], normalBuffer[i + 2]);
+
+		bool unique = true;
+
+		for (int j = 0; j < nonDupedVerts.size(); j++)
+		{
+			if (vert == nonDupedVerts[j])
+			{
+				//this is the same...
+				unique = false;
+				normalIndex[i] = j;
+				normsList[j].push_back(norm);
+			}
+		}
+
+		if (unique)
+		{
+			//need to add.
+			nonDupedVerts.push_back(vert);
+			normsList.push_back(std::vector<glm::vec3>(1, norm));
+			normalIndex[i] = normsList.size() - 1;// .push_back(normsList.size() - 1);
+		}
+	}
+
+	avgNorms.resize(normsList.size());
+	for (int i = 0; i < normsList.size(); i++)
+	{
+		glm::vec3 avg(0.0);
+		for (int j = 0; j < normsList[i].size(); j++)
+		{
+			avg += normsList[i][j];
+		}
+		avg = glm::normalize((1.0f / normsList[i].size()) * avg);
+		avgNorms[i] = avg;
+	}
+
+	for (int i = 0; i < indexBuffer.size(); i += 3)
+	{
+		int i_p0 = 3 * indexBuffer[i + 0];
+		int i_vert0 = 3 * indexBuffer[i + 1];
+		int i_vert1 = 3 * indexBuffer[i + 2];
+
+		std::cout << i << " : " << normalIndex.size() << " : " << normalIndex[i + 0] << " : " << avgNorms.size() << " \n";
+
+
+		glm::vec3 n0 = avgNorms[normalIndex[i + 0]];
+		glm::vec3 n1 = avgNorms[normalIndex[i + 1]];
+		glm::vec3 n2 = avgNorms[normalIndex[i + 2]];
+
+		glm::vec3 p0(vertexBuffer[i_p0 + 0], vertexBuffer[i_p0 + 1], vertexBuffer[i_p0 + 2]);
+		glm::vec3 vert0(vertexBuffer[i_vert0 + 0], vertexBuffer[i_vert0 + 1], vertexBuffer[i_vert0 + 2]);
+		glm::vec3 vert1(vertexBuffer[i_vert1 + 0], vertexBuffer[i_vert1 + 1], vertexBuffer[i_vert1 + 2]);
+
+
+		std::shared_ptr<MeshTriangle> tri(new MeshTriangle(p0,vert0,vert1,n0,n1,n2));
+
+		tri->applyMatrixSelf(transform, glm::transpose(glm::inverse(transform)));
+
+		faces.push_back(tri);
+	}
+
+	return faces;
+}
+
 void Mesh::bindVAO()
 {
 	glBindVertexArray(VertexArrayID);
@@ -319,6 +395,56 @@ void ColorMesh::bindArrays()
 	this->bindVertexAttribVBO(0, 3, this->vertexBuffer);
 	this->bindVertexAttribVBO(1, 3, this->normalBuffer);
 	this->bindVertexAttribVBO(2, 3, this->colorBuffer);
+}
+
+std::shared_ptr<ColorMesh> ColorMesh::meshFromTriangles(std::vector<std::shared_ptr<MeshTriangle>>& faces, int r, int g, int b, float thickness)
+{
+	std::shared_ptr<ColorMesh> mesh(new ColorMesh());
+	float r_ = r / 255.f;
+	float g_ = g / 255.f;
+	float b_ = b / 255.f;
+
+	for (int i = 0; i < faces.size(); i++)
+	{
+		//faces[i]->thicken(thickness);
+
+		mesh->vertexBuffer.push_back(faces[i]->vert0.x);
+		mesh->vertexBuffer.push_back(faces[i]->vert0.y);
+		mesh->vertexBuffer.push_back(faces[i]->vert0.z);
+		mesh->normalBuffer.push_back(faces[i]->n0.x);
+		mesh->normalBuffer.push_back(faces[i]->n0.y);
+		mesh->normalBuffer.push_back(faces[i]->n0.z);
+		mesh->colorBuffer.push_back(r_);
+		mesh->colorBuffer.push_back(g_);
+		mesh->colorBuffer.push_back(b_);
+		mesh->indexBuffer.push_back(3 * i + 0);
+
+		mesh->vertexBuffer.push_back(faces[i]->vert1.x);
+		mesh->vertexBuffer.push_back(faces[i]->vert1.y);
+		mesh->vertexBuffer.push_back(faces[i]->vert1.z);
+		mesh->normalBuffer.push_back(faces[i]->n1.x);
+		mesh->normalBuffer.push_back(faces[i]->n1.y);
+		mesh->normalBuffer.push_back(faces[i]->n1.z);
+		mesh->colorBuffer.push_back(r_);
+		mesh->colorBuffer.push_back(g_);
+		mesh->colorBuffer.push_back(b_);
+		mesh->indexBuffer.push_back(3 * i + 1);
+
+		mesh->vertexBuffer.push_back(faces[i]->vert2.x);
+		mesh->vertexBuffer.push_back(faces[i]->vert2.y);
+		mesh->vertexBuffer.push_back(faces[i]->vert2.z);
+		mesh->normalBuffer.push_back(faces[i]->n2.x);
+		mesh->normalBuffer.push_back(faces[i]->n2.y);
+		mesh->normalBuffer.push_back(faces[i]->n2.z);
+		mesh->colorBuffer.push_back(r_);
+		mesh->colorBuffer.push_back(g_);
+		mesh->colorBuffer.push_back(b_);
+		mesh->indexBuffer.push_back(3 * i + 2);
+	}
+	mesh->recalculateBounds();
+	mesh->bindArrays();
+	mesh->recalculateBounds();
+	return mesh;
 }
 
 std::shared_ptr<ColorMesh> ColorMesh::triangle()

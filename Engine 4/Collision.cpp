@@ -1,13 +1,17 @@
 #include "Collision.h"
 
+
+
+// ==================== Legacy stuff ===============
+
 Capsule::Capsule(float radius, float height)
 {
-	this->radius = radius;
-	this->height = height;
+    this->radius = radius;
+    this->height = height;
 
-	A = glm::vec4(0, height / 2, 0, 1);
-	B = glm::vec4(0, -height / 2, 0, 1);
-	type = TYPE::CAPSULE;
+    A = glm::vec4(0, height / 2, 0, 1);
+    B = glm::vec4(0, -height / 2, 0, 1);
+    type = TYPE::CAPSULE;
 }
 
 void Capsule::temp()
@@ -141,22 +145,16 @@ void CollisionFunctions::getClosestPoints(glm::mat4 aToWorld, std::shared_ptr<Ca
 
 
       /*
-
       float a = glm::dot(u, u);
       float b = glm::dot(u, v);
       float c = glm::dot(v, v);
       float d = glm::dot(u, w);
       float e = glm::dot(v, w);
-
       float denom = a * c - b * b;
-
       if (denom == 0)
       {
           //parallel...
           std::cout << "parallel...... Fix this\n";
-
-
-
           return glm::vec3(-1, -1, -1);
       }
       else
@@ -164,13 +162,9 @@ void CollisionFunctions::getClosestPoints(glm::mat4 aToWorld, std::shared_ptr<Ca
           //non parallel
           float s = glm::clamp((b * e - c * d) / denom, 0.0f, 1.0f);
           //float t = glm::clamp((a * e - b * d) / denom, 0.0f, 1.0f);
-
           return thisB + s * u;
       }
-
-
       return glm::vec3();
-
       */
 }
 

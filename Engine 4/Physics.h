@@ -49,11 +49,11 @@ protected:
 	collisionManifold collide(std::shared_ptr<GameObject> objectA, std::shared_ptr<GameObject> objectB);
 
 	void collision(std::shared_ptr<GameObject> objectA, std::shared_ptr<GameObject> objectB);
-	void penetrationCorrection(std::shared_ptr<GameObject> objectA, std::shared_ptr<GameObject> objectB, collisionManifold& colInfo); 
+	void penetrationCorrection(std::shared_ptr<GameObject> objectA, std::shared_ptr<GameObject> objectB, collisionManifold& colInfo);
 
 public:
 	Physics();
-	
+
 	void addObject(std::shared_ptr<GameObject> object);
 	void setGravity(glm::vec3 gravity);
 	void setBounceBoundary(glm::vec3 boundary);

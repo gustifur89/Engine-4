@@ -156,6 +156,7 @@
     <ClCompile Include="IOManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Octree.cpp" />
     <ClCompile Include="Physics.cpp" />
     <ClCompile Include="Primitives.cpp" />
     <ClCompile Include="RenderTexture.cpp" />
@@ -168,9 +169,11 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="Geometry.h" />
     <ClInclude Include="Header.h" />
     <ClInclude Include="IOManager.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Octree.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="Primitives.h" />
     <ClInclude Include="RenderTexture.h" />

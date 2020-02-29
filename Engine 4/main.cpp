@@ -4,6 +4,7 @@
 #include "Toggle.h"
 #include "Primitives.h"
 #include "Physics.h"
+#include "Octree.h"
 
 glm::vec3 cameraRotation;
 void move(IOManager& IO, std::shared_ptr<Camera> camera)
@@ -116,40 +117,39 @@ int main()
 	std::shared_ptr<ColorMesh> torusMesh = ColorMesh::loadFromFile("torus");
 	std::shared_ptr<ColorMesh> sphereMesh = ColorMesh::loadFromFile("smoothSphere");
 	std::shared_ptr<ColorMesh> smoothTorusMesh = ColorMesh::loadFromFile("smoothTorus");
+	std::shared_ptr<ColorMesh> arbitMesh = ColorMesh::loadFromFile("random");
+
 
 	std::shared_ptr<GameObject> stage(new GameObject);
 
 	//makeBunchOfStuff(stage, cubeMesh, colorShader, 25);
 	//makeBunchOfStuff(stage, sphereMesh, colorShader, 25);
 	//makeBunchOfStuff(stage, smoothTorusMesh, colorShader, 25);
-	
+	/*
 	Physics physicsSim;
 	physicsSim.setGravity(glm::vec3(0, -6, 0));
 	physicsSim.setBounceBoundary(glm::vec3(15));
 
 	glm::vec3 maxBound(12,30,12);
 	glm::vec3 minBound(-12, 2, -12);
-	glm::vec3 difBound = maxBound - minBound;
+	glm::vec3 difBound = maxBound - minBound;*/
 
-
-
-
-
-	std::shared_ptr<GameObjectColor> floor = Primitive::makeAABB(glm::vec3(12,1,12), colorShader, 100,200,100, 0.0);
+	std::shared_ptr<GameObjectColor> floor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
 	floor->transform.setPosition(0,-6,0);
-	//floor->velocity = 3.0f * glm::vec3((rand() % 2000) / 1000.0 - 1.0, (rand() % 2000) / 1000.0 - 1.0, (rand() % 2000) / 1000.0 - 1.0);
-	floor->setMass(0.0);
-	floor->setElasticity(0.6);
-	physicsSim.addObject(floor);
+	floor->shader = colorShader;
+	floor->mesh = arbitMesh;
 	stage->addChild(floor);
 
-//	std::shared_ptr<GameObjectColor> thing = Primitive::makeAABB(glm::vec3(1,1,1), colorShader, 160,180,200, 0.0);
-//	thing->transform.setPosition(0,4,6);
-	//thing->velocity = 3.0f * glm::vec3((rand() % 2000) / 1000.0 - 1.0, (rand() % 2000) / 1000.0 - 1.0, (rand() % 2000) / 1000.0 - 1.0);
-//	thing->setMass(1.0);
-//	thing->setElasticity(1.0);
-	//physicsSim.addObject(thing);
-//	stage->addChild(thing);
+	std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);
+
+	testStup->create(stage, glm::mat4(1.0));
+
+	std::shared_ptr<ColorMesh> nStage = ColorMesh::meshFromTriangles(testStup->triangles, 100, 100, 100, 0.2);
+	std::shared_ptr<GameObjectColor> nFloor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
+	nFloor->transform.setPosition(0, 0, 0);
+	nFloor->shader = colorShader;
+	nFloor->mesh = nStage;
+	stage->addChild(nFloor);
 
 	std::shared_ptr<Camera> camera(new Camera(90.0f, IO.aspectRatio, 0.1f, 100.0f));
 	
@@ -158,6 +158,8 @@ int main()
 
 	float dt = 1.0 / 30.0f;
 
+	std::vector<std::shared_ptr<GameObject>> physicsList;
+
 	do
 
 	{
@@ -165,35 +167,33 @@ int main()
 		{
 			IO.toggleMouseState();
 		}
-		
-		if (IO.isKeyPressed(GLFW_KEY_T))
-		{
-		//	thing->transform.setPosition(0, 4, 6);
-		}
 
 		if (shootToggle.toggle(IO.isMouseDown(GLFW_MOUSE_BUTTON_1)))
 		{
-			//spawn projectile
-			for (int i = 0; i < 10; i++)
-			{
-				double radius = 0.2;
-				glm::vec3 direction = camera->getTransformedZ();
+			//spawn a fancy ball.
+			int r = rand() % 255;
+			int g = rand() % 255;
+			int b = rand() % 255;
 
-				std::shared_ptr<GameObjectColor> ball = Primitive::makeSphere(radius, colorShader, rand() % 255, rand() % 255, rand() % 255, 0.0);// (rand() % 1000) / 1000.0);
-				//std::shared_ptr<GameObjectColor> ball = Primitive::makeCapsule(0.5, 0.5, colorShader, rand() % 255, rand() % 255, rand() % 255, 0.0);// (rand() % 1000) / 1000.0);
-				ball->transform.setPosition(camera->getPosition());
-				ball->velocity = 20.0f * direction;
-				ball->setMass(0.2);
-				ball->setElasticity(0.4);
-				physicsSim.addObject(ball);
-				stage->addChild(ball);
-			}
-					
+			std::shared_ptr<GameObjectColor> ball = Primitive::makeSphere(0.2, colorShader, r, g, b, 3.0);
+			ball->velocity = 10.0f * camera->getTransformedZ();
+			ball->transform.setPosition(camera->getPosition());
+			stage->addChild(ball);
+			physicsList.push_back(ball);
 		}
-		
-		//physicsSim.physicsStep(IO.deltaTime, 1);
-		physicsSim.physicsStep(dt, 1);
-		GameObject::cleanUp(stage);
+
+
+		for (std::shared_ptr<GameObject> object : physicsList)
+		{
+			glm::vec3 nP;
+			glm::vec3 thisP = object->transform.getPosition();
+			glm::vec3 nextP = thisP + dt * object->velocity;
+			testStup->collide(0.0, thisP, nextP, &nP);
+
+			object->transform.setPosition(nP);
+
+		}
+
 
 		move(IO, camera);
 
