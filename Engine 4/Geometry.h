@@ -93,17 +93,48 @@ public:
 
 	bool collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out)
 	{
-		//need to expand the plane by the radius;
-		// plane equation: dot( (p - v0), normal) = 0
-		// extruded equation: dot( (p - v0 + radius * normal), normal) = 0
+		//distance from triangle to line...  solve for minimum? clamp t to [0,1]?
+		//Get the point of collision, and clamp it into the triangle (barycentric)
 
-		//TODO: rework to be more efficient. A lot can be shortened. Lots of redundant checks.
-
-		//side:
-		float side0 = glm::dot(v0 - (vert0 + radius * normal), normal);
-		float side1 = glm::dot(v1 - (vert0 + radius * normal), normal);
+		glm::mat4 transform(1.0f);
 
 		glm::vec3 dir01 = v1 - v0;
+		float denom = glm::dot(dir01, normal);
+		if (denom >= 0.0) return false; //Parallel OR moving away.
+		float t = glm::dot(vert0 - v0, normal) / denom;
+		glm::vec3 intPt = v0 + t * dir01;
+
+		//Need another quick culling check.... Or maybe it will be fine because the Octree will cull...
+
+		//now get it's barycentric coords... clamped to the edge if need be.
+		glm::vec3 baryPt = getClampedBarycentricPt(intPt);
+
+		glm::vec3 closestPt = baryPt.x * vert0 + baryPt.y * vert1 + baryPt.z * vert2;
+
+		//Do a check:
+		glm::vec3 testPt = getBarycentricPt(closestPt);
+	//	std::cout << "yeet\n";
+		//std::cout << baryPt.x << " : " << baryPt.y << " : " << baryPt.z << " \n";
+	//	std::cout << testPt.x << " : " << testPt.y << " : " << testPt.z << " \n";
+
+		//now we have the closest point on the triangle to the line...
+		//now we get the closest point on the line to the triangle...
+		t = glm::clamp(t, 0.0f, 1.0f);
+		glm::vec3 linePt = v0 + t * dir01;
+		
+		//We need to send the point back if it get's to close... Basically so the distance is at least radius away
+		float distance = glm::length(linePt - closestPt);
+		
+		float distanceToMoveBack = fmax(radius - distance, 0.0);
+
+		//go to the end and work back
+		glm::vec3 newPt = v1 - distanceToMoveBack * (1.0f / glm::length(dir01)) * dir01;
+
+		*out = newPt;
+
+		return distanceToMoveBack > 0.0;
+
+		/*
 
 	//	if (glm::dot(dir01, normal) > 0.0)
 	//		return false;
@@ -124,7 +155,7 @@ public:
 		{
 			//interesting case. It transects the plane
 			
-			float denom = glm::dot(dir01, normal);
+			//float denom = glm::dot(dir01, normal);
 
 			if (denom == 0.0) // parallel Not sure this can happen.... ??? 
 			{
@@ -133,7 +164,7 @@ public:
 			}
 			else
 			{
-				float t = glm::dot(vert0 + radius * normal - v0, normal) / denom; // I'm like 90% sure this will always be valid here due to above checks ( valid :=  t<=1.0 && t >+ 0.0 )
+				//float t = glm::dot(vert0 + radius * normal - v0, normal) / denom; // I'm like 90% sure this will always be valid here due to above checks ( valid :=  t<=1.0 && t >+ 0.0 )
 				//std::cout << t << "\n";
 																	  
 				//glm::vec3 intP = v0 + t * dir01;
@@ -157,6 +188,52 @@ public:
 				}
 			}
 		}
+		*/
+	}
+
+	glm::vec3 getClampedBarycentricPt(glm::vec3 pt)
+	{
+		//https://stackoverflow.com/questions/14467296/barycentric-coordinate-clamping-on-3d-triangle
+		//Sus but we'll try it...
+		glm::vec3 bcPt = getBarycentricPt(pt);
+
+		if (bcPt.x < 0)
+		{
+			float t = glm::dot(pt - vert1, vert2 - vert1) / glm::dot(vert2 - vert1, vert2 - vert1);
+			t = glm::clamp(t, 0.0f, 1.0f);
+			return glm::vec3(0.0f, 1.0f - t, t);
+		}
+		else if (bcPt.y < 0)
+		{
+			float t = glm::dot(pt - vert2, vert0 - vert2) / glm::dot(vert0 - vert2, vert0 - vert2);
+			t = glm::clamp(t, 0.0f, 1.0f);
+			return glm::vec3(t, 0.0f, 1.0f - t);
+		}
+		else if (bcPt.z < 0)
+		{
+			float t = glm::dot(pt - vert0, vert1 - vert0) / glm::dot(vert1 - vert0, vert1 - vert0);
+			t = glm::clamp(t, 0.0f, 1.0f);
+			return glm::vec3(1.0f - t, t, 0.0f);
+		}
+		else
+		{
+			return bcPt;
+		}
+	}
+
+	glm::vec3 getBarycentricPt(glm::vec3 pt)
+	{
+		glm::vec3 v0 = vert1 - vert0, v1 = vert2 - vert0, v2 = pt - vert0;
+		float d00 = glm::dot(v0, v0);
+		float d01 = glm::dot(v0, v1);
+		float d11 = glm::dot(v1, v1);
+		float d20 = glm::dot(v2, v0);
+		float d21 = glm::dot(v2, v1);
+		float denom = d00 * d11 - d01 * d01;
+		float v = (d11 * d20 - d01 * d21) / denom;
+		float w = (d00 * d21 - d01 * d20) / denom;
+		float u = 1.0f - v - w;
+		return glm::vec3(u,v,w);
 	}
 
 	bool isPointInTriangle(glm::vec3 p, float radius)
