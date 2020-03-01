@@ -1,5 +1,9 @@
-﻿  main.cpp
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Geometry.h(12,29): warning C4305: 'initializing': truncation from 'double' to 'const float'
+﻿  Octree.cpp
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Geometry.h(12,27): warning C4305: 'initializing': truncation from 'double' to 'const float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Octree.cpp(166,17): warning C4101: 'w1': unreferenced local variable
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Octree.cpp(166,13): warning C4101: 'w0': unreferenced local variable
+  main.cpp
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Geometry.h(12,27): warning C4305: 'initializing': truncation from 'double' to 'const float'
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(69,33): warning C4244: '+=': conversion from 'double' to 'T', possible loss of data
           with
           [
@@ -28,12 +32,13 @@ C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(108,30): warning C
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(147,106): warning C4305: 'argument': truncation from 'double' to 'float'
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(154,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(159,24): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(178,90): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(178,87): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(178,84): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(178,96): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(177,90): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(177,87): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(177,84): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(177,96): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(192,7): warning C4305: 'argument': truncation from 'double' to 'float'
   Generating code
-  25 of 1221 functions ( 2.0%) were compiled, the rest were copied from previous compilation.
+  7 of 1234 functions ( 0.6%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     8 functions had inline decision re-evaluated but remain unchanged
   Finished generating code

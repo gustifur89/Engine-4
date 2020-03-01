@@ -38,7 +38,7 @@ std::vector<std::shared_ptr<MeshTriangle>> Mesh::getTrianglesFromMesh(glm::mat4 
 	std::vector<glm::vec3> avgNorms; // for corners of shared pts.
 	std::vector<std::vector<glm::vec3>> normsList; // for corners of shared pts.
 	std::vector<glm::vec3> nonDupedVerts;
-	std::vector<int> normalIndex(indexBuffer.size(), 0);
+	std::vector<int> normalIndex;// (indexBuffer.size(), 0);
 
 	for (int i = 0; i < vertexBuffer.size(); i+=3)
 	{
@@ -53,7 +53,8 @@ std::vector<std::shared_ptr<MeshTriangle>> Mesh::getTrianglesFromMesh(glm::mat4 
 			{
 				//this is the same...
 				unique = false;
-				normalIndex[i] = j;
+				//normalIndex[i] = j;
+				normalIndex.push_back(j);
 				normsList[j].push_back(norm);
 			}
 		}
@@ -63,7 +64,9 @@ std::vector<std::shared_ptr<MeshTriangle>> Mesh::getTrianglesFromMesh(glm::mat4 
 			//need to add.
 			nonDupedVerts.push_back(vert);
 			normsList.push_back(std::vector<glm::vec3>(1, norm));
-			normalIndex[i] = normsList.size() - 1;// .push_back(normsList.size() - 1);
+
+			//normalIndex[i] = normsList.size() - 1;// .push_back(normsList.size() - 1);
+			normalIndex.push_back(normsList.size() - 1);
 		}
 	}
 
@@ -81,23 +84,38 @@ std::vector<std::shared_ptr<MeshTriangle>> Mesh::getTrianglesFromMesh(glm::mat4 
 
 	for (int i = 0; i < indexBuffer.size(); i += 3)
 	{
-		int i_p0 = 3 * indexBuffer[i + 0];
-		int i_vert0 = 3 * indexBuffer[i + 1];
-		int i_vert1 = 3 * indexBuffer[i + 2];
-
-		std::cout << i << " : " << normalIndex.size() << " : " << normalIndex[i + 0] << " : " << avgNorms.size() << " \n";
+		int i_vert0 = indexBuffer[i + 0];
+		int i_vert1 = indexBuffer[i + 1];
+		int i_vert2 = indexBuffer[i + 2];
 
 
-		glm::vec3 n0 = avgNorms[normalIndex[i + 0]];
-		glm::vec3 n1 = avgNorms[normalIndex[i + 1]];
-		glm::vec3 n2 = avgNorms[normalIndex[i + 2]];
-
-		glm::vec3 p0(vertexBuffer[i_p0 + 0], vertexBuffer[i_p0 + 1], vertexBuffer[i_p0 + 2]);
-		glm::vec3 vert0(vertexBuffer[i_vert0 + 0], vertexBuffer[i_vert0 + 1], vertexBuffer[i_vert0 + 2]);
-		glm::vec3 vert1(vertexBuffer[i_vert1 + 0], vertexBuffer[i_vert1 + 1], vertexBuffer[i_vert1 + 2]);
+		int indx0 = normalIndex[i_vert0];
+		int indx1 = normalIndex[i_vert1];
+		int indx2 = normalIndex[i_vert2];
 
 
-		std::shared_ptr<MeshTriangle> tri(new MeshTriangle(p0,vert0,vert1,n0,n1,n2));
+		//std::cout << (vertexBuffer.size()/3) << " : "  << i << " : " << normalIndex.size() << " : " << normalIndex[i_vert0] << " : " << avgNorms.size() << " \n";
+		/*
+		std::cout << i << " : " << indexBuffer.size() << "\n";
+		std::cout << "0 " << i_vert0 << " : " << normalIndex.size() << " : " << indx0 << " : " << avgNorms.size() << "\n";
+		std::cout << "1 " << i_vert1 << " : " << normalIndex.size() << " : " << indx1 << " : " << avgNorms.size() << "\n";
+		std::cout << "2 " << i_vert2 << " : " << normalIndex.size() << " : " << indx2 << " : " << avgNorms.size() << "\n";
+		*/
+
+		glm::vec3 n0 = avgNorms[indx0];
+		glm::vec3 n1 = avgNorms[indx1];
+		glm::vec3 n2 = avgNorms[indx2];
+
+		glm::vec3 vert0(vertexBuffer[3 * i_vert0 + 0], vertexBuffer[3 * i_vert0 + 1], vertexBuffer[3 * i_vert0 + 2]);
+		glm::vec3 vert1(vertexBuffer[3 * i_vert1 + 0], vertexBuffer[3 * i_vert1 + 1], vertexBuffer[3 * i_vert1 + 2]);
+		glm::vec3 vert2(vertexBuffer[3 * i_vert2 + 0], vertexBuffer[3 * i_vert2 + 1], vertexBuffer[3 * i_vert2 + 2]);
+
+		//glm::vec3 vert0 = nonDupedVerts[i_vert0];
+		//glm::vec3 vert1 = nonDupedVerts[i_vert1];
+		//glm::vec3 vert2 = nonDupedVerts[i_vert2];
+
+
+		std::shared_ptr<MeshTriangle> tri(new MeshTriangle(vert0, vert1, vert2, n0, n1, n2));
 
 		tri->applyMatrixSelf(transform, glm::transpose(glm::inverse(transform)));
 
@@ -397,7 +415,7 @@ void ColorMesh::bindArrays()
 	this->bindVertexAttribVBO(2, 3, this->colorBuffer);
 }
 
-std::shared_ptr<ColorMesh> ColorMesh::meshFromTriangles(std::vector<std::shared_ptr<MeshTriangle>>& faces, int r, int g, int b, float thickness)
+std::shared_ptr<ColorMesh> ColorMesh::meshFromTriangles(std::vector<std::shared_ptr<MeshTriangle>> faces, int r, int g, int b, float thickness)
 {
 	std::shared_ptr<ColorMesh> mesh(new ColorMesh());
 	float r_ = r / 255.f;
@@ -406,14 +424,22 @@ std::shared_ptr<ColorMesh> ColorMesh::meshFromTriangles(std::vector<std::shared_
 
 	for (int i = 0; i < faces.size(); i++)
 	{
-		//faces[i]->thicken(thickness);
+		/*
+		std::cout << "face " << i << "\n";
+		std::cout << faces[i]->vert0.x << " : " << faces[i]->vert0.y << " : " << faces[i]->vert0.z << "\n";
+		std::cout << faces[i]->vert1.x << " : " << faces[i]->vert1.y << " : " << faces[i]->vert1.z << "\n";
+		std::cout << faces[i]->vert2.x << " : " << faces[i]->vert2.y << " : " << faces[i]->vert2.z << "\n";
+		std::cout << faces[i]->normal.x << " : " << faces[i]->normal.y << " : " << faces[i]->normal.z << "\n";
+		std::cout << faces[i]->n0.x << " : " << faces[i]->n0.y << " : " << faces[i]->n0.z << "\n";
+		std::cout << faces[i]->n1.x << " : " << faces[i]->n1.y << " : " << faces[i]->n1.z << "\n";
+		std::cout << faces[i]->n2.x << " : " << faces[i]->n2.y << " : " << faces[i]->n2.z << "\n";
 
 		mesh->vertexBuffer.push_back(faces[i]->vert0.x);
 		mesh->vertexBuffer.push_back(faces[i]->vert0.y);
 		mesh->vertexBuffer.push_back(faces[i]->vert0.z);
-		mesh->normalBuffer.push_back(faces[i]->n0.x);
-		mesh->normalBuffer.push_back(faces[i]->n0.y);
-		mesh->normalBuffer.push_back(faces[i]->n0.z);
+		mesh->normalBuffer.push_back(faces[i]->normal.x);
+		mesh->normalBuffer.push_back(faces[i]->normal.y);
+		mesh->normalBuffer.push_back(faces[i]->normal.z);
 		mesh->colorBuffer.push_back(r_);
 		mesh->colorBuffer.push_back(g_);
 		mesh->colorBuffer.push_back(b_);
@@ -422,9 +448,9 @@ std::shared_ptr<ColorMesh> ColorMesh::meshFromTriangles(std::vector<std::shared_
 		mesh->vertexBuffer.push_back(faces[i]->vert1.x);
 		mesh->vertexBuffer.push_back(faces[i]->vert1.y);
 		mesh->vertexBuffer.push_back(faces[i]->vert1.z);
-		mesh->normalBuffer.push_back(faces[i]->n1.x);
-		mesh->normalBuffer.push_back(faces[i]->n1.y);
-		mesh->normalBuffer.push_back(faces[i]->n1.z);
+		mesh->normalBuffer.push_back(faces[i]->normal.x);
+		mesh->normalBuffer.push_back(faces[i]->normal.y);
+		mesh->normalBuffer.push_back(faces[i]->normal.z);
 		mesh->colorBuffer.push_back(r_);
 		mesh->colorBuffer.push_back(g_);
 		mesh->colorBuffer.push_back(b_);
@@ -433,17 +459,64 @@ std::shared_ptr<ColorMesh> ColorMesh::meshFromTriangles(std::vector<std::shared_
 		mesh->vertexBuffer.push_back(faces[i]->vert2.x);
 		mesh->vertexBuffer.push_back(faces[i]->vert2.y);
 		mesh->vertexBuffer.push_back(faces[i]->vert2.z);
-		mesh->normalBuffer.push_back(faces[i]->n2.x);
-		mesh->normalBuffer.push_back(faces[i]->n2.y);
-		mesh->normalBuffer.push_back(faces[i]->n2.z);
+		mesh->normalBuffer.push_back(faces[i]->normal.x);
+		mesh->normalBuffer.push_back(faces[i]->normal.y);
+		mesh->normalBuffer.push_back(faces[i]->normal.z);
+		mesh->colorBuffer.push_back(r_);
+		mesh->colorBuffer.push_back(g_);
+		mesh->colorBuffer.push_back(b_);
+		mesh->indexBuffer.push_back(3 * i + 2); 
+		*/
+
+		///*
+		MeshTriangle temp = faces[i]->getThicker(thickness);
+
+		/*
+		std::cout << "face " << i << "\n";
+		std::cout << temp.vert0.x << " : " << temp.vert0.y << " : " << temp.vert0.z << "\n";
+		std::cout << temp.vert1.x << " : " << temp.vert1.y << " : " << temp.vert1.z << "\n";
+		std::cout << temp.vert2.x << " : " << temp.vert2.y << " : " << temp.vert2.z << "\n";
+		std::cout << temp.normal.x << " : " << temp.normal.y << " : " << temp.normal.z << "\n";
+		std::cout << temp.n0.x << " : " << temp.n0.y << " : " << temp.n0.z << "\n";
+		std::cout << temp.n1.x << " : " << temp.n1.y << " : " << temp.n1.z << "\n";
+		std::cout << temp.n2.x << " : " << temp.n2.y << " : " << temp.n2.z << "\n";
+		*/
+		mesh->vertexBuffer.push_back(temp.vert0.x);
+		mesh->vertexBuffer.push_back(temp.vert0.y);
+		mesh->vertexBuffer.push_back(temp.vert0.z);
+		mesh->normalBuffer.push_back(temp.normal.x);
+		mesh->normalBuffer.push_back(temp.normal.y);
+		mesh->normalBuffer.push_back(temp.normal.z);
+		mesh->colorBuffer.push_back(r_);
+		mesh->colorBuffer.push_back(g_);
+		mesh->colorBuffer.push_back(b_);
+		mesh->indexBuffer.push_back(3 * i + 0);
+
+		mesh->vertexBuffer.push_back(temp.vert1.x);
+		mesh->vertexBuffer.push_back(temp.vert1.y);
+		mesh->vertexBuffer.push_back(temp.vert1.z);
+		mesh->normalBuffer.push_back(temp.normal.x);
+		mesh->normalBuffer.push_back(temp.normal.y);
+		mesh->normalBuffer.push_back(temp.normal.z);
+		mesh->colorBuffer.push_back(r_);
+		mesh->colorBuffer.push_back(g_);
+		mesh->colorBuffer.push_back(b_);
+		mesh->indexBuffer.push_back(3 * i + 1);
+
+		mesh->vertexBuffer.push_back(temp.vert2.x);
+		mesh->vertexBuffer.push_back(temp.vert2.y);
+		mesh->vertexBuffer.push_back(temp.vert2.z);
+		mesh->normalBuffer.push_back(temp.normal.x);
+		mesh->normalBuffer.push_back(temp.normal.y);
+		mesh->normalBuffer.push_back(temp.normal.z);
 		mesh->colorBuffer.push_back(r_);
 		mesh->colorBuffer.push_back(g_);
 		mesh->colorBuffer.push_back(b_);
 		mesh->indexBuffer.push_back(3 * i + 2);
+		//*/
 	}
-	mesh->recalculateBounds();
 	mesh->bindArrays();
-	mesh->recalculateBounds();
+	mesh->recalculateBounds();	
 	return mesh;
 }
 

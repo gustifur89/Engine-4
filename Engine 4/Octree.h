@@ -37,7 +37,7 @@ public:
 class TempSoup
 {
 public:
-	void collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out);
+	bool collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out);
 	std::vector<std::shared_ptr<MeshTriangle>> triangles;
 
 	void create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform);

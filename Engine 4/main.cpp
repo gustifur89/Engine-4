@@ -135,7 +135,7 @@ int main()
 	glm::vec3 difBound = maxBound - minBound;*/
 
 	std::shared_ptr<GameObjectColor> floor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	floor->transform.setPosition(0,-6,0);
+	floor->transform.setPosition(0,0,0);
 	floor->shader = colorShader;
 	floor->mesh = arbitMesh;
 	stage->addChild(floor);
@@ -149,7 +149,7 @@ int main()
 	nFloor->transform.setPosition(0, 0, 0);
 	nFloor->shader = colorShader;
 	nFloor->mesh = nStage;
-	stage->addChild(nFloor);
+//	stage->addChild(nFloor);
 
 	std::shared_ptr<Camera> camera(new Camera(90.0f, IO.aspectRatio, 0.1f, 100.0f));
 	
@@ -161,7 +161,6 @@ int main()
 	std::vector<std::shared_ptr<GameObject>> physicsList;
 
 	do
-
 	{
 		if (mouseLockToggle.toggle(IO.isKeyPressed(GLFW_KEY_2)))
 		{
@@ -188,7 +187,13 @@ int main()
 			glm::vec3 nP;
 			glm::vec3 thisP = object->transform.getPosition();
 			glm::vec3 nextP = thisP + dt * object->velocity;
-			testStup->collide(0.0, thisP, nextP, &nP);
+			//testStup->collide(0.2, thisP, nextP, &nP);
+			///*
+			if (testStup->collide(0.1, thisP, nextP, &nP))
+			{
+				object->velocity = glm::vec3(0.0);
+			}
+			//*/
 
 			object->transform.setPosition(nP);
 

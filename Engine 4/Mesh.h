@@ -48,7 +48,7 @@ public:
 	
 	void bindArrays();
 
-	static std::shared_ptr<ColorMesh> meshFromTriangles(std::vector<std::shared_ptr<MeshTriangle>>& triangleList, int r, int g, int b, float thickness = 0.0);
+	static std::shared_ptr<ColorMesh> meshFromTriangles(std::vector<std::shared_ptr<MeshTriangle>> triangleList, int r, int g, int b, float thickness = 0.0);
 	static std::shared_ptr<ColorMesh> triangle();
 	static std::shared_ptr<ColorMesh> loadFromFile(std::string fileName);
 	static std::shared_ptr<ColorMesh> applyMatrixToMesh(std::shared_ptr<ColorMesh> & mesh, glm::mat4 matrix);

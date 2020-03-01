@@ -184,17 +184,20 @@ void Octree::construct(std::shared_ptr<GameObject> worldObject)
 
 // ======================= TempSoup =======================
 
-void TempSoup::collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out)
+bool TempSoup::collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out)
 {
 	*out = v1;
 
 	for (std::shared_ptr<MeshTriangle> triangle : triangles)
 	{
 		if (triangle->collide(radius, v0, v1, out))
-			break;
+		{
+			std::cout << "hit\n";
+			return true;
+		}
 	}
 
-	//return false;
+	return false;
 }
 
 void TempSoup::create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform)

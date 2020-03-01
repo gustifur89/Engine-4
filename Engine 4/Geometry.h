@@ -9,7 +9,7 @@ private:
 		return glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
 	}
 
-	const float EPSILON = 0.001;
+	const float EPSILON = 0.1;
 
 public:
 	MeshTriangle(glm::vec3 vert0, glm::vec3 vert1, glm::vec3 vert2, glm::vec3 n0, glm::vec3 n1, glm::vec3 n2)
@@ -21,6 +21,7 @@ public:
 		this->n1 = n1;
 		this->n2 = n2;
 		this->normal = calculateNormal(vert0, vert1, vert2);
+	//	std::cout << normal.x << " : " << normal.y << " " << normal.z << "\n";
 	}
 
 	glm::vec3 vert0, vert1, vert2;
@@ -99,10 +100,15 @@ public:
 		//TODO: rework to be more efficient. A lot can be shortened. Lots of redundant checks.
 
 		//side:
-		float side0 = glm::dot(v0 - vert0, normal);
-		float side1 = glm::dot(v1 - vert0, normal);
+		float side0 = glm::dot(v0 - (vert0 + radius * normal), normal);
+		float side1 = glm::dot(v1 - (vert0 + radius * normal), normal);
 
-		if (side0 >= 0 && side1 >= 0)
+		glm::vec3 dir01 = v1 - v0;
+
+	//	if (glm::dot(dir01, normal) > 0.0)
+	//		return false;
+
+		if (side0 > 0 && side1 > 0)
 		{
 			//both on the colliding side: So no collision
 			//*out = v0;
@@ -117,8 +123,7 @@ public:
 		else
 		{
 			//interesting case. It transects the plane
-			glm::vec3 dir01 = v1 - v0;
-
+			
 			float denom = glm::dot(dir01, normal);
 
 			if (denom == 0.0) // parallel Not sure this can happen.... ??? 
@@ -129,10 +134,14 @@ public:
 			else
 			{
 				float t = glm::dot(vert0 + radius * normal - v0, normal) / denom; // I'm like 90% sure this will always be valid here due to above checks ( valid :=  t<=1.0 && t >+ 0.0 )
-				glm::vec3 intP = v0 + t * dir01;
-				
-				
-				if (isPointInTriangle(v0 + t * dir01, radius))
+				//std::cout << t << "\n";
+																	  
+				//glm::vec3 intP = v0 + t * dir01;
+				if(t <= 0.0 && t >= 1.0f)
+				{
+					return false;
+				}
+				else if (isPointInTriangle(v0 + t * dir01, radius))
 				{
 					//w0, w1
 					//see which side is on the top:
@@ -195,6 +204,22 @@ public:
 		vert2 += v2Offset * n2;
 	}
 
+	MeshTriangle getThicker(float radius)
+	{
+		//need to offset the geometry properly...
+		float v0Offset = radius / glm::dot(n0, normal);
+		float v1Offset = radius / glm::dot(n1, normal);
+		float v2Offset = radius / glm::dot(n2, normal);
+
+		//std::cout << v0Offset << " : " << v1Offset << " : " << v2Offset << "\n";
+
+		vert0 += v0Offset * n0;
+		vert1 += v1Offset * n1;
+		vert2 += v2Offset * n2;
+
+		return MeshTriangle(vert0 + v0Offset * n0, vert1 + v1Offset * n1, vert2 + v2Offset * n2, n0, n1, n2);
+	}
+	
 	void applyMatrixSelf(glm::mat4 matrix, glm::mat4 normalMatrix)
 	{
 		vert0 = matrix * glm::vec4(vert0, 1);
