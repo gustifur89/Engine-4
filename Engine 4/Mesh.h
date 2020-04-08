@@ -1,5 +1,6 @@
 #pragma once
 #include "Headers.h"
+#include "TempGeometry.h"
 #include "Geometry.h"
 
 class Mesh

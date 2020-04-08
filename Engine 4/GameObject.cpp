@@ -13,6 +13,8 @@ GameObject::GameObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shade
 	velocity = glm::vec3(0, 0, 0);
 	staticFriction = 0.4;
 	dynamicFriction = 0.2;
+	friction = 0.0;
+	collisionReactEnabled = true;
 }
 
 void GameObject::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform)

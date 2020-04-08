@@ -153,6 +153,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="GrapplingHook.cpp" />
     <ClCompile Include="IOManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="Collision.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Geometry.h" />
+    <ClInclude Include="GrapplingHook.h" />
     <ClInclude Include="Header.h" />
     <ClInclude Include="IOManager.h" />
     <ClInclude Include="Mesh.h" />
@@ -179,6 +181,7 @@
     <ClInclude Include="RenderTexture.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SSAOShader.h" />
+    <ClInclude Include="TempGeometry.h" />
     <ClInclude Include="Toggle.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="WindowShader.h" />

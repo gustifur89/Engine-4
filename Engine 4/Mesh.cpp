@@ -256,6 +256,7 @@ std::shared_ptr<ColorMesh> ColorMesh::loadFromFile(std::string fileName)
 	bool vertexes = false;
 	bool faces = false;
 	bool alphaChannel = false;
+	bool uvChannel = false;
 
 	while (true)
 	{
@@ -289,7 +290,16 @@ std::shared_ptr<ColorMesh> ColorMesh::loadFromFile(std::string fileName)
 					alphaChannel = true;
 				}
 			}
+			if (type == "float")
+			{
+				file >> type;
+				if (type == "s" || type == "t")
+				{
+					uvChannel = true;
+				}
+			}
 		}
+
 		else if (line == "end_header")
 		{
 			vertexes = true;
@@ -317,6 +327,11 @@ std::shared_ptr<ColorMesh> ColorMesh::loadFromFile(std::string fileName)
 				float x, y, z, nx, ny, nz;
 				int r, g, b;
 				file >> x >> z >> y >> nx >> nz >> ny;	//y and z switch
+				if (uvChannel)
+				{
+					float s,t;
+					file >> s >> t;
+				}
 				file >> r >> g >> b;
 
 				if (alphaChannel)

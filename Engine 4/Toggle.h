@@ -3,10 +3,12 @@ class Toggle
 {
 private:
 	bool internalToggle;
+	bool internalState;
 public:
 	Toggle()
 	{
 		internalToggle = true;
+		internalState = false;
 	}
 
 	bool toggle(bool condition)
@@ -16,6 +18,7 @@ public:
 			if (internalToggle)
 			{
 				internalToggle = false;
+				internalState = !internalState;
 				return true;
 			}
 		}
@@ -26,7 +29,15 @@ public:
 		return false;
 	}
 
-
-
+	bool getState()
+	{
+		return internalState;
+	}
+	
+	bool setState(bool state)
+	{
+		internalState = state;
+		return state;
+	}
 
 };

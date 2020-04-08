@@ -2,6 +2,23 @@
 #include "Headers.h"
 class Transform
 {
+private:
+	static glm::quat LookAt(glm::vec3 sourcePoint, glm::vec3 destPoint)
+	{
+		glm::vec3 forwardVector = glm::normalize(destPoint - sourcePoint);
+
+		glm::vec3 rotAxis = glm::cross(glm::vec3(0,0,1), forwardVector);
+		float dot = glm::dot(glm::vec3(0, 0, 1), forwardVector);
+
+		glm::quat q;
+		q.x = rotAxis.x;
+		q.y = rotAxis.y;
+		q.z = rotAxis.z;
+		q.w = dot + 1;
+
+		return glm::normalize(q);
+	}
+
 protected:
 	glm::vec3 position;
 	glm::quat rotation;
@@ -19,6 +36,7 @@ public:
 	void setRotation(double angleX, double angleY, double angleZ);
 	void setRotation(glm::vec3 eulerAngles);
 	void setRotation(Transform& transform);
+	void setDirection(glm::vec3 direction);
 
 	void setScale(float scaleX, float scaleY, float scaleZ);
 	void setScale(glm::vec3 scale);

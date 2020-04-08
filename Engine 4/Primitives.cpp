@@ -70,6 +70,7 @@ std::shared_ptr<GameObjectColor> Primitive::makeSphere(float radius, std::shared
 	spheroid->transform.setScale(glm::vec3(radius));
 	spheroid->setShininess(specular);
 	spheroid->collider = std::shared_ptr<Sphere>(new Sphere(radius));
+	spheroid->radius = radius;
 	//object->addChild(spheroid);
 
 	return spheroid;

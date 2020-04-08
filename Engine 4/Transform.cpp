@@ -48,6 +48,11 @@ void Transform::setRotation(Transform& transform)
 	this->rotation = transform.rotation;
 }
 
+void Transform::setDirection(glm::vec3 direction)
+{
+	rotation = LookAt(glm::vec3(0), direction);
+}
+
 void Transform::setScale(float scaleX, float scaleY, float scaleZ)
 {
 	scale.x = scaleX;

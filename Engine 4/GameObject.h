@@ -34,8 +34,11 @@ public:
 	float mass;
 	float invMass;
 	float elasticity;
+	float friction;
 	float staticFriction;
 	float dynamicFriction;
+	float radius;
+	bool collisionReactEnabled;
 
 	glm::vec3 velocity;
 	
