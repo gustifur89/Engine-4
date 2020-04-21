@@ -6,6 +6,22 @@
 #include "Physics.h"
 #include "Octree.h"
 #include "GrapplingHook.h"
+#include "SkyBox.h"
+#include "Portal.h"
+
+void checkGLError(std::string tag)
+{
+	/*GLenum err;
+	while ((err = glGetError())) {
+		std::cout << "error : " << err << "\n";
+	}*/
+
+	GLenum err;
+	while ((err = glGetError())) {
+		std::cout << tag << "- error : " << (err) << "\n";
+	}
+
+}
 
 glm::vec3 cameraRotation;
 Toggle movemodeToggle;
@@ -139,7 +155,7 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 
 	bool slow = IO.isKeyPressed(GLFW_KEY_Q);
 
-	float speed = 20.0;
+	float speed = 10.0;
 	float jumpSpeed = 8.0;
 
 	float xSpeed = 0.0;
@@ -185,7 +201,7 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 		ySpeed = -speed;
 	}
 
-	double mouseSensitivity = 1.0;
+	double mouseSensitivity = 0.6;
 
 	if (IO.getMouseLockState()) {
 		double deltaPitch = IO.deltaMouseY * mouseSensitivity;
@@ -280,15 +296,22 @@ glm::vec3 collisionResolution(glm::vec3 velocity, glm::vec3 normal, float fricti
 
 void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, std::shared_ptr<CollisionStructure> collider)
 {
+	if (!object->physiceEnabled && !object->neverDisable) return;
 	glm::vec3 thisP = object->transform.getPosition();
 	glm::vec3 nextP = thisP + difference;
 
 	glm::vec3 faceNorm;
 	glm::vec3 nP = nextP;
-	if (collider->collide(object->radius, thisP, nextP, &nP, &faceNorm, 6))
+	if (collider->collide(object->radius, thisP, nextP, &nP, &faceNorm, 4))
 	{
 		if (object->collisionReactEnabled)
 			object->velocity = collisionResolution(object->velocity, faceNorm, object->friction, object->elasticity);
+
+		//need to collide to stop.
+		if (glm::length(nP - thisP) < GameObject::stopSpeed)
+		{
+			object->physiceEnabled = false;
+		}
 	}
 
 	object->transform.setPosition(nP);
@@ -299,7 +322,9 @@ int main()
 	srand(0);
 	IOManager IO;
 	//1280,800
-	IO.createWindow(800, 600, "test", 30);
+	int WIDTH = 1280;
+	int HEIGHT = 800;
+	IO.createWindow(WIDTH, HEIGHT, "test", 30);
 	IO.setClearColor(200, 60, 100);// pink
 	//IO.setClearColor(214, 252, 255);
 	std::shared_ptr<WindowShader> windowShader = WindowShader::loadShader("screen", "window");
@@ -311,6 +336,10 @@ int main()
 	IO.setWindowShader(windowShader);
 
 	std::shared_ptr<ColorShader> colorShader = ColorShader::loadShader("color");
+	std::shared_ptr<TextureShader> textureShader = TextureShader::loadShader("texture");
+	std::shared_ptr<TextureShader> autoTextureShader = TextureShader::loadShader("texture_tessalate");
+	std::shared_ptr<SkyBoxShader> skyboxShader = SkyBoxShader::loadShader("skybox");
+	std::shared_ptr<PortalShader> portalShader = PortalShader::loadShader("portal");
 
 	std::shared_ptr<ColorMesh> cubeMesh = ColorMesh::loadFromFile("cube");
 	std::shared_ptr<ColorMesh> torusMesh = ColorMesh::loadFromFile("torus");
@@ -320,9 +349,43 @@ int main()
 	std::shared_ptr<ColorMesh> trisMesh = ColorMesh::loadFromFile("tris");
 	std::shared_ptr<ColorMesh> grapplingHookMesh = ColorMesh::loadFromFile("GrapplingHook");
 	std::shared_ptr<ColorMesh> grappleRopeMesh = ColorMesh::loadFromFile("GrappleRope");
+	std::shared_ptr<ColorMesh> portalMesh = ColorMesh::loadFromFile("portalMesh");
+
+	std::shared_ptr<TextureMesh> texCubeMesh = TextureMesh::loadFromFile("textCube");
+	std::shared_ptr<TextureMesh> texGround = TextureMesh::loadFromFile("testGround_tex");
+	std::shared_ptr<TextureMesh> bakedMesh = TextureMesh::loadFromFile("lab");//level_0
+
+	std::shared_ptr<Texture> t_blue_32 = Texture::loadFromFile("blue_32.png", GL_NEAREST_MIPMAP_NEAREST, true);
+	std::shared_ptr<Texture> t_BakedRender = Texture::loadFromFile("RenderTexture.png", GL_NEAREST, false); // TextureBake
+	std::vector<std::string> starsFiles ={
+		"right.png",
+		"left.png",
+		"top.png",
+		"bottom.png",
+		"front.png",
+		"back.png",
+	};
+	std::shared_ptr<SkyBoxTexture> sb_stars = SkyBoxTexture::loadFromFile(starsFiles, GL_LINEAR_MIPMAP_LINEAR, true);
 
 	std::shared_ptr<GameObject> stage(new GameObject);
-
+	checkGLError("strugf");
+	
+	std::shared_ptr<Portal> portal1 = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
+	portal1->transform.setPosition(0, 1.4, 0);
+	portal1->transform.setScale(1.4, 1.8 ,0.01);
+	portal1->mesh = portalMesh;
+	portal1->shader = portalShader;
+	portal1->setWorld(stage);
+	stage->addChild(portal1);
+	std::shared_ptr<Portal> portal2 = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
+	portal2->transform.setPosition(0, 6.9, 0);
+	portal2->transform.setScale(1.4, 1.8, 0.01);
+	portal2->mesh = portalMesh;
+	portal2->shader = portalShader;
+	portal2->setWorld(stage);
+	stage->addChild(portal2);
+	Portal::linkPortals(portal1, portal2); // fix this.. i dont like it anymore...
+	
 	//makeBunchOfStuff(stage, cubeMesh, colorShader, 25);
 	//makeBunchOfStuff(stage, sphereMesh, colorShader, 25);
 	//makeBunchOfStuff(stage, smoothTorusMesh, colorShader, 25);
@@ -335,17 +398,35 @@ int main()
 	glm::vec3 minBound(-12, 2, -12);
 	glm::vec3 difBound = maxBound - minBound;*/
 
+	/*
 	std::shared_ptr<GameObjectColor> floor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
 	floor->transform.setPosition(0,0,0);
 	floor->shader = colorShader;
 	floor->mesh = arbitMesh;
 	stage->addChild(floor);
-	
-	//std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);
-	//std::shared_ptr<TempSoup> tree = std::shared_ptr<TempSoup>(new TempSoup);
-	std::shared_ptr<Octree> tree = std::shared_ptr<Octree>(new Octree);
-	tree->create(stage, glm::mat4(1.0));
+	*/
 
+	std::shared_ptr<SkyBox> skyBox = std::shared_ptr<SkyBox>(new SkyBox());
+	skyBox->shader = skyboxShader;
+	skyBox->transform.setRotation(180, 0, 0);
+	skyBox->texture = sb_stars;
+	skyBox->transform.setScale(0.1, 0.1, 0.1);
+	stage->addChild(skyBox);
+	//IO.setSkyBox(skyBox);
+
+	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	floor->transform.setPosition(0, 0, 0);
+	floor->shader = textureShader;//textureShader autoTextureShader
+	floor->texture = t_BakedRender;
+	floor->mesh = bakedMesh;
+	stage->addChild(floor);
+
+//	std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);
+	std::shared_ptr<TempSoup> tree = std::shared_ptr<TempSoup>(new TempSoup);
+//	std::shared_ptr<Octree> tree = std::shared_ptr<Octree>(new Octree);
+	tree->create(stage, glm::mat4(1.0));
+	std::shared_ptr<TempSoup> empty = std::shared_ptr<TempSoup>(new TempSoup);
+	empty->create(NULL, glm::mat4(1.0));
 
 	std::shared_ptr<ColorMesh> nStage = ColorMesh::meshFromTriangles(tree->triangles, 100, 100, 100, 0.1);
 	std::shared_ptr<GameObjectColor> nFloor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
@@ -359,6 +440,7 @@ int main()
 	Toggle mouseLockToggle;
 	Toggle shootToggle;
 	Toggle physicsToggle;
+	Toggle noClip;
 	float shootDelay = 1.0f / 10.0f;
 	float reloadTime = 0.0f;
 	
@@ -374,15 +456,16 @@ int main()
 	player->addChild(hand);
 	player->friction = 0.8;
 	player->elasticity = 0.0;
-	player->radius = 0.6;
-	player->collisionReactEnabled = false;
+	player->radius = 0.6;//0.6
+	player->neverDisable = true;
+	//player->collisionReactEnabled = false;
 
 	std::shared_ptr<GameObjectColor> grapplingHook = std::shared_ptr<GameObjectColor>(new GameObjectColor);
 	grapplingHook->shader = colorShader;
 	grapplingHook->mesh = grapplingHookMesh;
 	grapplingHook->transform.setRotation(0, 182, 0);
 	grapplingHook->transform.setPosition(-0.6, 0.0, 0.0);
-	hand->addChild(grapplingHook);
+	//hand->addChild(grapplingHook);
 
 	std::shared_ptr<GrapplingHook> grapple = std::shared_ptr<GrapplingHook>(new GrapplingHook(100.0f, 0.0f, 30.0f));
 	grapple->mesh = grappleRopeMesh;
@@ -390,7 +473,7 @@ int main()
 	stage->addChild(grapple);
 		
 	std::vector<std::shared_ptr<GameObject>> physicsList;
-	physicsList.push_back(player);
+	//physicsList.push_back(player);
 	float maxSpeed = 40.0;
 
 	glm::vec3 gravity = 30.0f * glm::vec3(0, -1, 0);
@@ -455,7 +538,20 @@ int main()
 		
 		//now move character based on input.
 		glm::vec3 contolVelocity = getControllerVelocity(IO, player);
-		tryMoveObject(player, dt * getControllerVelocity(IO, player), tree);
+		
+		noClip.toggle(IO.isKeyPressed(GLFW_KEY_P));
+		if (noClip.getState())
+		{
+			tryMoveObject(player, dt * getControllerVelocity(IO, player), tree);
+		}
+		else
+		{
+			tryMoveObject(player, dt * getControllerVelocity(IO, player), empty);
+		}
+		
+		
+		if (movemodeToggle.getState())
+			player->velocity -= gravity * dt;
 
 		//apply physics to everything
 		for (std::shared_ptr<GameObject> object : physicsList)
@@ -466,7 +562,8 @@ int main()
 			{
 				object->velocity = maxSpeed * glm::normalize(object->velocity);
 			}
-				
+			
+		
 			tryMoveObject(object, dt * object->velocity, tree);
 
 			/*
@@ -495,8 +592,13 @@ int main()
 		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));
 		hand->transform.setRotation(cameraRotation);
 
+		//portal2->transform.rotate(glm::vec3(0, dt * 30, 0));
+
+		portal1->portalRender(camera);
+		portal2->portalRender(camera);
 		windowShader->setViewMatrix(camera->getTransformMatrix());
 		IO.display(camera, stage);
+		checkGLError("in");
 	} while (IO.isWindowOpen());
 		
 	return 0;

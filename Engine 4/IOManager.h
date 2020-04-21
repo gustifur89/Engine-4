@@ -3,6 +3,7 @@
 #include "GameObject.h"
 #include "RenderTexture.h"
 #include "Light.h"
+#include "SkyBox.h"
 
 class IOManager
 {
@@ -16,15 +17,16 @@ protected:
 	glm::vec3 clearColor;
 
 	RenderTexture2D screenTexture;
-	GBufferRenderTexture gBufferTexture;
+	ScreenBufferRenderTexture screenBuffer;
 
 	GLuint windowVBO;
 	GLuint windowVAO;
-
+	
+	std::vector<std::shared_ptr<Shader>> postProcessingList;
+	
 	std::shared_ptr<Shader> screenShader;
 
-	std::vector<std::shared_ptr<Shader>> postProcessingList;
-	std::vector<std::shared_ptr<Shader>> preProcessingList;
+	std::shared_ptr<SkyBox> skybox;
 
 public:
 	IOManager();
@@ -56,7 +58,7 @@ public:
 	void display(std::shared_ptr<Camera> camera, std::shared_ptr<GameObject> renderObject);
 	void setWindowShader(std::shared_ptr<Shader> windowShader);
 	void setPostProcessingList(std::vector<std::shared_ptr<Shader>> postProcessingList);
-	void setPreProcessingList(std::vector<std::shared_ptr<Shader>> preProcessingList);
+	void setSkyBox(std::shared_ptr<SkyBox> skybox);
 
 	//parameters
 	GLFWwindow* window;
@@ -68,7 +70,6 @@ public:
 	double deltaMouseX, deltaMouseY;
 	double r, g, b;
 	std::string title;
-	
 	float deltaTime;
 	std::shared_ptr<Shader> windowShader;
 };

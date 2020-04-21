@@ -39,6 +39,10 @@ public:
 	float dynamicFriction;
 	float radius;
 	bool collisionReactEnabled;
+	bool physiceEnabled;
+	bool neverDisable;
+	static float stopSpeed;
+
 
 	glm::vec3 velocity;
 	
@@ -69,3 +73,20 @@ public:
 	void renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform);
 	
 };
+
+class GameObjectTexture : public GameObject
+{
+public:
+	GameObjectTexture(std::shared_ptr<TextureMesh> mesh, std::shared_ptr<TextureShader> shader);
+	GameObjectTexture() : GameObjectTexture(NULL, NULL) {}
+	float shininess;
+	glm::mat4 colorMatrix;
+	std::shared_ptr<Texture> texture;
+	std::shared_ptr<TextureShader> shader;
+
+	void setShininess(float shininess);
+	void setFillColor(int r, int g, int b);
+	void renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform);
+
+};
+

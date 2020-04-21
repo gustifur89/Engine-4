@@ -9,7 +9,7 @@ private:
 		return glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
 	}
 
-	const float EPSILON = 0.0002;
+	const float EPSILON = 0.001;
 
 public:
 	MeshTriangle(glm::vec3 vert0, glm::vec3 vert1, glm::vec3 vert2, glm::vec3 n0, glm::vec3 n1, glm::vec3 n2)
@@ -102,19 +102,31 @@ public:
 		glm::vec3 dif = v1 - v0;
 
 		float dirFactor = glm::dot(dif, normal);
-		if (dirFactor >= 0.0) return false; //Parallel OR moving away.
+		if (dirFactor >= 0.0) return false; //Parallel OR moving away OR v1 - v0 == 0
+
+		glm::vec3 dir = glm::normalize(dif);
 		
+		v0 -= EPSILON * dir;
+		dif += EPSILON * dir;
+
+
+
 		glm::vec4 intersection = PointinTriangleOffset(v0, dif, radius);
+
+
+		//intersection = collideFace(v0, dif, 0.0);
 
 		if (intersection.w >= 0.0 && intersection.w <= 1.0)
 		{
 			//collisions
-			glm::vec3 offset = EPSILON * intersection.xyz();
+			glm::vec3 norm = glm::normalize(intersection.xyz());
+			glm::vec3 offset = glm::vec3(0.0);// -EPSILON * glm::normalize(dif);   //EPSILON * intersection.xyz();
 			glm::vec3 intPt = v0 + intersection.w * dif + offset;
 
-			glm::vec3 remainder = v1 - intPt;
+			glm::vec3 remainder = v1 - intPt - EPSILON * dir;// -expandCorrection;
 
-			glm::vec3 perp = glm::dot(remainder, intersection.xyz()) * intersection.xyz();
+			//glm::vec3 perp = glm::dot(remainder, norm) * norm;
+			glm::vec3 perp = glm::dot(remainder, norm) * norm;
 
 			glm::vec3 par = remainder - perp;
 
@@ -473,9 +485,17 @@ public:
 				float t = fmax(t0, t1);
 
 				//need to get normal..
-				glm::vec3 norm = (pt + t * dif) - center;
+				
+				if (t <= 1.0)
+				{
+					glm::vec3 norm = (pt + t * dif) - center;
 
-				return glm::vec4(norm, t);
+					return glm::vec4(norm, t);
+				}
+				else
+				{
+					return glm::vec4(0, 0, 0, 100);
+				}
 			}
 			else
 			{

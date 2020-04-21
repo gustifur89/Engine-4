@@ -18,6 +18,20 @@ public:
 	GLuint normTex;
 };
 
+class ScreenBufferRenderTexture
+{
+public:
+	ScreenBufferRenderTexture();
+	ScreenBufferRenderTexture(int width, int height);
+
+	//parameters
+	GLuint frameBuffer;
+	GLuint renderedTexture;
+	GLuint depthrenderbuffer;
+
+	GLuint colTex;
+	GLuint depthTex;
+};
 
 class RenderTexture2D
 {

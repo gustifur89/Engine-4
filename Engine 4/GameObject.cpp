@@ -2,6 +2,8 @@
 
 // ============================== GameObject ===========================
 
+float GameObject::stopSpeed = 0.01;
+
 GameObject::GameObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shader) : mesh(mesh), shader(shader)
 {
 	visible = true;
@@ -15,6 +17,8 @@ GameObject::GameObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shade
 	dynamicFriction = 0.2;
 	friction = 0.0;
 	collisionReactEnabled = true;
+	physiceEnabled = true;
+	neverDisable = false;
 }
 
 void GameObject::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform)
@@ -59,7 +63,7 @@ void GameObject::render(std::shared_ptr<Camera> camera, glm::mat4 parentTransfor
 	}
 	else if (mesh)
 	{
-		if (camera->isBoxInView(mesh->bounds, parentTransform * this->transform.getTransformMatrix()))
+		if (true || camera->isBoxInView(mesh->bounds, parentTransform * this->transform.getTransformMatrix()))
 		{
 			this->renderFunc(camera, parentTransform);
 		}
@@ -129,7 +133,8 @@ void GameObjectColor::setShininess(float shininess)
 
 void GameObjectColor::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform)
 {
-	glm::mat4 MVMatrix = camera->getTransformMatrix() * parentTransform * transform.getTransformMatrix();
+	glm::mat4 MMatrix = parentTransform * transform.getTransformMatrix();
+	glm::mat4 MVMatrix = camera->getTransformMatrix() * MMatrix;
 	glm::mat4 MVPmatrix = camera->getProjectionMatrix() * MVMatrix;
 	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MVMatrix));
 
@@ -154,7 +159,48 @@ void GameObjectColor::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 paren
 		}
 		//*/
 
-		shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, shininess, colorMatrix);
+		shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, MMatrix, shininess, colorMatrix);
 		mesh->render();
 	}
 }
+
+// ============================== GameObjectTexture ===========================
+
+GameObjectTexture::GameObjectTexture(std::shared_ptr<TextureMesh> mesh, std::shared_ptr<TextureShader> shader) : shader(shader)
+{
+	colorMatrix = glm::mat4(1.0);
+	this->mesh = mesh;
+	shininess = 0.0;
+}
+
+void GameObjectTexture::setFillColor(int r, int g, int b)
+{
+	colorMatrix = glm::mat4(0.0);
+	colorMatrix[3][0] = r / 255.f;
+	colorMatrix[3][1] = g / 255.f;
+	colorMatrix[3][2] = b / 255.f;
+	colorMatrix[3][3] = 1.0f;
+}
+
+void GameObjectTexture::setShininess(float shininess)
+{
+	this->shininess = shininess;
+}
+
+void GameObjectTexture::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform)
+{
+	glm::mat4 MMatrix = parentTransform * transform.getTransformMatrix();
+	glm::mat4 MVMatrix = camera->getTransformMatrix() * MMatrix;
+	glm::mat4 MVPmatrix = camera->getProjectionMatrix() * MVMatrix;
+//	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MVMatrix));
+	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MMatrix));
+
+	if (shader && mesh && texture)
+	{
+		shader->useShader();
+		shader->setTexture(texture);
+		shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, MMatrix, shininess, colorMatrix);
+		mesh->render();
+	}
+}
+

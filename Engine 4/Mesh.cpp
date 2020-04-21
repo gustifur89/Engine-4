@@ -578,3 +578,176 @@ std::shared_ptr<ColorMesh> ColorMesh::triangle()
 	mesh->recalculateBounds();
 	return mesh;
 }
+
+// ================================== TextureMesh =====================================
+
+std::shared_ptr<TextureMesh> TextureMesh::loadFromFile(std::string fileName)
+{
+
+	fileName = std::string("src/meshes/") + fileName + std::string(".ply");
+	std::ifstream file;
+	file = std::ifstream(fileName);
+
+	if (file.fail())
+	{
+		fprintf(stderr, "failed to load file at : ");
+		fprintf(stderr, fileName.c_str());
+		fprintf(stderr, "\n");
+		return std::shared_ptr<TextureMesh>(NULL);
+	}
+	std::shared_ptr<TextureMesh> mesh(new TextureMesh());
+
+	std::string line;
+
+	int vertex_number = 0;
+	int face_number = 0;
+	int count_v = 0;
+	int count_f = 0;
+	bool vertexes = false;
+	bool faces = false;
+	bool alphaChannel = false;
+	bool rgbChannel = false;
+
+	while (true)
+	{
+		//assumes you get 9 in.
+		file >> line;
+		if (file.eof())
+			return std::shared_ptr<TextureMesh>(NULL);
+
+		if (line == "element")
+		{
+			std::string type;
+			file >> type;
+			if (type == "vertex")
+			{
+				file >> vertex_number;
+			}
+			if (type == "face")
+			{
+				file >> face_number;
+			}
+		}
+		else if (line == "property")
+		{
+			std::string type;
+			file >> type;
+			if (type == "uchar")
+			{
+				file >> type;
+				if (type == "alpha")
+				{
+					alphaChannel = true;
+				}
+			}
+			if (type == "float")
+			{
+				file >> type;
+				if (type == "r" || type == "g" || type == "b")
+				{
+					rgbChannel = true;
+				}
+			}
+		}
+
+		else if (line == "end_header")
+		{
+			vertexes = true;
+			break;
+		}
+
+	}
+
+	while (true)
+	{
+		if (file.eof())
+			return std::shared_ptr<TextureMesh>(NULL);;
+
+		if (vertexes)
+		{
+			if (count_v == vertex_number)
+			{
+				//exit
+				vertexes = false;
+				faces = true;
+			}
+			else
+			{
+				//read vertex;
+				float x, y, z, nx, ny, nz;
+				float u, v;// r, g, b;
+				file >> x >> z >> y >> nx >> nz >> ny;	//y and z switch
+				if (rgbChannel)
+				{
+					float r, g, b;
+					file >> r >> g >> b;
+				}
+				file >> u >> v;
+				if (alphaChannel)
+				{
+					int a;
+					file >> a;
+				}
+
+				mesh->vertexBuffer.push_back(-x);
+				mesh->vertexBuffer.push_back(y);
+				mesh->vertexBuffer.push_back(z);
+
+				mesh->normalBuffer.push_back(-nx);
+				mesh->normalBuffer.push_back(ny);
+				mesh->normalBuffer.push_back(nz);
+
+				mesh->uvBuffer.push_back(u);
+				mesh->uvBuffer.push_back(1.0 - v);
+				count_v++;
+			}
+		}
+		else if (faces)
+		{
+			if (count_f == face_number)
+			{
+				//exit
+				break;
+			}
+			else
+			{
+				//read vertex;
+
+				int num_v;			//whether it is triangles or quads
+				int v1, v2, v3, v4;
+				file >> num_v;
+				if (num_v == 3)
+				{
+					file >> v1 >> v2 >> v3;
+					mesh->indexBuffer.push_back(v1);
+					mesh->indexBuffer.push_back(v2);
+					mesh->indexBuffer.push_back(v3);
+				}
+				else if (num_v == 4)
+				{
+					file >> v1 >> v2 >> v3 >> v4;
+					mesh->indexBuffer.push_back(v1);
+					mesh->indexBuffer.push_back(v2);
+					mesh->indexBuffer.push_back(v3);
+
+					mesh->indexBuffer.push_back(v1);
+					mesh->indexBuffer.push_back(v3);
+					mesh->indexBuffer.push_back(v4);
+				}
+
+				count_f++;
+			}
+		}
+	}
+	file.close();
+
+	mesh->vertexCount = mesh->vertexBuffer.size() / 3;
+
+	mesh->bindIndexVBO(mesh->indexBuffer);
+
+	mesh->bindVertexAttribVBO(0, 3, mesh->vertexBuffer);
+	mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
+	mesh->bindVertexAttribVBO(2, 2, mesh->uvBuffer);
+	mesh->recalculateBounds();
+	return mesh;
+}

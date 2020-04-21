@@ -167,6 +167,7 @@ bool Octree::Node::collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* 
 
 
 	}
+	return false;
 }
 
 void Octree::Node::getExtentsFromRegion(int region, glm::vec3* min_, glm::vec3* max_)
@@ -442,7 +443,7 @@ bool TempSoup::collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out,
 
 void TempSoup::create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform)
 {
-
+	if (!worldObject) return;
 	if (worldObject->mesh)
 	{
 		std::vector<std::shared_ptr<MeshTriangle>> meshTris = worldObject->mesh->getTrianglesFromMesh(parentTransform * worldObject->transform.getTransformMatrix());

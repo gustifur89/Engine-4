@@ -159,10 +159,14 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Octree.cpp" />
     <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="Portal.cpp" />
     <ClCompile Include="Primitives.cpp" />
     <ClCompile Include="RenderTexture.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="SkyBox.cpp" />
     <ClCompile Include="SSAOShader.cpp" />
+    <ClCompile Include="stb_image.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="WindowShader.cpp" />
   </ItemGroup>
@@ -177,11 +181,15 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Octree.h" />
     <ClInclude Include="Physics.h" />
+    <ClInclude Include="Portal.h" />
     <ClInclude Include="Primitives.h" />
     <ClInclude Include="RenderTexture.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="SkyBox.h" />
     <ClInclude Include="SSAOShader.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="TempGeometry.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="Toggle.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="WindowShader.h" />

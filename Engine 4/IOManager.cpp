@@ -54,10 +54,10 @@ bool IOManager::createWindow(int width, int height, std::string title, int fps)
 
 	screenShader = Shader::loadShader("screen","screen");
 
-	gBufferTexture = GBufferRenderTexture(width, height);
+	screenBuffer = ScreenBufferRenderTexture(width, height);
 	screenTexture = RenderTexture2D(width, height);
 	
-	glBindFramebuffer(GL_FRAMEBUFFER, gBufferTexture.frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, screenBuffer.frameBuffer);
 
 	glSetUp();
 
@@ -211,11 +211,15 @@ void IOManager::display(std::shared_ptr<Camera> camera, std::shared_ptr<GameObje
 	
 	if (camera != nullptr && renderObject != nullptr)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, gBufferTexture.frameBuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, screenBuffer.frameBuffer);
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+		
 		renderObject->render(camera, glm::mat4(1.0));
+
+		//render sky box
+		//if (skybox)
+		//	skybox->render(camera);
 
 		renderWindow();
 	}
@@ -227,40 +231,35 @@ void IOManager::display(std::shared_ptr<Camera> camera, std::shared_ptr<GameObje
 void IOManager::renderWindow()
 { 
 	if (!windowShader) return;
- 
-	//render gBuffer to whatever preprocessing buffers you need.
-	// Ambient occlusions and such.
-	renderPreProcessing();
 
-	//renders from gbuffer to a simple 2d texture - screenTexture.
+	//First render all the post processing stuff. This assumes all passes will take the color/depth info and write to color/depth output.
+	//renderPostProcessing();
+
 	windowShader->useShader();
-	glBindTextureUnit(0, gBufferTexture.colTex);
-	glBindTextureUnit(1, gBufferTexture.posTex);
-	glBindTextureUnit(2, gBufferTexture.normTex);
+	glBindTextureUnit(0, screenBuffer.colTex);
+	glBindTextureUnit(1, screenBuffer.depthTex);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, screenTexture.frameBuffer);
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glBindVertexArray(windowVAO);
-	glEnableVertexAttribArray(0);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glDisableVertexAttribArray(0);
-	glBindVertexArray(0);
-	
-	
-	//then it renders all of the post processing:
-	renderPostProcessing();
-
-	//At the end, render to screen.
-	screenShader->useShader();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindTextureUnit(0, screenTexture.colTex);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBindVertexArray(windowVAO);
 	glEnableVertexAttribArray(0);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDisableVertexAttribArray(0);
 	glBindVertexArray(0);
+
+
+	/*
+	//At the end, render to screen.
+	windowShader->useShader();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTextureUnit(0, screenBuffer.colTex);
+	glBindTextureUnit(1, screenBuffer.depthTex);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBindVertexArray(windowVAO);
+	glEnableVertexAttribArray(0);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisableVertexAttribArray(0);
+	glBindVertexArray(0);*/
 	
 }
 
@@ -280,36 +279,14 @@ void IOManager::renderPostProcessing()
 	}
 }
 
-void IOManager::renderPreProcessing()
-{
-	for (std::shared_ptr<Shader> shader : preProcessingList)
-	{
-		shader->useShader();
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glBindTextureUnit(0, gBufferTexture.colTex);
-		glBindTextureUnit(1, gBufferTexture.posTex);
-		glBindTextureUnit(2, gBufferTexture.normTex);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glBindVertexArray(windowVAO);
-		glEnableVertexAttribArray(0);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDisableVertexAttribArray(0);
-		glBindVertexArray(0);
-		//shader->eprocess();
-	}
-}
-
 void IOManager::setWindowShader(std::shared_ptr<Shader> windowShader)
 {
 	this->windowShader = windowShader;
 	windowShader->useShader();
 	GLuint colTexLoc = windowShader->getUniformLocation("colTex");
-	GLuint posTexLoc = windowShader->getUniformLocation("posTex");
-	GLuint normTexLoc = windowShader->getUniformLocation("normTex");
+	GLuint depthTexLoc = windowShader->getUniformLocation("depthTex");
 	glUniform1i(colTexLoc, 0);
-	glUniform1i(posTexLoc, 1);
-	glUniform1i(normTexLoc, 2);
-
+	glUniform1i(depthTexLoc, 1);
 }
 
 void IOManager::setPostProcessingList(std::vector<std::shared_ptr<Shader>> postProcessingList)
@@ -317,7 +294,7 @@ void IOManager::setPostProcessingList(std::vector<std::shared_ptr<Shader>> postP
 	this->postProcessingList = postProcessingList;
 }
 
-void IOManager::setPreProcessingList(std::vector<std::shared_ptr<Shader>> preProcessingList)
+void IOManager::setSkyBox(std::shared_ptr<SkyBox> skybox)
 {
-	this->preProcessingList = preProcessingList;
+	this->skybox = skybox;
 }

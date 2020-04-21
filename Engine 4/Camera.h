@@ -7,10 +7,11 @@
 class Camera : public Transform
 {
 public:
+	Camera();
 	Camera(float fov, float aspectRatio, float minZ, float maxZ);
 	~Camera();
 
-	glm::mat4 getTransformMatrix();
+	virtual glm::mat4 getTransformMatrix();
 	glm::mat4 getProjectionMatrix();
 	
 	bool isSphereInView(glm::vec3 position, double radius, glm::mat4 modelMatrix);

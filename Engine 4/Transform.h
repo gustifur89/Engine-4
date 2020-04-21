@@ -36,6 +36,7 @@ public:
 	void setRotation(double angleX, double angleY, double angleZ);
 	void setRotation(glm::vec3 eulerAngles);
 	void setRotation(Transform& transform);
+	void setRotation(glm::quat quat);
 	void setDirection(glm::vec3 direction);
 
 	void setScale(float scaleX, float scaleY, float scaleZ);

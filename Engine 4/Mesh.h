@@ -54,3 +54,12 @@ public:
 	static std::shared_ptr<ColorMesh> loadFromFile(std::string fileName);
 	static std::shared_ptr<ColorMesh> applyMatrixToMesh(std::shared_ptr<ColorMesh> & mesh, glm::mat4 matrix);
 };
+
+class TextureMesh : public Mesh
+{
+public:
+	GLuint uvBufferID;
+	std::vector<GLfloat> uvBuffer;
+
+	static std::shared_ptr<TextureMesh> loadFromFile(std::string fileName);
+};

@@ -1,77 +1,12 @@
-﻿  main.cpp
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(12,30): warning C4305: 'initializing': truncation from 'double' to 'const float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(505,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(563,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(564,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(646,18): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(74,33): warning C4244: '+=': conversion from 'double' to 'T', possible loss of data
-          with
-          [
-              T=float
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(75,33): warning C4244: '+=': conversion from 'double' to 'T', possible loss of data
-          with
-          [
-              T=float
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(76,55): warning C4305: '=': truncation from 'double' to 'T'
-          with
-          [
-              T=float
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(77,57): warning C4305: '=': truncation from 'double' to 'T'
-          with
-          [
-              T=float
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(104,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(105,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(193,33): warning C4244: '+=': conversion from 'double' to 'T', possible loss of data
-          with
-          [
-              T=float
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(194,33): warning C4244: '+=': conversion from 'double' to 'T', possible loss of data
-          with
-          [
-              T=float
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(195,55): warning C4305: '=': truncation from 'double' to 'T'
-          with
-          [
-              T=float
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(196,57): warning C4305: '=': truncation from 'double' to 'T'
-          with
-          [
-              T=float
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(225,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(226,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(254,80): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(254,62): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(254,44): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(257,39): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(350,102): warning C4305: 'argument': truncation from 'double' to 'float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(357,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(365,24): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(375,24): warning C4305: '=': truncation from 'double' to 'float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(377,22): warning C4305: '=': truncation from 'double' to 'float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(384,53): warning C4305: 'argument': truncation from 'double' to 'float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(416,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(417,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(418,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(419,38): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(420,17): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(421,17): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(423,91): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(423,88): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(423,85): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(423,97): warning C4305: 'argument': truncation from 'double' to 'float'
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(431,25): warning C4305: '=': truncation from 'double' to 'float'
+﻿  Portal.cpp
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(12,29): warning C4305: 'initializing': truncation from 'double' to 'const float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(525,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(583,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(584,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(666,18): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
   Generating code
-  2 of 1300 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+  2 of 1835 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    2 functions had inline decision re-evaluated but remain unchanged
+    10 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Engine 4.vcxproj -> C:\Users\Sean Coleman\source\repos\Engine 4\x64\Release\Engine 4.exe

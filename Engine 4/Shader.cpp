@@ -390,6 +390,13 @@ void Shader::loadTexture(int location, int textureID)
 	glUniform1i(location, 0);
 }
 
+void Shader::loadCubeMap(int location, int textureID)
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+	glUniform1i(location, 0);
+}
+
 Shader::~Shader()
 {
 }
@@ -404,6 +411,7 @@ std::shared_ptr<ColorShader> ColorShader::loadShader(std::string fileName)
 	out->mvp = out->getUniformLocation("MVP");
 	out->mv = out->getUniformLocation("MV");
 	out->cm = out->getUniformLocation("ColorMatrix");
+	out->mm = out->getUniformLocation("MM");
 	out->useShader();
 	out->loadMatrix(out->cm, glm::mat4(1.0));
 	out->nm = out->getUniformLocation("NM");
@@ -411,11 +419,12 @@ std::shared_ptr<ColorShader> ColorShader::loadShader(std::string fileName)
 	return out;
 }
 
-void ColorShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, float shininess, glm::mat4 colorMatrix)
+void ColorShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, float shininess, glm::mat4 colorMatrix)
 {
 	loadMatrix(mvp, MVP);
 	loadMatrix(mv, MV);
 	loadMatrix(cm, colorMatrix);
+	loadMatrix(mm, MM);
 	loadMatrix(nm, NM);
 	loadFloat(shininessLoc, shininess);
 }
@@ -429,8 +438,11 @@ std::shared_ptr<TextureShader> TextureShader::loadShader(std::string fileName)
 	out->mvp = out->getUniformLocation("MVP");
 	out->nm = out->getUniformLocation("NM");
 	out->mv = out->getUniformLocation("MV");
+	out->mm = out->getUniformLocation("MM");
+	out->cm = out->getUniformLocation("ColorMatrix");
+	out->loadMatrix(out->cm, glm::mat4(1.0));
 	out->texLoc = out->getUniformLocation("tex");
-	out->light_loc = out->getUniformLocation("light");
+	out->shininessLoc = out->getUniformLocation("specular");
 	return out;
 }
 
@@ -439,9 +451,67 @@ void TextureShader::setTexture(std::shared_ptr<Texture> texture)
 	loadTexture(texLoc, texture->textureID);
 }
 
-void TextureShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM)
+void TextureShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, float shininess, glm::mat4 colorMatrix)
 {
 	loadMatrix(mvp, MVP);
 	loadMatrix(mv, MV);
 	loadMatrix(nm, NM);
+	loadMatrix(mm, MM);
+	loadMatrix(cm, colorMatrix);
+	loadFloat(shininessLoc, shininess);
+}
+
+// =============== SkyBoxShader ============================
+
+std::shared_ptr<SkyBoxShader> SkyBoxShader::loadShader(std::string fileName)
+{
+	std::shared_ptr<SkyBoxShader> out(new SkyBoxShader());
+	out->Shader::loadShader_(fileName, fileName);
+	out->pvm = out->getUniformLocation("PVM");
+	out->cm = out->getUniformLocation("ColorMatrix");
+	out->loadMatrix(out->cm, glm::mat4(1.0));
+	out->skyBoxLoc = out->getUniformLocation("skybox");
+	return out;
+}
+
+void SkyBoxShader::setSkyBoxTexture(std::shared_ptr<SkyBoxTexture> skyBoxTexture)
+{
+	loadCubeMap(skyBoxLoc, skyBoxTexture->textureID);
+}
+
+void SkyBoxShader::setMatrixes(glm::mat4 PVM, glm::mat4 colorMatrix)
+{
+	loadMatrix(pvm, PVM);
+	loadMatrix(cm, colorMatrix);
+}
+
+// ========================================== PortalShader ================================
+
+std::shared_ptr<PortalShader> PortalShader::loadShader(std::string fileName)
+{
+	std::shared_ptr<PortalShader> out(new PortalShader());
+	out->Shader::loadShader_(fileName, fileName);
+	out->mvp = out->getUniformLocation("MVP");
+	out->mv = out->getUniformLocation("MV");
+	out->cm = out->getUniformLocation("ColorMatrix");
+	out->loadMatrix(out->cm, glm::mat4(1.0));
+	out->colLoc = out->getUniformLocation("colTex");
+	out->depLoc = out->getUniformLocation("depthTex");
+	out->useShader();
+	glUniform1i(out->colLoc, 0);
+	glUniform1i(out->depLoc, 1);
+	return out;
+}
+
+void PortalShader::setTexture(std::shared_ptr<ScreenBufferRenderTexture> texture)
+{
+	glBindTextureUnit(0, texture->colTex);
+	glBindTextureUnit(1, texture->depthTex);
+}
+
+void PortalShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 colorMatrix)
+{
+	loadMatrix(mvp, MVP);
+	loadMatrix(mv, MV);
+	loadMatrix(cm, colorMatrix);
 }

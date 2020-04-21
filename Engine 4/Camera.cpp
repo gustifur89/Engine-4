@@ -2,6 +2,10 @@
 
 
 
+Camera::Camera()
+{
+}
+
 Camera::Camera(float fov, float aspectRatio, float minZ, float maxZ)
 {
 	projectionMatrix = glm::perspective(
