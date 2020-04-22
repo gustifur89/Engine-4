@@ -322,6 +322,64 @@ public:
 		*/
 	}
 
+	bool rayIntersectsTriangle(glm::vec3 v0, glm::vec3 v1, glm::vec3* ptOnSurface, glm::vec3* remainder)
+	{
+		glm::vec3 dif = v1 - v0;
+
+		float dirFactor = glm::dot(dif, normal);
+		
+		glm::vec3 dir = glm::normalize(dif);
+
+		glm::vec4 intersection = intersectFace(v0, dif);
+
+		if (intersection.w >= 0.0 && intersection.w <= 1.0)
+		{
+			//collisions
+			glm::vec3 intPt = v0 + intersection.w * dif;
+			*remainder = v1 - intPt;
+			*ptOnSurface = intPt;
+			return true;
+		}
+		else
+		{
+			//nothing...
+			return false;
+		}
+	}
+
+	glm::vec4 intersectFace(glm::vec3 pt, glm::vec3 dif)
+	{
+		//This should work... Maybe not though
+		float d0 = glm::dot(pt, normal) + d;
+		float d1 = glm::dot(pt + dif, normal) + d;
+		//Returns when it crosses the plane...
+		float t = -d0 / (d1 - d0);
+		//test if it does collie the face... not just the plane.
+		//maybe let's just...
+		//bool ptIn = ptInTriangle(pt + t * dif);//ptInTriangleProject(pt + t * dif);
+		//std::cout << ptIn << "\n";
+		pt += t * dif;
+
+		glm::vec3 e01 = vert1 - vert0, e12 = vert2 - vert1, e20 = vert0 - vert2;
+		glm::vec3 d0p = pt - vert0, d1p = pt - vert1, d2p = pt - vert2;
+		glm::vec3 sideEdge01 = glm::cross(e01, d0p);
+		glm::vec3 sideEdge12 = glm::cross(e12, d1p);
+		glm::vec3 sideEdge20 = glm::cross(e20, d2p);
+
+		float side0 = glm::dot(normal, sideEdge01);
+		float side1 = glm::dot(normal, sideEdge12);
+		float side2 = glm::dot(normal, sideEdge20);
+
+		if (t >= 0.0 && t <= 1.0 && side0 >= 0.0 && side1 >= 0.0 && side2 >= 0.0)
+		{
+			return glm::vec4(normal, t);
+		}
+		else
+		{
+			return glm::vec4(0, 0, 0, 100.0); // return a large number because we will use a min fucntion later
+		}
+	}
+
 	bool ptInTriangle(glm::vec3 pt)
 	{
 		glm::vec3 e01 = vert1 - vert0,	e12 = vert2 - vert1,	e20 = vert0 - vert2;

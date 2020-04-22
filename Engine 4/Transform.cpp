@@ -83,8 +83,8 @@ glm::vec3 Transform::getPosition()
 }
 
 glm::vec3 Transform::getRotation()
-{
-	return glm::eulerAngles(rotation);
+{ 
+	return glm::degrees(glm::eulerAngles(rotation));
 }
 
 glm::vec3 Transform::getScale()
@@ -120,6 +120,14 @@ glm::vec3 Transform::getTransformedZ(glm::vec3 angles)
 	return rotationMatrix * zAxis;
 }
 
+glm::vec3 Transform::getTransformedZ(glm::quat quat)
+{
+	glm::mat4 rotationMatrix = getRotationMatrix(quat);
+	glm::vec4 zAxis(0, 0, 1, 0);
+
+	return rotationMatrix * zAxis;
+}
+
 glm::vec3 Transform::getTransformedX()
 {
 	glm::mat4 rotationMatrix = getRotationMatrix(rotation);
@@ -136,6 +144,14 @@ glm::vec3 Transform::getTransformedX(glm::vec3 angles)
 	return rotationMatrix * xAxis;
 }
 
+glm::vec3 Transform::getTransformedX(glm::quat quat)
+{
+	glm::mat4 rotationMatrix = getRotationMatrix(quat);
+	glm::vec4 xAxis(1, 0, 0, 0);
+
+	return rotationMatrix * xAxis;
+}
+
 glm::vec3 Transform::getTransformedY()
 {
 	glm::mat4 rotationMatrix = getRotationMatrix(rotation);
@@ -147,6 +163,14 @@ glm::vec3 Transform::getTransformedY()
 glm::vec3 Transform::getTransformedY(glm::vec3 angles)
 {
 	glm::mat4 rotationMatrix = getRotationMatrix(angles);
+	glm::vec4 yAxis(0, 1, 0, 0);
+
+	return rotationMatrix * yAxis;
+}
+
+glm::vec3 Transform::getTransformedY(glm::quat quat)
+{
+	glm::mat4 rotationMatrix = getRotationMatrix(quat);
 	glm::vec4 yAxis(0, 1, 0, 0);
 
 	return rotationMatrix * yAxis;

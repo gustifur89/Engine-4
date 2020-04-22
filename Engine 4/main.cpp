@@ -24,6 +24,7 @@ void checkGLError(std::string tag)
 }
 
 glm::vec3 cameraRotation;
+glm::quat cameraOrientation = glm::quat(glm::radians(glm::vec3(0,0,0)));
 Toggle movemodeToggle;
 void move(IOManager& IO, std::shared_ptr<GameObject> player)
 {
@@ -84,25 +85,33 @@ void move(IOManager& IO, std::shared_ptr<GameObject> player)
 	
 	double mouseSensitivity = 1.0;
 
+
 	if (IO.getMouseLockState()) {
-		double deltaPitch = IO.deltaMouseY * mouseSensitivity;
+		/*double deltaPitch = IO.deltaMouseY * mouseSensitivity;
 		double deltaPivot = -IO.deltaMouseX * mouseSensitivity;
 		cameraRotation.x += deltaPitch;
 		cameraRotation.y += deltaPivot;
 		if (cameraRotation.x > 89.9) cameraRotation.x = 89.9;
 		if (cameraRotation.x < -89.9) cameraRotation.x = -89.9;
+		*/
+		float framePitch = IO.deltaMouseY * mouseSensitivity;
+		float frameYaw = -IO.deltaMouseX * mouseSensitivity;
+		cameraOrientation = framePitch * cameraOrientation * frameYaw;
 	}
 
-	//player->transform.setRotation(cameraRotation);
+	player->transform.setRotation(cameraOrientation);
 	
 	movemodeToggle.toggle(IO.isKeyPressed(GLFW_KEY_V));
 
 	if (movemodeToggle.getState())
 	{
 		//fly
-		glm::vec3 directionForward = Transform::getTransformedZ(cameraRotation);
-		glm::vec3 directionStrafe = Transform::getTransformedX(cameraRotation);
-		glm::vec3 directionVertical = Transform::getTransformedY(cameraRotation);
+		glm::vec3 directionForward = Transform::getTransformedZ(cameraOrientation);
+		glm::vec3 directionStrafe = Transform::getTransformedX(cameraOrientation);
+		glm::vec3 directionVertical = Transform::getTransformedY(cameraOrientation);
+		//glm::vec3 directionForward = Transform::getTransformedZ(cameraRotation);
+		//glm::vec3 directionStrafe = Transform::getTransformedX(cameraRotation);
+		//glm::vec3 directionVertical = Transform::getTransformedY(cameraRotation);
 		//glm::vec3 directionForward = player->transform.getTransformedZ();
 		//glm::vec3 directionStrafe = player->transform.getTransformedX();
 		//glm::vec3 directionVertical = player->transform.getTransformedY();
@@ -201,27 +210,36 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 		ySpeed = -speed;
 	}
 
-	double mouseSensitivity = 0.6;
+	double mouseSensitivity = 0.4;
 
 	if (IO.getMouseLockState()) {
-		double deltaPitch = IO.deltaMouseY * mouseSensitivity;
+		
+		/*double deltaPitch = IO.deltaMouseY * mouseSensitivity;
 		double deltaPivot = -IO.deltaMouseX * mouseSensitivity;
 		cameraRotation.x += deltaPitch;
 		cameraRotation.y += deltaPivot;
 		if (cameraRotation.x > 89.9) cameraRotation.x = 89.9;
 		if (cameraRotation.x < -89.9) cameraRotation.x = -89.9;
+		*/
+
+		float pitch = IO.deltaMouseY * mouseSensitivity;
+		float yaw = -IO.deltaMouseX * mouseSensitivity;
+		glm::quat framePitch = glm::quat(glm::radians(glm::vec3(pitch, 0, 0)));
+		glm::quat frameYaw = glm::quat(glm::radians(glm::vec3(0, yaw, 0)));
+		cameraOrientation = frameYaw * cameraOrientation * framePitch;
 	}
 
-	//player->transform.setRotation(cameraRotation);
+
+	player->transform.setRotation(cameraOrientation);
 
 	movemodeToggle.toggle(IO.isKeyPressed(GLFW_KEY_V));
 
 	if (movemodeToggle.getState())
 	{
 		//fly
-		glm::vec3 directionForward = Transform::getTransformedZ(cameraRotation);
-		glm::vec3 directionStrafe = Transform::getTransformedX(cameraRotation);
-		glm::vec3 directionVertical = Transform::getTransformedY(cameraRotation);
+		glm::vec3 directionForward = Transform::getTransformedZ(cameraOrientation);
+		glm::vec3 directionStrafe = Transform::getTransformedX(cameraOrientation);
+		glm::vec3 directionVertical = Transform::getTransformedY(cameraOrientation);
 		//glm::vec3 directionForward = player->transform.getTransformedZ();
 		//glm::vec3 directionStrafe = player->transform.getTransformedX();
 		//glm::vec3 directionVertical = player->transform.getTransformedY();
@@ -356,35 +374,19 @@ int main()
 	std::shared_ptr<TextureMesh> bakedMesh = TextureMesh::loadFromFile("lab");//level_0
 
 	std::shared_ptr<Texture> t_blue_32 = Texture::loadFromFile("blue_32.png", GL_NEAREST_MIPMAP_NEAREST, true);
-	std::shared_ptr<Texture> t_BakedRender = Texture::loadFromFile("RenderTexture.png", GL_NEAREST, false); // TextureBake
+	std::shared_ptr<Texture> t_BakedRender = Texture::loadFromFile("RenderTexture.png", GL_NEAREST, false); // TextureBake RenderTexture
 	std::vector<std::string> starsFiles ={
-		"right.png",
-		"left.png",
-		"top.png",
-		"bottom.png",
-		"front.png",
-		"back.png",
+		"s_right.png",
+		"s_left.png",
+		"s_top.png",
+		"s_bottom.png",
+		"s_front.png",
+		"s_back.png",
 	};
 	std::shared_ptr<SkyBoxTexture> sb_stars = SkyBoxTexture::loadFromFile(starsFiles, GL_LINEAR_MIPMAP_LINEAR, true);
 
 	std::shared_ptr<GameObject> stage(new GameObject);
 	checkGLError("strugf");
-	
-	std::shared_ptr<Portal> portal1 = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
-	portal1->transform.setPosition(0, 1.4, 0);
-	portal1->transform.setScale(1.4, 1.8 ,0.01);
-	portal1->mesh = portalMesh;
-	portal1->shader = portalShader;
-	portal1->setWorld(stage);
-	stage->addChild(portal1);
-	std::shared_ptr<Portal> portal2 = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
-	portal2->transform.setPosition(0, 6.9, 0);
-	portal2->transform.setScale(1.4, 1.8, 0.01);
-	portal2->mesh = portalMesh;
-	portal2->shader = portalShader;
-	portal2->setWorld(stage);
-	stage->addChild(portal2);
-	Portal::linkPortals(portal1, portal2); // fix this.. i dont like it anymore...
 	
 	//makeBunchOfStuff(stage, cubeMesh, colorShader, 25);
 	//makeBunchOfStuff(stage, sphereMesh, colorShader, 25);
@@ -456,7 +458,7 @@ int main()
 	player->addChild(hand);
 	player->friction = 0.8;
 	player->elasticity = 0.0;
-	player->radius = 0.6;//0.6
+	player->radius = 0.2;//0.6
 	player->neverDisable = true;
 	//player->collisionReactEnabled = false;
 
@@ -473,10 +475,26 @@ int main()
 	stage->addChild(grapple);
 		
 	std::vector<std::shared_ptr<GameObject>> physicsList;
-	//physicsList.push_back(player);
+	physicsList.push_back(player);
 	float maxSpeed = 40.0;
 
 	glm::vec3 gravity = 30.0f * glm::vec3(0, -1, 0);
+
+	std::shared_ptr<Portal> portal1 = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
+	portal1->transform.setPosition(0, 1.4, 0);
+	portal1->transform.setScale(1.4, 1.8, 0.01);
+	portal1->mesh = portalMesh;
+	portal1->shader = portalShader;
+	portal1->setWorld(stage);
+	stage->addChild(portal1);
+	std::shared_ptr<Portal> portal2 = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
+	portal2->transform.setPosition(0, 6.9, 0);
+	portal2->transform.setScale(1.4, 1.8, 0.01);
+	portal2->mesh = portalMesh;
+	portal2->shader = portalShader;
+	portal2->setWorld(stage);
+	stage->addChild(portal2);
+	Portal::linkPortals(portal1, portal2); // fix this.. i dont like it anymore...
 
 	do
 	{
@@ -537,18 +555,30 @@ int main()
 		player->velocity += grappleForce * dt;
 		
 		//now move character based on input.
-		glm::vec3 contolVelocity = getControllerVelocity(IO, player);
+		glm::vec3 controlVelocity = dt * getControllerVelocity(IO, player);
 		
+		glm::vec3 thisPt = player->transform.getPosition();
+		glm::vec3 nextPt = thisPt + controlVelocity;
+		glm::quat newRot;
+
+		//player->transform.setRotation(cameraRotation);
+		newRot = cameraOrientation;
+		bool didTeleport = false;
+		portal1->action(player, controlVelocity, &didTeleport, &thisPt, &nextPt, &newRot);
+		portal2->action(player, controlVelocity, &didTeleport, &thisPt, &nextPt, &newRot);
+		player->transform.setPosition(thisPt);
+		cameraOrientation = newRot;
+		controlVelocity = nextPt - thisPt;
+
 		noClip.toggle(IO.isKeyPressed(GLFW_KEY_P));
 		if (noClip.getState())
 		{
-			tryMoveObject(player, dt * getControllerVelocity(IO, player), tree);
+			tryMoveObject(player, controlVelocity, tree);
 		}
 		else
 		{
-			tryMoveObject(player, dt * getControllerVelocity(IO, player), empty);
+			tryMoveObject(player, controlVelocity, empty);
 		}
-		
 		
 		if (movemodeToggle.getState())
 			player->velocity -= gravity * dt;
@@ -588,7 +618,9 @@ int main()
 		}
 		
 		//camera adjust
-		camera->setRotation(cameraRotation);
+	//	camera->setRotation(cameraRotation);
+		camera->setRotation(cameraOrientation);
+		//camera->setRotation(player->transform);
 		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));
 		hand->transform.setRotation(cameraRotation);
 

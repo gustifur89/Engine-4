@@ -62,6 +62,9 @@ public:
 	static glm::vec3 getTransformedX(glm::vec3 angles);
 	static glm::vec3 getTransformedY(glm::vec3 angles);
 	static glm::vec3 getTransformedZ(glm::vec3 angles);
+	static glm::vec3 getTransformedX(glm::quat quat);
+	static glm::vec3 getTransformedY(glm::quat quat);
+	static glm::vec3 getTransformedZ(glm::quat quat);
 
 	//appliers
 	inline Transform operator+(const Transform& other)
