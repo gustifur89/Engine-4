@@ -227,6 +227,17 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 		glm::quat framePitch = glm::quat(glm::radians(glm::vec3(pitch, 0, 0)));
 		glm::quat frameYaw = glm::quat(glm::radians(glm::vec3(0, yaw, 0)));
 		cameraOrientation = frameYaw * cameraOrientation * framePitch;
+		/*float cPitch = glm::degrees(glm::eulerAngles(cameraOrientation)).x;
+		if (cPitch > 89)
+		{
+			framePitch = glm::quat(glm::radians(glm::vec3(89 - cPitch, 0, 0)));
+			cameraOrientation = cameraOrientation * framePitch;
+		}
+		if (cPitch < -89)
+		{
+			framePitch = glm::quat(glm::radians(glm::vec3(-89 - cPitch, 0, 0)));
+			cameraOrientation = cameraOrientation * framePitch;
+		}*/
 	}
 
 
@@ -371,22 +382,46 @@ int main()
 
 	std::shared_ptr<TextureMesh> texCubeMesh = TextureMesh::loadFromFile("textCube");
 	std::shared_ptr<TextureMesh> texGround = TextureMesh::loadFromFile("testGround_tex");
-	std::shared_ptr<TextureMesh> bakedMesh = TextureMesh::loadFromFile("lab");//level_0
+	std::shared_ptr<TextureMesh> bakedMesh = TextureMesh::loadFromFile("Yellow_room");//level_0 lab
 
 	std::shared_ptr<Texture> t_blue_32 = Texture::loadFromFile("blue_32.png", GL_NEAREST_MIPMAP_NEAREST, true);
-	std::shared_ptr<Texture> t_BakedRender = Texture::loadFromFile("RenderTexture.png", GL_NEAREST, false); // TextureBake RenderTexture
-	std::vector<std::string> starsFiles ={
+	std::shared_ptr<Texture> t_BakedRender = Texture::loadFromFile("TexBake.png", GL_NEAREST, false); // TextureBake RenderTexture
+	/*std::vector<std::string> starsFiles ={
 		"s_right.png",
 		"s_left.png",
 		"s_top.png",
 		"s_bottom.png",
 		"s_front.png",
 		"s_back.png",
-	};
+	};*/
+	/*std::vector<std::string> starsFiles ={
+		"skyMap_4.png",	//skyMap_2// -
+		"skyMap_2.png",	//skyMap_4
+		"skyMap_3.png",	//skyMap_3 // -
+		"skyMap_1.png",	//skyMap_1 // -
+		"skyMap_5.png",	//skyMap_5 // -
+		"skyMap_0.png"	//skyMap_0 // -
+	};*/
+	/*std::vector<std::string> starsFiles = {
+		"test_1_right.png",		//skyMap_2// -
+		"test_1_left.png",		//skyMap_4
+		"test_1_top.png",		//skyMap_3 // -
+		"test_1_bottom.png",	//skyMap_1 // -
+		"test_1_front.png",		//skyMap_5 // -
+		"test_1_back.png"		//skyMap_0 // -
+	};*/
+	std::vector<std::string> starsFiles = {
+		"BlueSky_right.png",		//skyMap_2// -
+		"BlueSky_left.png",			//skyMap_4
+		"BlueSky_top.png",			//skyMap_3 // -
+		"BlueSky_bottom.png",		//skyMap_1 // -
+		"BlueSky_front.png",		//skyMap_5 // -
+		"BlueSky_back.png"			//skyMap_0 // -
+	}; 
 	std::shared_ptr<SkyBoxTexture> sb_stars = SkyBoxTexture::loadFromFile(starsFiles, GL_LINEAR_MIPMAP_LINEAR, true);
 
 	std::shared_ptr<GameObject> stage(new GameObject);
-	checkGLError("strugf");
+	checkGLError("");
 	
 	//makeBunchOfStuff(stage, cubeMesh, colorShader, 25);
 	//makeBunchOfStuff(stage, sphereMesh, colorShader, 25);
@@ -408,7 +443,10 @@ int main()
 	stage->addChild(floor);
 	*/
 
-	std::shared_ptr<SkyBox> skyBox = std::shared_ptr<SkyBox>(new SkyBox());
+	SkyBox* skyBox_ = new SkyBox();
+
+	std::shared_ptr<SkyBox> skyBox = std::shared_ptr<SkyBox>(skyBox_);
+
 	skyBox->shader = skyboxShader;
 	skyBox->transform.setRotation(180, 0, 0);
 	skyBox->texture = sb_stars;
@@ -480,6 +518,7 @@ int main()
 
 	glm::vec3 gravity = 30.0f * glm::vec3(0, -1, 0);
 
+	/*
 	std::shared_ptr<Portal> portal1 = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
 	portal1->transform.setPosition(0, 1.4, 0);
 	portal1->transform.setScale(1.4, 1.8, 0.01);
@@ -495,6 +534,50 @@ int main()
 	portal2->setWorld(stage);
 	stage->addChild(portal2);
 	Portal::linkPortals(portal1, portal2); // fix this.. i dont like it anymore...
+	*/
+
+	std::vector<std::shared_ptr<Portal>> portalList = Portal::loadPortalList(stage, WIDTH, HEIGHT, portalShader, portalMesh, "portals.txt");
+
+	/*
+//	std::vector<std::shared_ptr<Portal>> portalList;
+	std::shared_ptr<Portal> gateway1A = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
+	gateway1A->transform.setPosition(-0.5, 1.25, -1.9375);
+	gateway1A->transform.setScale(1, 2, 0.00001);
+	gateway1A->mesh = portalMesh;
+	gateway1A->shader = portalShader;
+	gateway1A->setWorld(stage);
+	portalList.push_back(gateway1A);
+	stage->addChild(gateway1A);
+	std::shared_ptr<Portal> gateway1B = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
+	gateway1B->transform.setPosition(12.5, 6.25, -0.9375);
+	gateway1B->transform.setScale(1, 2, 0.00001);
+	gateway1B->mesh = portalMesh;
+	gateway1B->shader = portalShader;
+	gateway1B->setWorld(stage);
+	portalList.push_back(gateway1B);
+	stage->addChild(gateway1B);
+	Portal::linkPortals(gateway1A, gateway1B);
+
+	std::shared_ptr<Portal> gateway2A = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
+	gateway2A->transform.setPosition(14.938, 6.25, 1.5);
+	gateway2A->transform.setScale(1, 2, 0.00001);
+	gateway2A->transform.setRotation(0, 90, 0);
+	gateway2A->mesh = portalMesh;
+	gateway2A->shader = portalShader;
+	gateway2A->setWorld(stage);
+	portalList.push_back(gateway2A);
+	stage->addChild(gateway2A);
+	std::shared_ptr<Portal> gateway2B = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
+	gateway2B->transform.setPosition(16.065, 6.25, 1.5);
+	gateway2B->transform.setScale(1, 2, 0.00001);
+	gateway2B->transform.setRotation(0, 90, 0);
+	gateway2B->mesh = portalMesh;
+	gateway2B->shader = portalShader;
+	gateway2B->setWorld(stage);
+	portalList.push_back(gateway2B);
+	stage->addChild(gateway2B);
+	Portal::linkPortals(gateway2A, gateway2B);
+	*/
 
 	do
 	{
@@ -564,8 +647,10 @@ int main()
 		//player->transform.setRotation(cameraRotation);
 		newRot = cameraOrientation;
 		bool didTeleport = false;
-		portal1->action(player, controlVelocity, &didTeleport, &thisPt, &nextPt, &newRot);
-		portal2->action(player, controlVelocity, &didTeleport, &thisPt, &nextPt, &newRot);
+		for (std::shared_ptr<Portal> portal : portalList)
+		{
+			portal->action(player, controlVelocity, &didTeleport, &thisPt, &nextPt, &newRot);
+		}
 		player->transform.setPosition(thisPt);
 		cameraOrientation = newRot;
 		controlVelocity = nextPt - thisPt;
@@ -623,11 +708,13 @@ int main()
 		//camera->setRotation(player->transform);
 		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));
 		hand->transform.setRotation(cameraRotation);
-
+		
+		skyBox->transform.rotate(dt* glm::normalize(glm::vec3(((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0))));
 		//portal2->transform.rotate(glm::vec3(0, dt * 30, 0));
 
-		portal1->portalRender(camera);
-		portal2->portalRender(camera);
+		//gateway2A->portalRender(camera, 2, portalList, true);
+		//gateway2B->portalRender(camera, 2, portalList, true);
+		Portal::preRenderPortals(portalList, camera, 3);
 		windowShader->setViewMatrix(camera->getTransformMatrix());
 		IO.display(camera, stage);
 		checkGLError("in");
