@@ -105,7 +105,7 @@ void IOManager::glSetUp()
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
 	glClearDepth(1.f);
-	glDepthFunc(GL_LEQUAL);
+	glDepthFunc(GL_LEQUAL);//GL_LEQUAL
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 }
@@ -245,9 +245,18 @@ void IOManager::renderWindow()
 	glEnableVertexAttribArray(0);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDisableVertexAttribArray(0);
+
+	/*
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	Portal::debugShader->useShader();
+	glBindVertexArray(Portal::debugVAO);
+	glEnableVertexAttribArray(0);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisableVertexAttribArray(0);
 	glBindVertexArray(0);
-
-
+	glDisable(GL_BLEND);
+	//*/
 	/*
 	//At the end, render to screen.
 	windowShader->useShader();

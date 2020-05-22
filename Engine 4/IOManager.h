@@ -4,6 +4,7 @@
 #include "RenderTexture.h"
 #include "Light.h"
 #include "SkyBox.h"
+#include "Portal.h"
 
 class IOManager
 {

@@ -6,10 +6,20 @@
 
 class Camera : public Transform
 {
+private:
+	glm::vec4 plane0;
+	glm::vec4 plane1;
+	glm::vec4 plane2;
+	glm::vec4 plane3;
+	glm::vec4 plane4;
+	glm::vec4 plane5;
+	std::vector<glm::vec4> planes;
 public:
 	Camera();
 	Camera(float fov, float aspectRatio, float minZ, float maxZ);
 	~Camera();
+
+	void createPlanes();
 
 	virtual glm::mat4 getTransformMatrix();
 	glm::mat4 getProjectionMatrix();
@@ -31,5 +41,7 @@ public:
 	GLfloat gamma;
 	GLfloat exposure;
 	Frustum viewFrustum;
+
+	std::string debugValue;
 };
 

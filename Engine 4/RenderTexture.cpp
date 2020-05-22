@@ -86,6 +86,8 @@ ScreenBufferRenderTexture::ScreenBufferRenderTexture(int width, int height)
 {
 	// colTex	RGBA	R G B Alpha
 	// depthTex	R		Depth
+	this->width = width;
+	this->height = height;
 
 	//FrameBuffer
 

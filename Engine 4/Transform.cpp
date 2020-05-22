@@ -181,7 +181,7 @@ glm::mat4 Transform::getTransformMatrix()
 	//glm::quat rotationQuat;
 	//rotationQuat = glm::quat(glm::vec3(angleX * TO_RAD, angleY * TO_RAD, angleZ * TO_RAD));
 
-	glm::mat4 translation = glm::translate(position);;// glm::translate(glm::mat4(1.0), position);
+	glm::mat4 translation = glm::translate(position);// glm::translate(glm::mat4(1.0), position);
 
 	glm::mat4 rotationMatrix = getRotationMatrix(rotation);
 

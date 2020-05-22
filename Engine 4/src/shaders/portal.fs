@@ -2,6 +2,7 @@
 
 in vec2 UV;
 in float w;
+in float z;
 
 layout(location = 0) out vec4 color;
 layout(location = 1) out float depth;
@@ -16,5 +17,6 @@ void main()
 	vec4 col = texture(colTex, uv);
 	//color = ColorMatrix * col;
 	color = col;
-	depth = texture(depthTex, uv).r;
+	//depth = texture(depthTex, uv).r;
+	depth = z/w;
 }

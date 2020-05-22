@@ -31,6 +31,9 @@ public:
 
 	GLuint colTex;
 	GLuint depthTex;
+
+	int width;
+	int height;
 };
 
 class RenderTexture2D

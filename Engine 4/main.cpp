@@ -351,10 +351,10 @@ int main()
 	srand(0);
 	IOManager IO;
 	//1280,800
-	int WIDTH = 1280;
+	int WIDTH = 800;
 	int HEIGHT = 800;
 	IO.createWindow(WIDTH, HEIGHT, "test", 30);
-	IO.setClearColor(200, 60, 100);// pink
+	IO.setClearColor(0, 0, 0);// pink
 	//IO.setClearColor(214, 252, 255);
 	std::shared_ptr<WindowShader> windowShader = WindowShader::loadShader("screen", "window");
 	windowShader->setGlobalLight(glm::normalize(glm::vec3(-1, 1, -1)));
@@ -364,6 +364,10 @@ int main()
 
 	IO.setWindowShader(windowShader);
 
+	std::shared_ptr<WindowShader> portalInternalShader = WindowShader::loadShader("screen", "window");
+	Portal::setInternalShader(portalInternalShader);
+	std::shared_ptr<Shader> debugShader = Shader::loadShader("screen", "portalDebug");
+	Portal::setDebugShader(debugShader);
 	std::shared_ptr<ColorShader> colorShader = ColorShader::loadShader("color");
 	std::shared_ptr<TextureShader> textureShader = TextureShader::loadShader("texture");
 	std::shared_ptr<TextureShader> autoTextureShader = TextureShader::loadShader("texture_tessalate");
@@ -487,7 +491,8 @@ int main()
 	float dt = 1.0 / 30.0f;
 
 	std::shared_ptr<GameObjectColor> player = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	player->transform.setPosition(0, 6, 0);
+	//player->transform.setPosition(0, 6, 0);
+	player->transform.setPosition(0, 1, -3);
 	stage->addChild(player);
 
 	std::shared_ptr<GameObject> hand = std::shared_ptr<GameObject>(new GameObject);
@@ -702,19 +707,13 @@ int main()
 			*/
 		}
 		
-		//camera adjust
-	//	camera->setRotation(cameraRotation);
 		camera->setRotation(cameraOrientation);
-		//camera->setRotation(player->transform);
 		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));
 		hand->transform.setRotation(cameraRotation);
 		
-		skyBox->transform.rotate(dt* glm::normalize(glm::vec3(((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0))));
-		//portal2->transform.rotate(glm::vec3(0, dt * 30, 0));
+		skyBox->transform.rotate(dt * glm::normalize(glm::vec3(((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0))));
 
-		//gateway2A->portalRender(camera, 2, portalList, true);
-		//gateway2B->portalRender(camera, 2, portalList, true);
-		Portal::preRenderPortals(portalList, camera, 3);
+		Portal::preRenderPortals(portalList, camera, 2);
 		windowShader->setViewMatrix(camera->getTransformMatrix());
 		IO.display(camera, stage);
 		checkGLError("in");

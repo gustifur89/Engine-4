@@ -77,7 +77,6 @@ public:
 	void setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 colorMatrix = glm::mat4(1.0));
 };
 
-
 class SkyBoxShader : public Shader
 {
 public:
