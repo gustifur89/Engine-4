@@ -45,6 +45,7 @@ public:
 
 	glm::vec3 getPosition();
 	glm::vec3 getRotation();
+	glm::quat getRotationQuat();
 	glm::vec3 getScale();
 	
 	//Other getter

@@ -258,21 +258,26 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 
 		float speedModifier = slow ? 0.5f : 1.0f;
 
-		player->velocity = glm::vec3(0);
+		//std::cout << "fly\n";
 
+		//player->velocity = glm::vec3(0);
+		player->velocity = glm::vec3(0);
 		return speedModifier * vel;
 
 	}
 	else
 	{
 		//walk
-
-		float velZ = cos(cameraRotation.y * TO_RAD) * zSpeed - sin(cameraRotation.y * TO_RAD) * xSpeed;
-		float velX = sin(cameraRotation.y * TO_RAD) * zSpeed + cos(cameraRotation.y * TO_RAD) * xSpeed;
-
-		glm::vec3 vel(velX, player->velocity.y, velZ);
-
-		glm::vec3 acceleration(velZ, 0, velX);
+		//std::cout << "walk\n";
+		glm::vec3 directionForward = Transform::getTransformedZ(cameraOrientation);
+		glm::vec3 directionStrafe = Transform::getTransformedX(cameraOrientation);
+		glm::vec3 directionVertical = Transform::getTransformedY(cameraOrientation);
+		glm::vec3 vel = xSpeed * directionStrafe + zSpeed * directionForward;// +ySpeed * directionVertical;
+		
+		//std::cout << vel.x << " : " << vel.y << " : " << vel.z << "\n";
+		float speed = glm::length(vel);
+		if(speed > 0)
+			vel = speed * glm::normalize(glm::vec3(vel.x, 0, vel.z));
 
 		float speedModifier = slow ? 0.5f : 1.0f;
 
@@ -330,8 +335,18 @@ void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, std
 	glm::vec3 nextP = thisP + difference;
 
 	glm::vec3 faceNorm;
+	
+
+	glm::quat newRot = object->transform.getRotationQuat();//cameraOrientation;
+	bool didTeleport = false;
+	for (std::shared_ptr<Portal> portal : Portal::portalList)
+	{
+		portal->action(object, difference, &didTeleport, &thisP, &nextP, &newRot);
+	}
+	object->transform.setRotation(newRot);
 	glm::vec3 nP = nextP;
-	if (collider->collide(object->radius, thisP, nextP, &nP, &faceNorm, 4))
+
+	if (!object->noClip && collider->collide(object->radius, thisP, nextP, &nP, &faceNorm, 4))
 	{
 		if (object->collisionReactEnabled)
 			object->velocity = collisionResolution(object->velocity, faceNorm, object->friction, object->elasticity);
@@ -368,7 +383,6 @@ int main()
 	Portal::setInternalShader(portalInternalShader);
 	std::shared_ptr<Shader> debugShader = Shader::loadShader("screen", "portalDebug");
 	Portal::setDebugShader(debugShader);
-
 	std::shared_ptr<ColorShader> colorShader = ColorShader::loadShader("color");
 	std::shared_ptr<TextureShader> textureShader = TextureShader::loadShader("texture");
 	std::shared_ptr<TextureShader> autoTextureShader = TextureShader::loadShader("texture_tessalate");
@@ -492,7 +506,6 @@ int main()
 	float dt = 1.0 / 30.0f;
 
 	std::shared_ptr<GameObjectColor> player = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	//player->transform.setPosition(0, 6, 0);
 	player->transform.setPosition(0, 1, -3);
 	stage->addChild(player);
 
@@ -504,19 +517,7 @@ int main()
 	player->elasticity = 0.0;
 	player->radius = 0.2;//0.6
 	player->neverDisable = true;
-	//player->collisionReactEnabled = false;
-
-	std::shared_ptr<GameObjectColor> grapplingHook = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	grapplingHook->shader = colorShader;
-	grapplingHook->mesh = grapplingHookMesh;
-	grapplingHook->transform.setRotation(0, 182, 0);
-	grapplingHook->transform.setPosition(-0.6, 0.0, 0.0);
-	//hand->addChild(grapplingHook);
-
-	std::shared_ptr<GrapplingHook> grapple = std::shared_ptr<GrapplingHook>(new GrapplingHook(100.0f, 0.0f, 30.0f));
-	grapple->mesh = grappleRopeMesh;
-	grapple->shader = colorShader;
-	stage->addChild(grapple);
+	player->collisionReactEnabled = true;
 		
 	std::vector<std::shared_ptr<GameObject>> physicsList;
 	physicsList.push_back(player);
@@ -524,66 +525,7 @@ int main()
 
 	glm::vec3 gravity = 30.0f * glm::vec3(0, -1, 0);
 
-	/*
-	std::shared_ptr<Portal> portal1 = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
-	portal1->transform.setPosition(0, 1.4, 0);
-	portal1->transform.setScale(1.4, 1.8, 0.01);
-	portal1->mesh = portalMesh;
-	portal1->shader = portalShader;
-	portal1->setWorld(stage);
-	stage->addChild(portal1);
-	std::shared_ptr<Portal> portal2 = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
-	portal2->transform.setPosition(0, 6.9, 0);
-	portal2->transform.setScale(1.4, 1.8, 0.01);
-	portal2->mesh = portalMesh;
-	portal2->shader = portalShader;
-	portal2->setWorld(stage);
-	stage->addChild(portal2);
-	Portal::linkPortals(portal1, portal2); // fix this.. i dont like it anymore...
-	*/
-
 	Portal::loadPortalList(stage, WIDTH, HEIGHT, portalShader, portalMesh, "portals.txt");
-
-	/*
-//	std::vector<std::shared_ptr<Portal>> portalList;
-	std::shared_ptr<Portal> gateway1A = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
-	gateway1A->transform.setPosition(-0.5, 1.25, -1.9375);
-	gateway1A->transform.setScale(1, 2, 0.00001);
-	gateway1A->mesh = portalMesh;
-	gateway1A->shader = portalShader;
-	gateway1A->setWorld(stage);
-	portalList.push_back(gateway1A);
-	stage->addChild(gateway1A);
-	std::shared_ptr<Portal> gateway1B = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
-	gateway1B->transform.setPosition(12.5, 6.25, -0.9375);
-	gateway1B->transform.setScale(1, 2, 0.00001);
-	gateway1B->mesh = portalMesh;
-	gateway1B->shader = portalShader;
-	gateway1B->setWorld(stage);
-	portalList.push_back(gateway1B);
-	stage->addChild(gateway1B);
-	Portal::linkPortals(gateway1A, gateway1B);
-
-	std::shared_ptr<Portal> gateway2A = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
-	gateway2A->transform.setPosition(14.938, 6.25, 1.5);
-	gateway2A->transform.setScale(1, 2, 0.00001);
-	gateway2A->transform.setRotation(0, 90, 0);
-	gateway2A->mesh = portalMesh;
-	gateway2A->shader = portalShader;
-	gateway2A->setWorld(stage);
-	portalList.push_back(gateway2A);
-	stage->addChild(gateway2A);
-	std::shared_ptr<Portal> gateway2B = std::shared_ptr<Portal>(new Portal(WIDTH, HEIGHT));
-	gateway2B->transform.setPosition(16.065, 6.25, 1.5);
-	gateway2B->transform.setScale(1, 2, 0.00001);
-	gateway2B->transform.setRotation(0, 90, 0);
-	gateway2B->mesh = portalMesh;
-	gateway2B->shader = portalShader;
-	gateway2B->setWorld(stage);
-	portalList.push_back(gateway2B);
-	stage->addChild(gateway2B);
-	Portal::linkPortals(gateway2A, gateway2B);
-	*/
 
 	do
 	{
@@ -639,40 +581,20 @@ int main()
 
 		physicsToggle.toggle(IO.isKeyPressed(GLFW_KEY_6));
 
-		//do the player grapple:  (will use physics, so we do it up here.)
-		glm::vec3 grappleForce = grapple->action(IO.isMouseDown(GLFW_MOUSE_BUTTON_2), tree, player->transform.getPosition() + handOffset, Transform::getTransformedZ(cameraRotation));
-		player->velocity += grappleForce * dt;
-		
 		//now move character based on input.
-		glm::vec3 controlVelocity = dt * getControllerVelocity(IO, player);
-		
-		glm::vec3 thisPt = player->transform.getPosition();
-		glm::vec3 nextPt = thisPt + controlVelocity;
-		glm::quat newRot;
-
-		//player->transform.setRotation(cameraRotation);
-		newRot = cameraOrientation;
-		bool didTeleport = false;
-		for (std::shared_ptr<Portal> portal : Portal::portalList)
+		glm::vec3 controlVelocity = getControllerVelocity(IO, player);
+		player->noClip = movemodeToggle.getState();
+		float vy = player->velocity.y;
+		player->velocity = controlVelocity;
+		camera->setRotation(cameraOrientation);
+		if (movemodeToggle.getState())
 		{
-			portal->action(player, controlVelocity, &didTeleport, &thisPt, &nextPt, &newRot);
-		}
-		player->transform.setPosition(thisPt);
-		cameraOrientation = newRot;
-		controlVelocity = nextPt - thisPt;
-
-		noClip.toggle(IO.isKeyPressed(GLFW_KEY_P));
-		if (noClip.getState())
-		{
-			tryMoveObject(player, controlVelocity, tree);
+			player->velocity -= gravity * dt;
 		}
 		else
 		{
-			tryMoveObject(player, controlVelocity, empty);
+			player->velocity.y = vy;
 		}
-		
-		if (movemodeToggle.getState())
-			player->velocity -= gravity * dt;
 
 		//apply physics to everything
 		for (std::shared_ptr<GameObject> object : physicsList)
@@ -683,7 +605,6 @@ int main()
 			{
 				object->velocity = maxSpeed * glm::normalize(object->velocity);
 			}
-			
 		
 			tryMoveObject(object, dt * object->velocity, tree);
 
@@ -708,6 +629,7 @@ int main()
 			*/
 		}
 		
+		cameraOrientation = player->transform.getRotationQuat();
 		camera->setRotation(cameraOrientation);
 		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));
 		hand->transform.setRotation(cameraRotation);

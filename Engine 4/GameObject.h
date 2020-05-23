@@ -42,6 +42,7 @@ public:
 	bool physiceEnabled;
 	bool neverDisable;
 	static float stopSpeed;
+	bool noClip;
 
 
 	glm::vec3 velocity;

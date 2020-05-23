@@ -19,6 +19,7 @@ GameObject::GameObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shade
 	collisionReactEnabled = true;
 	physiceEnabled = true;
 	neverDisable = false;
+	noClip = false;
 }
 
 void GameObject::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform)

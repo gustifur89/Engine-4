@@ -87,6 +87,11 @@ glm::vec3 Transform::getRotation()
 	return glm::degrees(glm::eulerAngles(rotation));
 }
 
+glm::quat Transform::getRotationQuat()
+{
+	return rotation;
+}
+
 glm::vec3 Transform::getScale()
 {
 	return scale;

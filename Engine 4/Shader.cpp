@@ -411,7 +411,7 @@ std::shared_ptr<ColorShader> ColorShader::loadShader(std::string fileName)
 	out->mvp = out->getUniformLocation("MVP");
 	out->mv = out->getUniformLocation("MV");
 	out->cm = out->getUniformLocation("ColorMatrix");
-	out->dep_mvp = out->getUniformLocation("depthMVP");
+	out->dep_mvp = out->getUniformLocation("DepthMVP");
 	out->mm = out->getUniformLocation("MM");
 	out->useShader();
 	out->loadMatrix(out->cm, glm::mat4(1.0));

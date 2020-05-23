@@ -288,7 +288,6 @@ bool Camera::isScaleInView(glm::mat4 modelMatrix)
 
 glm::vec4 Camera::getViewSpaceBoundingBox(glm::mat4 modelMatrix)
 {
-
 	///MVP
 	glm::mat4 MMatrix = modelMatrix;
 	glm::mat4 MVmatrix = this->getTransformMatrix() * MMatrix;
@@ -343,11 +342,17 @@ glm::vec4 Camera::getViewSpaceBoundingBox(glm::mat4 modelMatrix)
 			}
 		}
 	}*/
+	
+	int numOfBehindProper = 0;
 
 	for (int i = 0; i < points.size(); i++)
 	{
 		///*
 		points[i].z = glm::clamp(points[i].z, -maxZ, -minZ);
+		
+		if(points[i].z == -minZ)
+			numOfBehindProper++;
+		
 		//find out the half height and half width...
 		float halfHeight = fabs(points[i].z * tanf(fov * 0.5f * TO_RAD));
 		float halfWidth = halfHeight * aspectRatio;
@@ -416,7 +421,7 @@ glm::vec4 Camera::getViewSpaceBoundingBox(glm::mat4 modelMatrix)
 	
 
 	
-	if (numberOfBehind == pts.size() || pts.size() == 0)
+	if (numberOfBehind == pts.size() || numOfBehindProper == pts.size())
 	{
 		return glm::vec4(-3, -3, -3, -3);
 	}
