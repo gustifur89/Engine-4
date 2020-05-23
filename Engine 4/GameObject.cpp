@@ -136,6 +136,7 @@ void GameObjectColor::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 paren
 	glm::mat4 MMatrix = parentTransform * transform.getTransformMatrix();
 	glm::mat4 MVMatrix = camera->getTransformMatrix() * MMatrix;
 	glm::mat4 MVPmatrix = camera->getProjectionMatrix() * MVMatrix;
+	glm::mat4 depMVPmatrix = camera->getDepthProjectionMatrix() * MVMatrix;
 	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MVMatrix));
 
 	if (shader && mesh)
@@ -159,7 +160,7 @@ void GameObjectColor::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 paren
 		}
 		//*/
 
-		shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, MMatrix, shininess, colorMatrix);
+		shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, MMatrix, depMVPmatrix, shininess, colorMatrix);
 		mesh->render();
 	}
 }
@@ -192,6 +193,7 @@ void GameObjectTexture::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 par
 	glm::mat4 MMatrix = parentTransform * transform.getTransformMatrix();
 	glm::mat4 MVMatrix = camera->getTransformMatrix() * MMatrix;
 	glm::mat4 MVPmatrix = camera->getProjectionMatrix() * MVMatrix;
+	glm::mat4 depMVPmatrix = camera->getDepthProjectionMatrix() * MVMatrix;
 //	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MVMatrix));
 	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MMatrix));
 
@@ -199,7 +201,7 @@ void GameObjectTexture::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 par
 	{
 		shader->useShader();
 		shader->setTexture(texture);
-		shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, MMatrix, shininess, colorMatrix);
+		shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, MMatrix, depMVPmatrix, shininess, colorMatrix);
 		mesh->render();
 	}
 }

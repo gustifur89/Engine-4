@@ -354,7 +354,7 @@ int main()
 	int WIDTH = 800;
 	int HEIGHT = 800;
 	IO.createWindow(WIDTH, HEIGHT, "test", 30);
-	IO.setClearColor(0, 0, 0);// pink
+	IO.setClearColor(255, 0, 0);// pink
 	//IO.setClearColor(214, 252, 255);
 	std::shared_ptr<WindowShader> windowShader = WindowShader::loadShader("screen", "window");
 	windowShader->setGlobalLight(glm::normalize(glm::vec3(-1, 1, -1)));
@@ -368,6 +368,7 @@ int main()
 	Portal::setInternalShader(portalInternalShader);
 	std::shared_ptr<Shader> debugShader = Shader::loadShader("screen", "portalDebug");
 	Portal::setDebugShader(debugShader);
+
 	std::shared_ptr<ColorShader> colorShader = ColorShader::loadShader("color");
 	std::shared_ptr<TextureShader> textureShader = TextureShader::loadShader("texture");
 	std::shared_ptr<TextureShader> autoTextureShader = TextureShader::loadShader("texture_tessalate");
@@ -541,7 +542,7 @@ int main()
 	Portal::linkPortals(portal1, portal2); // fix this.. i dont like it anymore...
 	*/
 
-	std::vector<std::shared_ptr<Portal>> portalList = Portal::loadPortalList(stage, WIDTH, HEIGHT, portalShader, portalMesh, "portals.txt");
+	Portal::loadPortalList(stage, WIDTH, HEIGHT, portalShader, portalMesh, "portals.txt");
 
 	/*
 //	std::vector<std::shared_ptr<Portal>> portalList;
@@ -652,7 +653,7 @@ int main()
 		//player->transform.setRotation(cameraRotation);
 		newRot = cameraOrientation;
 		bool didTeleport = false;
-		for (std::shared_ptr<Portal> portal : portalList)
+		for (std::shared_ptr<Portal> portal : Portal::portalList)
 		{
 			portal->action(player, controlVelocity, &didTeleport, &thisPt, &nextPt, &newRot);
 		}
@@ -712,8 +713,8 @@ int main()
 		hand->transform.setRotation(cameraRotation);
 		
 		skyBox->transform.rotate(dt * glm::normalize(glm::vec3(((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0))));
-
-		Portal::preRenderPortals(portalList, camera, 2);
+		
+		Portal::preRenderPortals(camera, 3);
 		windowShader->setViewMatrix(camera->getTransformMatrix());
 		IO.display(camera, stage);
 		checkGLError("in");

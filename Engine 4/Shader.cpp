@@ -411,6 +411,7 @@ std::shared_ptr<ColorShader> ColorShader::loadShader(std::string fileName)
 	out->mvp = out->getUniformLocation("MVP");
 	out->mv = out->getUniformLocation("MV");
 	out->cm = out->getUniformLocation("ColorMatrix");
+	out->dep_mvp = out->getUniformLocation("depthMVP");
 	out->mm = out->getUniformLocation("MM");
 	out->useShader();
 	out->loadMatrix(out->cm, glm::mat4(1.0));
@@ -419,12 +420,13 @@ std::shared_ptr<ColorShader> ColorShader::loadShader(std::string fileName)
 	return out;
 }
 
-void ColorShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, float shininess, glm::mat4 colorMatrix)
+void ColorShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, glm::mat4 depthMVP, float shininess, glm::mat4 colorMatrix)
 {
 	loadMatrix(mvp, MVP);
 	loadMatrix(mv, MV);
 	loadMatrix(cm, colorMatrix);
 	loadMatrix(mm, MM);
+	loadMatrix(dep_mvp, depthMVP);
 	loadMatrix(nm, NM);
 	loadFloat(shininessLoc, shininess);
 }
@@ -439,6 +441,7 @@ std::shared_ptr<TextureShader> TextureShader::loadShader(std::string fileName)
 	out->nm = out->getUniformLocation("NM");
 	out->mv = out->getUniformLocation("MV");
 	out->mm = out->getUniformLocation("MM");
+	out->dep_mvp = out->getUniformLocation("DepthMVP");
 	out->cm = out->getUniformLocation("ColorMatrix");
 	out->loadMatrix(out->cm, glm::mat4(1.0));
 	out->texLoc = out->getUniformLocation("tex");
@@ -451,13 +454,14 @@ void TextureShader::setTexture(std::shared_ptr<Texture> texture)
 	loadTexture(texLoc, texture->textureID);
 }
 
-void TextureShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, float shininess, glm::mat4 colorMatrix)
+void TextureShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, glm::mat4 depthMVP, float shininess, glm::mat4 colorMatrix)
 {
 	loadMatrix(mvp, MVP);
 	loadMatrix(mv, MV);
 	loadMatrix(nm, NM);
 	loadMatrix(mm, MM);
 	loadMatrix(cm, colorMatrix);
+	loadMatrix(dep_mvp, depthMVP);
 	loadFloat(shininessLoc, shininess);
 }
 
@@ -496,7 +500,8 @@ std::shared_ptr<PortalShader> PortalShader::loadShader(std::string fileName)
 	out->cm = out->getUniformLocation("ColorMatrix");
 	out->loadMatrix(out->cm, glm::mat4(1.0));
 	out->colLoc = out->getUniformLocation("colTex");
-	out->depLoc = out->getUniformLocation("depthTex");
+	out->depLoc = out->getUniformLocation("DepthMVP");
+	out->dep_mvp = out->getUniformLocation("DepthMVP");
 	out->useShader();
 	glUniform1i(out->colLoc, 0);
 	glUniform1i(out->depLoc, 1);
@@ -509,8 +514,9 @@ void PortalShader::setTexture(std::shared_ptr<ScreenBufferRenderTexture> texture
 	glBindTextureUnit(1, texture->depthTex);
 }
 
-void PortalShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 colorMatrix)
+void PortalShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 depthMVP, glm::mat4 colorMatrix)
 {
+	loadMatrix(dep_mvp, depthMVP);
 	loadMatrix(mvp, MVP);
 	loadMatrix(mv, MV);
 	loadMatrix(cm, colorMatrix);

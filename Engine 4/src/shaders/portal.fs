@@ -17,6 +17,8 @@ void main()
 	vec4 col = texture(colTex, uv);
 	//color = ColorMatrix * col;
 	color = col;
+	//gl_FragDepth = texture(depthTex, uv).r;
 	//depth = texture(depthTex, uv).r;
 	depth = z/w;
+	gl_FragDepth = depth;
 }

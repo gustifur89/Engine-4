@@ -5,6 +5,7 @@ layout (location = 1) in vec3 norm;
 layout (location = 2) in vec2 uv;
 
 uniform mat4 MVP;
+uniform mat4 DepthMVP;
 uniform mat4 MV;
 uniform mat4 NM;
 uniform mat4 MM;
@@ -23,6 +24,8 @@ void main ()
 	frg_norm = (NM * vec4(norm, 0)).xyz;
 	
 	frg_pos = vec3(MM * vec4(pos,1)) * textureScale;
+
+	vec4 depP = DepthMVP * vec4(pos, 1);
 
 	vec3 mPos = mod(pos / textureScale, 1.0);//mod(frg_pos / textureScale, 1.0);
 
@@ -48,14 +51,8 @@ void main ()
 	//
 	//frg_uv = UV;
 
-
-
-
-
 	UV = frg_norm.xy/frg_norm.z * 0.5 + 0.5;
 
-
-
-	w = gl_Position.w;
-	z = gl_Position.z;
+	w = depP.w;
+	z = depP.z;
 }

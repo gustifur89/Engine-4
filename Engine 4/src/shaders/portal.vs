@@ -3,6 +3,7 @@
 layout (location = 0) in vec3 pos;
 
 uniform mat4 MVP;
+uniform mat4 DepthMVP;
 uniform mat4 MV;
 
 out vec2 UV;

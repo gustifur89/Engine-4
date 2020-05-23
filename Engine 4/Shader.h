@@ -46,35 +46,35 @@ class ColorShader : public Shader
 {
 private:
 	GLuint shininessLoc;
-	GLuint mvp, mv, nm, cm, mm;
+	GLuint mvp, mv, nm, cm, mm, dep_mvp;
 	glm::mat4 colorMatrix;
 
 public:	
 	
 	static std::shared_ptr<ColorShader> loadShader(std::string fileName);
 
-	void setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, float shininess, glm::mat4 colorMatrix = glm::mat4(1.0));
+	void setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, glm::mat4 depthMVP, float shininess, glm::mat4 colorMatrix = glm::mat4(1.0));
 };
 
 class TextureShader : public Shader
 {
 public:
 	GLuint shininessLoc;
-	int mvp, mv, nm, cm, mm, texLoc;
+	int mvp, mv, nm, cm, mm, texLoc, dep_mvp;
 
 	static std::shared_ptr<TextureShader> loadShader(std::string fileName);
 	void setTexture(std::shared_ptr<Texture> texture);
-	void setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, float shininess, glm::mat4 colorMatrix = glm::mat4(1.0));
+	void setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, glm::mat4 depthMVP, float shininess, glm::mat4 colorMatrix = glm::mat4(1.0));
 };
 
 class PortalShader : public Shader
 {
 public:
-	int mvp, mv, cm, colLoc, depLoc;
+	int mvp, mv, cm, colLoc, depLoc, dep_mvp;
 
 	static std::shared_ptr<PortalShader> loadShader(std::string fileName);
 	void setTexture(std::shared_ptr<ScreenBufferRenderTexture> texture);
-	void setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 colorMatrix = glm::mat4(1.0));
+	void setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 depthMVP, glm::mat4 colorMatrix = glm::mat4(1.0));
 };
 
 class SkyBoxShader : public Shader

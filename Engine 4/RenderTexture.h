@@ -28,6 +28,7 @@ public:
 	GLuint frameBuffer;
 	GLuint renderedTexture;
 	GLuint depthrenderbuffer;
+	GLuint stencilrenderbuffer;
 
 	GLuint colTex;
 	GLuint depthTex;

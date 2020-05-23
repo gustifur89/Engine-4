@@ -23,6 +23,7 @@ public:
 
 	virtual glm::mat4 getTransformMatrix();
 	glm::mat4 getProjectionMatrix();
+	glm::mat4 getDepthProjectionMatrix();
 	
 	bool isSphereInView(glm::vec3 position, double radius, glm::mat4 modelMatrix);
 	bool isBoxInView(Bounds bounds, glm::mat4 modelMatrix);
@@ -34,6 +35,7 @@ public:
 	bool inView(glm::vec3 p);
 	//parameters
 	glm::mat4 projectionMatrix;
+	glm::mat4 depthProjectionMatrix; // to make oblique clipping play fiarly.
 	GLfloat fov;
 	GLfloat aspectRatio;
 	GLfloat minZ;

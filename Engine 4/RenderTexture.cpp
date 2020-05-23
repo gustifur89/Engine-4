@@ -122,12 +122,22 @@ ScreenBufferRenderTexture::ScreenBufferRenderTexture(int width, int height)
 	
 
 	// The depth buffer
+	/*
 	depthrenderbuffer = 0;
 	glGenRenderbuffers(1, &depthrenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
+	//*/
 
+	// The depthStencil buffer
+	///*
+	stencilrenderbuffer = 0;
+	glGenRenderbuffers(1, &stencilrenderbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, stencilrenderbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencilrenderbuffer);
+	//*/
 
 	// Set the list of draw buffers.
 	GLenum DrawBuffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };

@@ -105,6 +105,7 @@ void IOManager::glSetUp()
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
 	glClearDepth(1.f);
+	glClearStencil(0x00);
 	glDepthFunc(GL_LEQUAL);//GL_LEQUAL
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -213,8 +214,10 @@ void IOManager::display(std::shared_ptr<Camera> camera, std::shared_ptr<GameObje
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, screenBuffer.frameBuffer);
 		glViewport(0, 0, width, height);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
+		glStencilMask(~0);
+		glDisable(GL_SCISSOR_TEST);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+				
 		renderObject->render(camera, glm::mat4(1.0));
 
 		//render sky box
@@ -240,7 +243,7 @@ void IOManager::renderWindow()
 	glBindTextureUnit(1, screenBuffer.depthTex);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glBindVertexArray(windowVAO);
 	glEnableVertexAttribArray(0);
 	glDrawArrays(GL_TRIANGLES, 0, 6);

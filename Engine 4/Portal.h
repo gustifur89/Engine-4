@@ -46,6 +46,8 @@ public:
 	static GLuint debugVAO;
 	static GLuint internalPortalVBO;
 	static GLuint internalPortalVAO;
+	static std::vector<std::shared_ptr<Portal>> portalList;
+
 
 	void setUpPortalRect();
 	void setUpDebugRect();
@@ -54,18 +56,20 @@ public:
 	static std::shared_ptr<WindowShader> portalInternalShader;
 	static std::shared_ptr<Shader> debugShader;
 
+	bool isCameraInBounds(std::shared_ptr<Camera> camera);
 	void setWorld(std::shared_ptr<GameObject> world);
 	void renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform);
 	void portalRender(std::shared_ptr<Camera> camera, int drawDepth, std::vector<std::shared_ptr<Portal>> portalList, bool primaryDraw = true);
+	void drawStencil(std::shared_ptr<Camera> camera);
 	float getMinZ(Camera camera);
 	glm::mat4 getObliqueProjectionMatrix(std::shared_ptr<Camera> camera);
 	static bool boundsOverlap(glm::vec2 aMin, glm::vec2 aMax, glm::vec2 bMin, glm::vec2 bMax);
 
 	bool action(std::shared_ptr<GameObject> object, glm::vec3 difference, bool* didTeleport, glm::vec3* teleThisPt, glm::vec3* teleNextPt, glm::quat* newRot);
 
-	static void preRenderPortals(std::vector<std::shared_ptr<Portal>> portals, std::shared_ptr<Camera> camera, int depth = 6);
+	static void preRenderPortals(std::shared_ptr<Camera> camera, int depth = 6);
 	static void linkPortals(std::shared_ptr<Portal> portal1, std::shared_ptr<Portal> portal2);
-	static std::vector<std::shared_ptr<Portal>> loadPortalList(std::shared_ptr<GameObject> world, int WIDTH, int HEIGHT, std::shared_ptr<PortalShader> portalShader, std::shared_ptr<ColorMesh> portalMesh, std::string fileName);
+	static void loadPortalList(std::shared_ptr<GameObject> world, int WIDTH, int HEIGHT, std::shared_ptr<PortalShader> portalShader, std::shared_ptr<ColorMesh> portalMesh, std::string fileName);
 
 	//parameters
 	bool drawComplete;

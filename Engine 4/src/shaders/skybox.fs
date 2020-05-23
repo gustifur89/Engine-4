@@ -13,5 +13,6 @@ uniform mat4 ColorMatrix;
 void main()
 {    
     color = vec4((ColorMatrix * vec4(texture(skybox, texCoords).rgb, 1.0)).rgb, 1.0);
+    gl_FragDepth = 1.0;
     depth = 1.0;
 }

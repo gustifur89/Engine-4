@@ -14,7 +14,7 @@ Camera::Camera(float fov, float aspectRatio, float minZ, float maxZ)
 		minZ,				// Near clipping plane. Keep as big as possible, or you'll get precision issues.
 		maxZ				// Far clipping plane. Keep as little as possible.
 	);
-
+	depthProjectionMatrix = projectionMatrix;
 	viewFrustum = Frustum(projectionMatrix);
 	this->fov = fov;
 	this->aspectRatio = aspectRatio;
@@ -152,6 +152,11 @@ void Camera::createPlanes()
 glm::mat4 Camera::getProjectionMatrix()
 {
 	return projectionMatrix;
+}
+
+glm::mat4 Camera::getDepthProjectionMatrix()
+{
+	return depthProjectionMatrix;
 }
 
 glm::mat4 Camera::getTransformMatrix()
