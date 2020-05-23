@@ -17,7 +17,5 @@ void main()
 {
 	color = vec4((ColorMatrix * vec4(texture(tex, frg_uv).rgb, 1.0)).rgb, specular);
 	depth = z/w;
-	float depDif = abs(depth - gl_FragCoord.z);
-	//color = vec4(depDif);
-	gl_FragDepth = depth;// - gl_FragCoord.z;
+	gl_FragDepth = depth;
 }

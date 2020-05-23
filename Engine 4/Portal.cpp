@@ -259,17 +259,16 @@ void Portal::drawStencil(std::shared_ptr<Camera> camera)
 	this->transform.setScale(nScale);
 	this->transform.setPosition(nPos);
 	*/
-	glm::mat4 MMatrix = this->getAdjustedPortalMatrix(camera);// transform.getTransformMatrix();
+	glm::mat4 MMatrix = getAdjustedPortalMatrix(camera);
 	glm::mat4 MVMatrix = camera->getTransformMatrix() * MMatrix;
 	glm::mat4 MVPmatrix = camera->getProjectionMatrix() * MVMatrix;
+	glm::mat4 depMVPmatrix = camera->getDepthProjectionMatrix() * MVMatrix;
 	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MMatrix));
 
 	glDisable(GL_CULL_FACE);
 	shader->useShader();
-
 	shader->setTexture(portalTexture);
-
-	shader->setMatrixes(MVPmatrix, MVMatrix, colorMatrix);
+	shader->setMatrixes(MVPmatrix, MVMatrix, depMVPmatrix, colorMatrix);
 	mesh->render();
 	glEnable(GL_CULL_FACE);
 
@@ -518,10 +517,111 @@ double Portal::distanceToPlane(glm::vec3 entPos, glm::vec3 dir, glm::vec3 planeP
 	//return glm::dot(entPos, dir) - glm::dot(dir, planePoint);
 }
 
-void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, std::vector<std::shared_ptr<Portal>> portals, bool primaryDraw)
+void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int maxDepth, std::vector<std::shared_ptr<Portal>> portals, bool primaryDraw)
 {
 	if (!otherPortal || !world) return;
 	
+	glm::vec4 portalBox = camera->getViewSpaceBoundingBox(this->transform.getTransformMatrix());
+	//glm::vec4 portalBox = camera->getViewSpaceBoundingBox(getAdjustedPortalMatrix(camera));
+	glm::vec2 pMin = portalBox.xy();
+	glm::vec2 pMax = portalBox.zw();
+
+	std::shared_ptr<Camera> portalCam = std::shared_ptr<Camera>(new Camera(camera->fov, camera->aspectRatio, camera->minZ, camera->maxZ));
+
+	glm::mat4 m = otherPortal->transform.getTransformMatrix() * glm::inverse(this->transform.getTransformMatrix()) * camera->Transform::getTransformMatrix();
+	glm::vec3 scale;
+	glm::quat rotation;
+	glm::vec3 translation;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(m, scale, rotation, translation, skew, perspective);
+
+	portalCam->setRotation(rotation);
+	portalCam->setPosition(translation);
+	portalCam->projectionMatrix = camera->projectionMatrix;
+	portalCam->depthProjectionMatrix = camera->depthProjectionMatrix;
+
+	//loop through all portals and draw if visible. May need to do this before the oblique. Could result in performanc eissues but we'll see.
+	if (primaryDraw)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, portalTexture->frameBuffer);
+	//	glViewport(0, 0, portalTexture->width, portalTexture->height);
+	//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	}
+
+	//https://stackoverflow.com/questions/48246302/writing-to-the-opengl-stencil-buffer
+	//glClear(GL_STENCIL_BUFFER_BIT);
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
+	glDepthMask(GL_FALSE);
+	glEnable(GL_STENCIL_TEST); // Enables testing AND writing functionalities
+	glStencilFunc(GL_EQUAL, drawDepth, 0xFF); // Do not test the current value in the stencil buffer, always accept any value on there for drawing
+	glStencilMask(0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR); // Make every test succeed
+
+	drawStencil(camera);
+
+	glEnable(GL_STENCIL_TEST);
+
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP); // Make sure you will no longer (over)write stencil values, even if any test succeeds
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Make sure we draw on the backbuffer again.
+	glDepthMask(GL_TRUE);
+	glStencilFunc(GL_EQUAL, drawDepth + 1, 0xFF); // Now we will only draw pixels where the corresponding stencil buffer value equals 1
+	glStencilMask(0x00);
+
+	// ... here you render your image on the computer screen (or whatever) that should be limited by the previous geometry ...
+	portalCam->projectionMatrix = getObliqueProjectionMatrix(camera);
+
+	this->world->visible = false;
+	otherPortal->world->visible = true;
+
+	//otherPortal->visible = false;
+	world->render(portalCam, glm::mat4(1.0));
+	//otherPortal->visible = true;
+
+	otherPortal->world->visible = false;
+	this->world->visible = true;
+
+	glDisable(GL_STENCIL_TEST);
+
+	if (drawDepth < maxDepth)
+	{
+		for (int i = 0; i < portalList.size(); i++)
+		{
+			if (otherPortal != portalList[i])
+			{
+				//glm::vec4 otherBox = portalCam->getViewSpaceBoundingBox(portalList[i]->transform.getTransformMatrix());
+				glm::vec4 otherBox = portalCam->getViewSpaceBoundingBox(portalList[i]->getAdjustedPortalMatrix(camera));
+				glm::vec2 oMin = glm::vec2(otherBox.xy());
+				glm::vec2 oMax = glm::vec2(otherBox.zw());
+
+				if (boundsOverlap(oMin, oMax, pMin, pMax))
+				{
+					portalList[i]->portalRender(portalCam, drawDepth + 1, maxDepth, portalList, false);
+				}
+			}
+		}
+	}
+
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
+	drawStencil(camera);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Make sure we draw on the backbuffer again.
+
+
+	//glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
+	//drawStencil(camera);
+	//glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Make sure we draw on the backbuffer again.
+
+
+	//after you draw the world, redraw the depth
+//	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
+///	glDepthMask(GL_FALSE);
+
+	//drawStencil(camera);
+
+	//	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Make sure we draw on the backbuffer again.
+//	glDepthMask(GL_TRUE);
+
+	/*
 	glm::vec4 portalBox = camera->getViewSpaceBoundingBox(this->transform.getTransformMatrix());
 	//glm::vec4 portalBox = camera->getViewSpaceBoundingBox(getAdjustedPortalMatrix(camera));
 	glm::vec2 pMin = portalBox.xy();
@@ -603,6 +703,8 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, std::ve
 	this->world->visible = true;
 
 	glDisable(GL_STENCIL_TEST);
+
+	*/
 }
 
 void Portal::preRenderPortals(std::shared_ptr<Camera> camera, int depth)
@@ -610,10 +712,14 @@ void Portal::preRenderPortals(std::shared_ptr<Camera> camera, int depth)
 	//find first to render
 	//we need to use recursion to find them..
 	//need to find if one is in the view frustum
-	
 	for (int i = 0; i < portalList.size(); i++)
 	{
 		portalList[i]->internalRender = true;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, portalList[i]->portalTexture->frameBuffer);
+		glViewport(0, 0, portalList[i]->portalTexture->width, portalList[i]->portalTexture->height);
+		//glClearStencil(0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		/*
 		portalList[i]->properSize = portalList[i]->transform.getScale();
@@ -645,7 +751,7 @@ void Portal::preRenderPortals(std::shared_ptr<Camera> camera, int depth)
 
 		if (boundsOverlap(oMin, oMax, sMin, sMax))
 		{
-			portalList[i]->portalRender(camera, depth, portalList, true);
+			portalList[i]->portalRender(camera, 0, depth, portalList, true);
 		}
 	}
 

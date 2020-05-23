@@ -14,7 +14,8 @@ void main(){
 	vec4 tempPos = MVP * vec4(pos, 1);
 	gl_Position = tempPos;
 	UV = tempPos.xy;
-	w = tempPos.w;
-	z = tempPos.z;
+	vec4 depP = DepthMVP * vec4(pos, 1);
+	w = depP.w;
+	z = depP.z;
 }
 

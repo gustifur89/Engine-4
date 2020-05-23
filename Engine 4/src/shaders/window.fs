@@ -11,6 +11,14 @@ void main()
 {
 	vec4 col_ = texture( colTex, UV );
 	float depth = texture( depthTex, UV ).r;
+	if(UV.x < 0.5)
+	{
+		color.rgb = vec3(depth);// col_.rgb;
+	}
+	else
+	{
+		color.rgb = col_.rgb;
+	}
 	color.rgb = col_.rgb;
 	color.a = 1.0;
 }

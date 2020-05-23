@@ -500,7 +500,7 @@ std::shared_ptr<PortalShader> PortalShader::loadShader(std::string fileName)
 	out->cm = out->getUniformLocation("ColorMatrix");
 	out->loadMatrix(out->cm, glm::mat4(1.0));
 	out->colLoc = out->getUniformLocation("colTex");
-	out->depLoc = out->getUniformLocation("DepthMVP");
+	out->depLoc = out->getUniformLocation("depthTex");
 	out->dep_mvp = out->getUniformLocation("DepthMVP");
 	out->useShader();
 	glUniform1i(out->colLoc, 0);

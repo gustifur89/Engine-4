@@ -59,7 +59,7 @@ public:
 	bool isCameraInBounds(std::shared_ptr<Camera> camera);
 	void setWorld(std::shared_ptr<GameObject> world);
 	void renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform);
-	void portalRender(std::shared_ptr<Camera> camera, int drawDepth, std::vector<std::shared_ptr<Portal>> portalList, bool primaryDraw = true);
+	void portalRender(std::shared_ptr<Camera> camera, int drawDepth, int maxDepth, std::vector<std::shared_ptr<Portal>> portalList, bool primaryDraw = true);
 	void drawStencil(std::shared_ptr<Camera> camera);
 	float getMinZ(Camera camera);
 	glm::mat4 getObliqueProjectionMatrix(std::shared_ptr<Camera> camera);
