@@ -336,7 +336,6 @@ void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, std
 
 	glm::vec3 faceNorm;
 	
-
 	glm::quat newRot = object->transform.getRotationQuat();//cameraOrientation;
 	bool didTeleport = false;
 	for (std::shared_ptr<Portal> portal : Portal::portalList)
@@ -366,7 +365,7 @@ int main()
 	srand(0);
 	IOManager IO;
 	//1280,800
-	int WIDTH = 800;
+	int WIDTH = 1000;
 	int HEIGHT = 800;
 	IO.createWindow(WIDTH, HEIGHT, "test", 30);
 	IO.setClearColor(255, 0, 0);// pink
@@ -379,7 +378,7 @@ int main()
 
 	IO.setWindowShader(windowShader);
 
-	std::shared_ptr<WindowShader> portalInternalShader = WindowShader::loadShader("screen", "window");
+	std::shared_ptr<PortalShader> portalInternalShader = PortalShader::loadShader("portalDepthClear");
 	Portal::setInternalShader(portalInternalShader);
 	std::shared_ptr<Shader> debugShader = Shader::loadShader("screen", "portalDebug");
 	Portal::setDebugShader(debugShader);
@@ -579,11 +578,13 @@ int main()
 			player->velocity = glm::vec3(0);
 		}
 
-		physicsToggle.toggle(IO.isKeyPressed(GLFW_KEY_6));
+		physicsToggle.toggle(IO.isKeyPressed(GLFW_KEY_P));
+		player->noClip = physicsToggle.getState();
+
 
 		//now move character based on input.
 		glm::vec3 controlVelocity = getControllerVelocity(IO, player);
-		player->noClip = movemodeToggle.getState();
+		
 		float vy = player->velocity.y;
 		player->velocity = controlVelocity;
 		camera->setRotation(cameraOrientation);
@@ -595,6 +596,8 @@ int main()
 		{
 			player->velocity.y = vy;
 		}
+
+
 
 		//apply physics to everything
 		for (std::shared_ptr<GameObject> object : physicsList)
@@ -636,7 +639,7 @@ int main()
 		
 		skyBox->transform.rotate(dt * glm::normalize(glm::vec3(((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0))));
 		
-		Portal::preRenderPortals(camera, 3);
+		Portal::preRenderPortals(camera, 2);
 		windowShader->setViewMatrix(camera->getTransformMatrix());
 		IO.display(camera, stage);
 		checkGLError("in");

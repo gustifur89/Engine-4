@@ -29,7 +29,7 @@ void PortalCamera::setTransformMatrix(glm::mat4 mat)
 // ============================ Portal ===============================
 
 std::shared_ptr<Shader> Portal::debugShader = std::shared_ptr<Shader>();
-std::shared_ptr<WindowShader> Portal::portalInternalShader = std::shared_ptr<WindowShader>();
+std::shared_ptr<PortalShader> Portal::portalInternalShader = std::shared_ptr<PortalShader>();
 GLuint Portal::debugVBO = 0;
 GLuint Portal::debugVAO = 0;
 GLuint Portal::internalPortalVBO = 0;
@@ -62,11 +62,11 @@ void Portal::setDebugShader(std::shared_ptr<Shader> debugShader_)
 	Portal::debugShader = debugShader_;
 }
 
-void Portal::setInternalShader(std::shared_ptr<WindowShader> portalInternalShader_)
+void Portal::setInternalShader(std::shared_ptr<PortalShader> portalInternalShader_)
 {
 	Portal::portalInternalShader = portalInternalShader_;
-	GLuint colTexLoc = Portal::portalInternalShader->getUniformLocation("colTex");
-	glUniform1i(colTexLoc, 0);
+	//GLuint colTexLoc = Portal::portalInternalShader->getUniformLocation("colTex");
+	//glUniform1i(colTexLoc, 0);
 }
 
 void Portal::setUpPortalRect()
@@ -345,6 +345,22 @@ void Portal::drawStencil(std::shared_ptr<Camera> camera)
 	*/
 }
 
+void Portal::clearDepth(std::shared_ptr<Camera> camera)
+{
+	glm::mat4 MMatrix = getAdjustedPortalMatrix(camera);
+	glm::mat4 MVMatrix = camera->getTransformMatrix() * MMatrix;
+	glm::mat4 MVPmatrix = camera->getProjectionMatrix() * MVMatrix;
+	glm::mat4 depMVPmatrix = camera->getDepthProjectionMatrix() * MVMatrix;
+	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MMatrix));
+
+	glDisable(GL_CULL_FACE);
+	portalInternalShader->useShader();
+	portalInternalShader->setTexture(portalTexture);
+	portalInternalShader->setMatrixes(MVPmatrix, MVMatrix, depMVPmatrix, colorMatrix);
+	mesh->render();
+	glEnable(GL_CULL_FACE);
+}
+
 float Portal::getMinZ(Camera camera)
 {
 	return 0.0f;// return glm::length(camera.position - this->transform.position);
@@ -390,13 +406,19 @@ glm::mat4 Portal::getObliqueProjectionMatrix(std::shared_ptr<Camera> camera)
 	return newProjection;
 }
 
-bool Portal::boundsOverlap(glm::vec2 aMin, glm::vec2 aMax, glm::vec2 bMin, glm::vec2 bMax)
+bool Portal::boundsOverlap(glm::vec2 aMin, glm::vec2 aMax, glm::vec2 bMin, glm::vec2 bMax, bool output)
 {
-	if (bMax.x >= aMin.x && bMin.x <= aMax.x && bMax.y >= aMin.y && bMin.y <= aMax.y)
-		//!(aMin.x == aMax.x || aMin.y != aMax.y || bMin.x == bMax.x || bMin.y != bMax.y))
+	if (output)
 	{
-		//if (!(aMin.x == aMax.x || aMin.y != aMax.y || bMin.x == bMax.x || bMin.y != bMax.y))
-		if (!( ((aMin.x == aMax.x) && (bMin.x == bMax.x)) || ((aMin.x == aMax.x) && (bMin.x == bMax.x))))
+		std::cout << "a: " << aMin.x << " , " << aMax.x << "  :  " << aMin.y << " , " << aMax.y << "\n";
+		std::cout << "b: " << bMin.x << " , " << bMax.x << "  :  " << bMin.y << " , " << bMax.y << "\n";
+	}
+
+
+	if (bMax.x >= aMin.x && bMin.x <= aMax.x && bMax.y >= aMin.y && bMin.y <= aMax.y)
+	{
+		//if (!(((aMin.x == aMax.x) && (bMin.x == bMax.x)) || ((aMin.x == aMax.x) && (bMin.x == bMax.x))))
+		if (!(aMin.x == aMax.x || aMin.y == aMax.y || bMin.x == bMax.x || bMin.y == bMax.y))
 		{
 			return true;
 		}
@@ -521,8 +543,8 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int max
 {
 	if (!otherPortal || !world) return;
 	
-	glm::vec4 portalBox = camera->getViewSpaceBoundingBox(this->transform.getTransformMatrix());
-	//glm::vec4 portalBox = camera->getViewSpaceBoundingBox(getAdjustedPortalMatrix(camera));
+	//glm::vec4 portalBox = camera->getViewSpaceBoundingBox(this->transform.getTransformMatrix());
+	glm::vec4 portalBox = camera->getViewSpaceBoundingBox(getAdjustedPortalMatrix(camera));
 	glm::vec2 pMin = portalBox.xy();
 	glm::vec2 pMax = portalBox.zw();
 
@@ -568,6 +590,11 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int max
 	glStencilFunc(GL_EQUAL, drawDepth + 1, 0xFF); // Now we will only draw pixels where the corresponding stencil buffer value equals 1
 	glStencilMask(0x00);
 
+	//clear the depth behind the portal. That way there is no overdraw from geometry 
+	glDepthFunc(GL_ALWAYS);
+	clearDepth(camera);
+	glDepthFunc(GL_LEQUAL);
+
 	// ... here you render your image on the computer screen (or whatever) that should be limited by the previous geometry ...
 	portalCam->projectionMatrix = getObliqueProjectionMatrix(camera);
 
@@ -581,8 +608,6 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int max
 	otherPortal->world->visible = false;
 	this->world->visible = true;
 
-	glDisable(GL_STENCIL_TEST);
-
 	if (drawDepth < maxDepth)
 	{
 		for (int i = 0; i < portalList.size(); i++)
@@ -594,7 +619,7 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int max
 				glm::vec2 oMin = glm::vec2(otherBox.xy());
 				glm::vec2 oMax = glm::vec2(otherBox.zw());
 
-				if (boundsOverlap(oMin, oMax, pMin, pMax))
+				if (boundsOverlap(oMin, oMax, pMin, pMax, false))
 				{
 					portalList[i]->portalRender(portalCam, drawDepth + 1, maxDepth, portalList, false);
 				}
@@ -606,11 +631,11 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int max
 	drawStencil(camera);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Make sure we draw on the backbuffer again.
 
+	glDisable(GL_STENCIL_TEST);
 
 	//glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
 	//drawStencil(camera);
 	//glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Make sure we draw on the backbuffer again.
-
 
 	//after you draw the world, redraw the depth
 //	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
@@ -739,7 +764,7 @@ void Portal::preRenderPortals(std::shared_ptr<Camera> camera, int depth)
 		portalList[i]->transform.setPosition(nPos);
 		*/
 	}
-	
+
 	for (int i = 0; i < portalList.size(); i++)
 	{
 		glm::vec4 portalBox = camera->getViewSpaceBoundingBox(portalList[i]->getAdjustedPortalMatrix(camera));

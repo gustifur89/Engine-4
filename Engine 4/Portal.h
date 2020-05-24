@@ -41,7 +41,7 @@ public:
 	~Portal();
 
 	static void setDebugShader(std::shared_ptr<Shader> debugShader);
-	static void setInternalShader(std::shared_ptr<WindowShader> portalInternalShader);
+	static void setInternalShader(std::shared_ptr<PortalShader> portalInternalShader);
 	static GLuint debugVBO;
 	static GLuint debugVAO;
 	static GLuint internalPortalVBO;
@@ -53,7 +53,7 @@ public:
 	void setUpDebugRect();
 	void updateDebugRect(glm::vec4 bounds);
 	void drawDubugRect();
-	static std::shared_ptr<WindowShader> portalInternalShader;
+	static std::shared_ptr<PortalShader> portalInternalShader;
 	static std::shared_ptr<Shader> debugShader;
 
 	bool isCameraInBounds(std::shared_ptr<Camera> camera);
@@ -61,9 +61,10 @@ public:
 	void renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform);
 	void portalRender(std::shared_ptr<Camera> camera, int drawDepth, int maxDepth, std::vector<std::shared_ptr<Portal>> portalList, bool primaryDraw = true);
 	void drawStencil(std::shared_ptr<Camera> camera);
+	void clearDepth(std::shared_ptr<Camera> camera);
 	float getMinZ(Camera camera);
 	glm::mat4 getObliqueProjectionMatrix(std::shared_ptr<Camera> camera);
-	static bool boundsOverlap(glm::vec2 aMin, glm::vec2 aMax, glm::vec2 bMin, glm::vec2 bMax);
+	static bool boundsOverlap(glm::vec2 aMin, glm::vec2 aMax, glm::vec2 bMin, glm::vec2 bMax, bool output = false);
 	glm::mat4 getAdjustedPortalMatrix(std::shared_ptr<Camera> camera);
 
 	bool action(std::shared_ptr<GameObject> object, glm::vec3 difference, bool* didTeleport, glm::vec3* teleThisPt, glm::vec3* teleNextPt, glm::quat* newRot);

@@ -16,9 +16,7 @@
 #include <queue>
 #include <stack>
 #include <algorithm>
-
 #include <GL/glew.h>
-
 
 #include <GLFW/glfw3.h>
 
@@ -36,4 +34,5 @@
 #include <GL/GLU.h>
 
 #include "PerlinNoise.hpp"
+
 
