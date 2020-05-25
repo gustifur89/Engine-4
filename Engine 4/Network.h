@@ -11,8 +11,9 @@ private:
 
 public:
 	std::string lastUpdate;
+	bool didUpdate;
 
-	ClientData(int id) : id_(id) {}
+	ClientData(int id) : id_(id) { didUpdate = false; }
 
 	std::shared_ptr<GameObject> clientObject;
 	std::queue<glm::vec3> posQue;
@@ -45,6 +46,7 @@ public:
 	static const int FLOAT_SIZE;
 	static const int RECIEVE_DELAY;
 	static const int SEND_DELAY;
+	static const int HEARTBEAT_TIMESTEP;
 
 	static void ReadAddressFromFile(std::string fileName, std::string* address, int* port, bool* valid);
 	static std::string packData(int id, glm::vec3 position, glm::vec3 velocity);
@@ -82,8 +84,10 @@ public:
 	void ParseData(ENetHost* server, char* data);
 	void BroadcastPacket(ENetHost* server, std::string data);
 	void SendPacket(ENetPeer* peer, std::string data);
-
+	void* serverHeartbeat(ENetHost* server);
 	
+	bool heartbeatMutex;
+
 	Server() : Network() {}
 	void start();
 	//parameters

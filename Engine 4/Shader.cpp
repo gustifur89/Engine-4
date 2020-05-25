@@ -443,6 +443,7 @@ std::shared_ptr<TextureShader> TextureShader::loadShader(std::string fileName)
 	out->mm = out->getUniformLocation("MM");
 	out->dep_mvp = out->getUniformLocation("DepthMVP");
 	out->cm = out->getUniformLocation("ColorMatrix");
+	out->useShader();
 	out->loadMatrix(out->cm, glm::mat4(1.0));
 	out->texLoc = out->getUniformLocation("tex");
 	out->shininessLoc = out->getUniformLocation("specular");
@@ -473,6 +474,7 @@ std::shared_ptr<SkyBoxShader> SkyBoxShader::loadShader(std::string fileName)
 	out->Shader::loadShader_(fileName, fileName);
 	out->pvm = out->getUniformLocation("PVM");
 	out->cm = out->getUniformLocation("ColorMatrix");
+	out->useShader();
 	out->loadMatrix(out->cm, glm::mat4(1.0));
 	out->skyBoxLoc = out->getUniformLocation("skybox");
 	return out;
@@ -498,6 +500,7 @@ std::shared_ptr<PortalShader> PortalShader::loadShader(std::string fileName)
 	out->mvp = out->getUniformLocation("MVP");
 	out->mv = out->getUniformLocation("MV");
 	out->cm = out->getUniformLocation("ColorMatrix");
+	out->useShader();
 	out->loadMatrix(out->cm, glm::mat4(1.0));
 	out->colLoc = out->getUniformLocation("colTex");
 	out->depLoc = out->getUniformLocation("depthTex");
@@ -520,4 +523,36 @@ void PortalShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 depthMVP, 
 	loadMatrix(mvp, MVP);
 	loadMatrix(mv, MV);
 	loadMatrix(cm, colorMatrix);
+}
+
+// ========================================= WindowShader ==============================
+
+void WindowShader::setGlobalLight(glm::vec3 globalLight)
+{
+	useShader();
+	loadVector(globalLightLoc, globalLight);
+}
+
+void WindowShader::setViewMatrix(glm::mat4 viewMatrix)
+{
+	useShader();
+	loadMatrix(viewMatrixLoc, viewMatrix);
+	loadMatrix(normalViewMatrixLoc, glm::transpose(glm::inverse(viewMatrix)));
+}
+
+void WindowShader::setAmbient(float ambient)
+{
+	loadFloat(ambientLoc, ambient);
+}
+
+std::shared_ptr<WindowShader> WindowShader::loadShader(std::string vertName, std::string fragName)
+{
+	std::shared_ptr<WindowShader> out(new WindowShader);
+	out->Shader::loadShader_(vertName, fragName);
+	out->useShader();
+	out->globalLightLoc = out->getUniformLocation("globalLight");
+	out->viewMatrixLoc = out->getUniformLocation("viewMatrix");
+	out->normalViewMatrixLoc = out->getUniformLocation("normalViewMatrix");
+	out->ambientLoc = out->getUniformLocation("ambient");
+	return out;
 }

@@ -21,6 +21,11 @@ std::shared_ptr<Texture> Texture::loadFromFile(std::string fileName, int blendMo
 
 	unsigned char *data = stbi_load(fileName.c_str(), &width, &height, &nrChannels, STBI);
 
+    if (data == NULL)
+    {
+        std::cout << "failed to load texture at " << fileName << "\n";
+    }
+
 	std::shared_ptr<Texture> texture(new Texture());
 	
     bool mipmap = false;
@@ -65,8 +70,10 @@ std::shared_ptr<Texture> Texture::loadFromFile(std::string fileName, int blendMo
         glGenerateMipmap(GL_TEXTURE_2D);
 
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, blendMode);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, magBlendMode);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, blendMode);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, magBlendMode);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, blendMode);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magBlendMode);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 

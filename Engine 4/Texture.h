@@ -20,7 +20,7 @@ public:
 	GLuint textureID;
 };
 
-class SkyBoxTexture
+class SkyBoxTexture : public Texture
 {
 private:
 	// Data read from the header of the BMP file

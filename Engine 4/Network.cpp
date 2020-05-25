@@ -3,8 +3,9 @@
 // =============== Network =================
 
 const int Network::FLOAT_SIZE = 10;
-const int  Network::RECIEVE_DELAY = 5;
-const int  Network::SEND_DELAY = 5;
+const int Network::RECIEVE_DELAY = 10;
+const int Network::SEND_DELAY = 10;
+const int Network::HEARTBEAT_TIMESTEP = 100;
 
 void Network::ReadAddressFromFile(std::string fileName, std::string* address, int* port, bool* valid)
 {
@@ -136,13 +137,16 @@ void Server::ParseData(ENetHost* server, char* data)
 		case Network::TYPE_FLAG::UPDATE:
 		{
 			//BroadcastPacket(server, PacketData::MakeServerPacket(TYPE_FLAG::MESSAGE, id, msg));
-			BroadcastPacket(server, data);
-
-			//update our own...
+			//BroadcastPacket(server, data);
+			while (heartbeatMutex) { Sleep(1); };
+			heartbeatMutex = true;
+			//update our own...  this will be broadcast later
 			if (clientMap[id])
 			{
 				clientMap[id]->lastUpdate = data;
+				clientMap[id]->didUpdate = true;
 			}
+			heartbeatMutex = false;
 
 		}
 		break;
@@ -169,6 +173,32 @@ void Server::SendPacket(ENetPeer* peer, std::string data)
 	enet_peer_send(peer, 0, packet);
 }
 
+void* Server::serverHeartbeat(ENetHost* server)
+{
+	//the server sends a broadcast of all player position to all the other players every HEARTBEAT_TIMESTEP
+
+	while (running)
+	{
+		Sleep(HEARTBEAT_TIMESTEP);
+
+		while (heartbeatMutex) { Sleep(1); };
+		heartbeatMutex = true;
+		//go through and send all updates
+		for (auto const& x : clientMap)
+		{
+			if (x.second->didUpdate)
+			{
+				BroadcastPacket(server, x.second->lastUpdate);
+				x.second->didUpdate = false;
+			}
+			
+		}
+		heartbeatMutex = false;
+	}
+
+	return nullptr;
+}
+
 void Server::start()
 {
 	mainThread = std::thread(&Server::server, this);
@@ -191,6 +221,7 @@ void* Server::server()
 
 	enet_address_set_host(&address, ipAddress.c_str());// "127.0.0.1");
 	//address.host = ENET_HOST_ANY;
+	//address.host = ENET_HOST_ANY;
 	address.port = port;
 
 	server = enet_host_create(&address,
@@ -206,11 +237,15 @@ void* Server::server()
 	}
 	
 	connectionValid = true;
-
-	std::cout << "Server created at " << ipAddress << ":" << port << "\n";
+	heartbeatMutex = false;
+//	std::cout << "Server created at " << ipAddress << ":" << port << "\n";
+	std::cout << "Server created at " << address.host << ":" << address.port << "\n";
 
 	int new_player_id = 0;
 	running = true;
+
+	subThread = std::thread(&Server::serverHeartbeat, this, server);
+	subThread.detach();
 
 	while (running)
 	{
@@ -259,6 +294,16 @@ void* Server::server()
 				new_player_id++;
 				clientMap[new_player_id] = new ClientData(new_player_id);
 				event.peer->data = clientMap[new_player_id];
+				//set the initial update
+				std::string initUpdate = "";
+				initUpdate += std::to_string(Network::TYPE_FLAG::UPDATE);
+				initUpdate += "|";
+				initUpdate += std::to_string(new_player_id);
+				initUpdate += "|";
+				initUpdate += "0.0,0.0,0.0,0.0,0.0,0.0"; // pos = (0,0,0), vel = (0,0,0)
+				clientMap[new_player_id]->lastUpdate = initUpdate;
+				clientMap[new_player_id]->didUpdate = true;
+
 				//create the message to tell the guy his id
 				std::string userIdMsg = "";
 				userIdMsg += std::to_string(Network::TYPE_FLAG::SET_USER_ID);
@@ -340,13 +385,13 @@ void Client::ParseData(char* data)
 			if (id != clientID)
 			{
 				
-				if (clientMap[id] && clientMap[id]->clientObject)
+				if (clientMap[id])
 				{
 					//delays until we can touch the data.
-					while (clientMap[id]->updateMutex) {}
+					while (clientMap[id]->updateMutex) { Sleep(1); }
 
 					clientMap[id]->updateMutex = true;
-				//	std::cout << id << " : " << msg << "\n";
+					std::cout << id << " : " << msg << "\n";
 					glm::vec3 pos, vel;
 					Network::readPacketData(msg, &pos, &vel);
 										
@@ -370,7 +415,38 @@ void Client::ParseData(char* data)
 		case Network::TYPE_FLAG::SET_USER_ID:
 		{	
 			if (clientID == -1)
+			{
 				clientID = id;
+				while (posQue.size() > 0)
+				{
+					posInt = posQue.front();
+					posQue.pop();
+				}
+				while (velQue.size() > 0)
+				{
+					velInt = velQue.front();
+					velQue.pop();
+				}
+
+				//we only update if velocity changes. Because the simulations should sinc well enough
+				// but velocity changes simulation much more than position...
+				//if (posInt != oldPos || velInt != oldVel)
+				if (velInt != oldVel)
+				{
+					//new values so update
+					/*
+					std::string msg = "";
+					msg += std::to_string(Network::TYPE_FLAG::UPDATE);
+					msg += "|";
+					msg += std::to_string(clientID);
+					msg += "|";
+					msg += Network::packData(clientID, posInt, velInt);
+					SendPacket(peer, msg);
+					oldVel = velInt;
+					oldPos = posInt;
+					*/
+				}
+			}
 		break;
 		}
 	}
@@ -421,7 +497,7 @@ void* Client::client()
 	ENetEvent event;
 	ENetPeer* peer;
 
-	enet_address_set_host(&address, ipAddress.c_str());// "127.0.0.1");
+	enet_address_set_host_ip(&address, ipAddress.c_str());// "127.0.0.1");
 	address.port = port;// 7777;
 
 	peer = enet_host_connect(client, &address, 1, 0);
@@ -434,7 +510,8 @@ void* Client::client()
 	if (enet_host_service(client, &event, 5000) > 0 &&
 		event.type == ENET_EVENT_TYPE_CONNECT)
 	{
-		std::cout << "connection to " << ipAddress<<":"<< port <<" succeeded\n";
+		//std::cout << "connection to " << ipAddress<<":"<< port <<" succeeded\n";
+		std::cout << "connection to " << address.host << ":" << address.port << " succeeded\n";
 		connectionValid = true;
 	}
 	else
@@ -511,7 +588,10 @@ void* Client::msgLoop(ENetHost* client, ENetPeer* peer)
 			velQue.pop();
 		}
 
-		if (posInt != oldPos || velInt != oldVel)
+		//we only update if velocity changes. Because the simulations should sinc well enough
+		// but velocity changes simulation much more than position...
+		//if (posInt != oldPos || velInt != oldVel)
+		if (velInt != oldVel)
 		{
 			//new values so update
 			std::string msg = "";

@@ -1,6 +1,7 @@
 #include "Header.h"
 #include "IOManager.h"
-#include "WindowShader.h"
+//#include "WindowShader.h"
+#include "Shader.h"
 #include "Toggle.h"
 #include "Primitives.h"
 #include "Physics.h"
@@ -9,6 +10,7 @@
 #include "SkyBox.h"
 #include "Portal.h"
 #include "Network.h"
+#include "FileReader.h"
 
 void checkGLError(std::string tag)
 {
@@ -19,7 +21,7 @@ void checkGLError(std::string tag)
 
 	GLenum err;
 	while ((err = glGetError())) {
-		std::cout << tag << "- error : " << (err) << "\n";
+		std::cout << tag << " : error : " << (err) << "\n";
 	}
 
 }
@@ -29,7 +31,8 @@ glm::quat cameraOrientation = glm::quat(glm::radians(glm::vec3(0,0,0)));
 Toggle movemodeToggle;
 float playerFriction = 0.8;
 float playerElasticity = 0.0;
-float playerRadius = 0.4;
+float playerRadius = 0.2;
+float slipRange = 1.0; // this is the radius of uncertainty the network players can be in before it snaps
 
 void move(IOManager& IO, std::shared_ptr<GameObject> player)
 {
@@ -373,40 +376,24 @@ int main()
 	int WIDTH = 1000;
 	int HEIGHT = 800;
 	IO.createWindow(WIDTH, HEIGHT, "test", 30);
-	IO.setClearColor(255, 0, 0);// pink
-	//IO.setClearColor(214, 252, 255);
-	std::shared_ptr<WindowShader> windowShader = WindowShader::loadShader("screen", "window");
-	windowShader->setGlobalLight(glm::normalize(glm::vec3(-1, 1, -1)));
-	windowShader->setAmbient(1.0);
+	IO.setClearColor(0, 0, 0);
 	Primitive::init();
-	IO.setWindowShader(windowShader);
 
-	std::shared_ptr<PortalShader> portalInternalShader = PortalShader::loadShader("portalDepthClear");
-	Portal::setInternalShader(portalInternalShader);
-	std::shared_ptr<Shader> debugShader = Shader::loadShader("screen", "portalDebug");
-	Portal::setDebugShader(debugShader);
-	std::shared_ptr<ColorShader> colorShader = ColorShader::loadShader("color");
-	std::shared_ptr<TextureShader> textureShader = TextureShader::loadShader("texture");
-	std::shared_ptr<TextureShader> autoTextureShader = TextureShader::loadShader("texture_tessalate");
-	std::shared_ptr<SkyBoxShader> skyboxShader = SkyBoxShader::loadShader("skybox");
-	std::shared_ptr<PortalShader> portalShader = PortalShader::loadShader("portal");
+	std::map<std::string, std::shared_ptr<Shader>> shaderCollection = FileReader::readShaderFile("shaders.txt");
+	std::map<std::string, std::shared_ptr<Mesh>> meshCollection = FileReader::readMeshFile("meshes.txt");
+	std::map<std::string, std::shared_ptr<Texture>> textureCollection = FileReader::readTextureFile("textures.txt");
 
-	std::shared_ptr<ColorMesh> cubeMesh = ColorMesh::loadFromFile("cube");
-	std::shared_ptr<ColorMesh> torusMesh = ColorMesh::loadFromFile("torus");
-	std::shared_ptr<ColorMesh> sphereMesh = ColorMesh::loadFromFile("smoothSphere");
-	std::shared_ptr<ColorMesh> smoothTorusMesh = ColorMesh::loadFromFile("smoothTorus");
-	std::shared_ptr<ColorMesh> arbitMesh = ColorMesh::loadFromFile("testGround"); //random testGround
-	std::shared_ptr<ColorMesh> trisMesh = ColorMesh::loadFromFile("tris");
-	std::shared_ptr<ColorMesh> grapplingHookMesh = ColorMesh::loadFromFile("GrapplingHook");
-	std::shared_ptr<ColorMesh> grappleRopeMesh = ColorMesh::loadFromFile("GrappleRope");
-	std::shared_ptr<ColorMesh> portalMesh = ColorMesh::loadFromFile("portalMesh");
+	std::static_pointer_cast<WindowShader>(shaderCollection["window"])->setGlobalLight(glm::normalize(glm::vec3(-1, 1, -1)));
+	std::static_pointer_cast<WindowShader>(shaderCollection["window"])->setAmbient(1.0);
+	IO.setWindowShader(std::static_pointer_cast<WindowShader>(shaderCollection["window"]));
 
-	std::shared_ptr<TextureMesh> texCubeMesh = TextureMesh::loadFromFile("textCube");
-	std::shared_ptr<TextureMesh> texGround = TextureMesh::loadFromFile("testGround_tex");
-	std::shared_ptr<TextureMesh> bakedMesh = TextureMesh::loadFromFile("Yellow_room");//level_0 lab
+	Portal::setInternalShader(std::static_pointer_cast<PortalShader>(shaderCollection["portalInternal"]));
+	Portal::setDebugShader(std::static_pointer_cast<Shader>(shaderCollection["debug"]));
 
-	std::shared_ptr<Texture> t_blue_32 = Texture::loadFromFile("blue_32.png", GL_NEAREST_MIPMAP_NEAREST, true);
-	std::shared_ptr<Texture> t_BakedRender = Texture::loadFromFile("TexBake.png", GL_NEAREST, false); // TextureBake RenderTexture
+
+	/*
+	std::shared_ptr<Texture> t_blue_32 = Texture::loadFromFile("blue_32.png", GL_LINEAR_MIPMAP_LINEAR, true);
+	std::shared_ptr<Texture> t_BakedRender = Texture::loadFromFile("cargoBake.png", GL_NEAREST, false); // TextureBake RenderTexture TexBake TexBake0																								  
 	/*std::vector<std::string> starsFiles ={
 		"s_right.png",
 		"s_left.png",
@@ -414,7 +401,7 @@ int main()
 		"s_bottom.png",
 		"s_front.png",
 		"s_back.png",
-	};*/
+	};* /
 	/*std::vector<std::string> starsFiles ={
 		"skyMap_4.png",	//skyMap_2// -
 		"skyMap_2.png",	//skyMap_4
@@ -422,25 +409,25 @@ int main()
 		"skyMap_1.png",	//skyMap_1 // -
 		"skyMap_5.png",	//skyMap_5 // -
 		"skyMap_0.png"	//skyMap_0 // -
-	};*/
-	/*std::vector<std::string> starsFiles = {
+	};* /
+	std::vector<std::string> starsFiles = {
 		"test_1_right.png",		//skyMap_2// -
 		"test_1_left.png",		//skyMap_4
 		"test_1_top.png",		//skyMap_3 // -
 		"test_1_bottom.png",	//skyMap_1 // -
 		"test_1_front.png",		//skyMap_5 // -
 		"test_1_back.png"		//skyMap_0 // -
-	};*/
-	std::vector<std::string> starsFiles = {
+	};
+	/*std::vector<std::string> starsFiles = {
 		"BlueSky_right.png",		//skyMap_2// -
 		"BlueSky_left.png",			//skyMap_4
 		"BlueSky_top.png",			//skyMap_3 // -
 		"BlueSky_bottom.png",		//skyMap_1 // -
 		"BlueSky_front.png",		//skyMap_5 // -
 		"BlueSky_back.png"			//skyMap_0 // -
-	}; 
+	}; * /
 	std::shared_ptr<SkyBoxTexture> sb_stars = SkyBoxTexture::loadFromFile(starsFiles, GL_LINEAR_MIPMAP_LINEAR, true);
-
+	*/
 	std::shared_ptr<GameObject> stage(new GameObject);
 	
 	//makeBunchOfStuff(stage, cubeMesh, colorShader, 25);
@@ -466,18 +453,17 @@ int main()
 	SkyBox* skyBox_ = new SkyBox();
 
 	std::shared_ptr<SkyBox> skyBox = std::shared_ptr<SkyBox>(skyBox_);
-
-	skyBox->shader = skyboxShader;
+	skyBox->shader = std::static_pointer_cast<SkyBoxShader>(shaderCollection["skybox"]);//skyboxShader;
 	skyBox->transform.setRotation(180, 0, 0);
-	skyBox->texture = sb_stars;
+	skyBox->texture = std::static_pointer_cast<SkyBoxTexture>(textureCollection["sb_stars"]);;
 	skyBox->transform.setScale(0.1, 0.1, 0.1);
 	stage->addChild(skyBox);
 
 	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	floor->transform.setPosition(0, 0, 0);
-	floor->shader = textureShader;//textureShader autoTextureShader
-	floor->texture = t_BakedRender;
-	floor->mesh = bakedMesh;
+	floor->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
+	floor->texture = textureCollection["t_BakedRender"];//t_BakedRender;
+	floor->mesh = meshCollection["cargoHauler"];//bakedMesh; baked
 	stage->addChild(floor);
 
 //	std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);
@@ -487,11 +473,11 @@ int main()
 	std::shared_ptr<TempSoup> empty = std::shared_ptr<TempSoup>(new TempSoup);
 	empty->create(NULL, glm::mat4(1.0));
 
-	std::shared_ptr<ColorMesh> nStage = ColorMesh::meshFromTriangles(tree->triangles, 100, 100, 100, 0.1);
-	std::shared_ptr<GameObjectColor> nFloor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	nFloor->transform.setPosition(0, 0, 0);
-	nFloor->shader = colorShader; 
-	nFloor->mesh = nStage;
+	//std::shared_ptr<ColorMesh> nStage = ColorMesh::meshFromTriangles(tree->triangles, 100, 100, 100, 0.1);
+	//std::shared_ptr<GameObjectColor> nFloor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
+	//nFloor->transform.setPosition(0, 0, 0);
+	//nFloor->shader = colorShader; 
+	//nFloor->mesh = nStage;
 	//stage->addChild(nFloor);
 
 	std::shared_ptr<Camera> camera(new Camera(90.0f, IO.aspectRatio, 0.1f, 100.0f));
@@ -507,7 +493,7 @@ int main()
 	float dt = 1.0 / 30.0f;
 
 	std::shared_ptr<GameObjectColor> player = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	player->transform.setPosition(0, 1, -3);
+	player->transform.setPosition(0, 0.2, 0);
 	stage->addChild(player);
 
 	std::shared_ptr<GameObject> hand = std::shared_ptr<GameObject>(new GameObject);
@@ -526,7 +512,8 @@ int main()
 
 	glm::vec3 gravity = 30.0f * glm::vec3(0, -1, 0);
 
-	Portal::loadPortalList(stage, WIDTH, HEIGHT, portalShader, portalMesh, "portals.txt");
+	//Portal::loadPortalList(stage, WIDTH, HEIGHT, portalShader, portalMesh, "portals.txt");
+	Portal::loadPortalList(stage, WIDTH, HEIGHT, std::static_pointer_cast<PortalShader>(shaderCollection["portal"]), std::static_pointer_cast<ColorMesh>(meshCollection["portal"]), "portals.txt");
 
 	std::shared_ptr<Server> network;
 	if (network = std::static_pointer_cast<Server>(Network::makeNetwork(Network::NETWORK_TYPE::SERVER, "addressServer.txt")))
@@ -539,15 +526,19 @@ int main()
 	std::shared_ptr<Client> networkClient = std::static_pointer_cast<Client>(Network::makeNetwork(Network::NETWORK_TYPE::CLIENT, "addressClient.txt"));
 	networkClient->start();
 
+	checkGLError("setup");
+
 	do
 	{
+		dt = IO.deltaTime;
 		if (mouseLockToggle.toggle(IO.isKeyPressed(GLFW_KEY_2)))
 		{
 			IO.toggleMouseState();
 		}
 
 		//if (shootToggle.toggle(IO.isMouseDown(GLFW_MOUSE_BUTTON_1)))
-		if(IO.isMouseDown(GLFW_MOUSE_BUTTON_1) && shootDelay <= reloadTime)
+		shootToggle.toggle(IO.isMouseDown(GLFW_KEY_B));
+		if(shootToggle.getState() && IO.isMouseDown(GLFW_MOUSE_BUTTON_1) && shootDelay <= reloadTime)
 		{
 			reloadTime = 0.0;
 			//spawn a fancy ball.
@@ -564,7 +555,7 @@ int main()
 				float speed = 6.0f * ((rand() % 10000) / 10000.0) + 8.0f;
 				float elast = 0.66 * ((rand() % 10000) / 10000.0);
 
-				std::shared_ptr<GameObjectColor> ball = Primitive::makeSphere(0.1, colorShader, r, g, b, 3.0);
+				std::shared_ptr<GameObjectColor> ball = Primitive::makeSphere(0.1, std::static_pointer_cast<ColorShader>(shaderCollection["color"]), r, g, b, 3.0);
 				
 				glm::vec3 angles = angleSweep * glm::vec3(xa, ya, za);
 
@@ -587,7 +578,7 @@ int main()
 		
 		if (IO.isKeyPressed(GLFW_KEY_8))
 		{
-			player->transform.setPosition(0, 6, 0);
+			player->transform.setPosition(0, 0.2, 0);
 			player->velocity = glm::vec3(0);
 		}
 
@@ -622,7 +613,7 @@ int main()
 			int r = rand() % 155 + 100;
 			int g = rand() % 155 + 100;
 			int b = rand() % 155 + 100;
-			std::shared_ptr<GameObjectColor> nPlayer = Primitive::makeSphere(playerRadius, colorShader, r, g, b, 3.0);
+			std::shared_ptr<GameObjectColor> nPlayer = Primitive::makeSphere(playerRadius, std::static_pointer_cast<ColorShader>(shaderCollection["color"]), r, g, b, 3.0);
 			nPlayer->transform.setPosition(0, 0, 0);
 			stage->addChild(nPlayer);
 			nPlayer->friction = playerFriction;
@@ -639,30 +630,74 @@ int main()
 		for (auto const& clientPair : networkClient->clientMap)
 		{
 			//read the pos/vel
+			/* SNAP UPDATE PARADIGM
 			if (clientPair.second)
 			{
 				if (!clientPair.second->updateMutex)
 				{
 					clientPair.second->updateMutex = true;
-					glm::vec3 posInt, velInt;
-					while (clientPair.second->posQue.size() > 0)
+					if (clientPair.second->posQue.size() > 0)
 					{
-						posInt = clientPair.second->posQue.front();
-						clientPair.second->posQue.pop();
+						glm::vec3 posInt;
+						while (clientPair.second->posQue.size() > 0)
+						{
+							posInt = clientPair.second->posQue.front();
+							clientPair.second->posQue.pop();
+						}
+						clientPair.second->clientObject->transform.setPosition(posInt);
 					}
-					while (clientPair.second->velQue.size() > 0)
+					if (clientPair.second->velQue.size() > 0)
 					{
-						velInt = clientPair.second->velQue.front();
-						clientPair.second->velQue.pop();
+						glm::vec3 velInt;
+						while (clientPair.second->velQue.size() > 0)
+						{
+							velInt = clientPair.second->velQue.front();
+							clientPair.second->velQue.pop();
+							clientPair.second->clientObject->velocity = velInt;
+						}
 					}
-					clientPair.second->clientObject->transform.setPosition(posInt);
-					clientPair.second->clientObject->velocity = velInt;
+					clientPair.second->updateMutex = false;
+				}
+			}
+			*/
+			// Dead reckon paradigm
+			// set velocity + lerp (with physics...).
+			if (clientPair.second)
+			{
+				if (!clientPair.second->updateMutex)
+				{
+					clientPair.second->updateMutex = true;
+					if (clientPair.second->posQue.size() > 0)
+					{
+						glm::vec3 posInt;
+						while (clientPair.second->posQue.size() > 0)
+						{
+							posInt = clientPair.second->posQue.front();
+							clientPair.second->posQue.pop();
+						}
+						//check the snap
+						float slip = glm::length(posInt - clientPair.second->clientObject->transform.getPosition());
+						if (slip > slipRange)
+						{
+							clientPair.second->clientObject->transform.setPosition(posInt);
+						}
+						//clientPair.second->clientObject->transform.setPosition(posInt);
+					}
+					if (clientPair.second->velQue.size() > 0)
+					{
+						glm::vec3 velInt;
+						while (clientPair.second->velQue.size() > 0)
+						{
+							velInt = clientPair.second->velQue.front();
+							clientPair.second->velQue.pop();
+							clientPair.second->clientObject->velocity = velInt;
+						}
+					}
 					clientPair.second->updateMutex = false;
 				}
 			}
 		}
 		
-
 		//apply physics to everything
 		for (std::shared_ptr<GameObject> object : physicsList)
 		{
@@ -702,12 +737,10 @@ int main()
 		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));
 		hand->transform.setRotation(cameraRotation);
 		
-		skyBox->transform.rotate(dt * glm::normalize(glm::vec3(((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0))));
-		
-		
+
 		networkClient->updateNetworkPosVel(player->transform.getPosition(), player->velocity);
 		Portal::preRenderPortals(camera, 2);
-		windowShader->setViewMatrix(camera->getTransformMatrix());
+		std::static_pointer_cast<WindowShader>(shaderCollection["window"])->setViewMatrix(camera->getTransformMatrix());
 		IO.display(camera, stage);
 		checkGLError("in");
 	} while (IO.isWindowOpen());

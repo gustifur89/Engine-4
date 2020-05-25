@@ -1,4 +1,5 @@
 #pragma once
+/*
 #include "Header.h"
 #include "Shader.h"
 
@@ -18,3 +19,4 @@ public:
 	static std::shared_ptr<WindowShader> loadShader(std::string vertName, std::string fragName);
 };
 
+*/

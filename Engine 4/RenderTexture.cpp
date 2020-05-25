@@ -146,8 +146,6 @@ ScreenBufferRenderTexture::ScreenBufferRenderTexture(int width, int height)
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencilrenderbuffer);
 	*/
 
-
-
 	// Set the list of draw buffers.
 	GLenum DrawBuffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 	glDrawBuffers(2, DrawBuffers); // "1" is the size of DrawBuffers
@@ -158,7 +156,6 @@ ScreenBufferRenderTexture::ScreenBufferRenderTexture(int width, int height)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
-
 
 //=========================== RenderTexture2D =============================
 

@@ -1,0 +1,10 @@
+Texture t_blue_32 blue_32.png GL_LINEAR_MIPMAP_LINEAR true
+Texture t_BakedRender cargoBake.png GL_NEAREST false
+SkyBoxTexture sb_stars 
+	test_1_right.png
+	test_1_left.png
+	test_1_top.png
+	test_1_bottom.png
+	test_1_front.png
+	test_1_back.png
+	GL_LINEAR_MIPMAP_LINEAR true

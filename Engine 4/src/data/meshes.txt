@@ -1,0 +1,12 @@
+ColorMesh cube cube
+ColorMesh torus torus
+ColorMesh sphere smoothSphere
+ColorMesh arbit testGround
+ColorMesh tris tris
+ColorMesh grapplingHook GrapplingHook
+//this shouldn't be read....
+ColorMesh portal portalMesh
+TextureMesh texCube textCube
+TextureMesh texGround testGround_tex
+TextureMesh baked Yellow_room
+TextureMesh cargoHauler cargo_hauler

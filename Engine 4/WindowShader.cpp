@@ -1,5 +1,6 @@
 #include "WindowShader.h"
 
+/*
 void WindowShader::setGlobalLight(glm::vec3 globalLight)
 {
 	useShader();
@@ -29,3 +30,4 @@ std::shared_ptr<WindowShader> WindowShader::loadShader(std::string vertName, std
 	out->ambientLoc = out->getUniformLocation("ambient");
 	return out;
 }
+*/

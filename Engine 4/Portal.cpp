@@ -816,6 +816,13 @@ void Portal::loadPortalList(std::shared_ptr<GameObject> world, int WIDTH, int HE
 		//assumes you get 9 in.
 		file >> line;
 
+		//test for comment
+		if (line.find("//") != -1)
+		{
+			//skip to next line...
+			std::getline(file, line);
+		}
+
 		if (line == "portal")
 		{
 			float x, y, z, sx, sy, rot;

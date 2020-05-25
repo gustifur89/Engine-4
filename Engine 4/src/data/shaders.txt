@@ -1,0 +1,9 @@
+WindowShader window screen window
+PortalShader portalInternal portalDepthClear portalDepthClear
+Shader debug screen portalDebug
+ColorShader color color color
+TextureShader texture texture texture
+TextureShader autoTexture texture_tessalate texture_tessalate
+SkyBoxShader skybox skybox skybox
+PortalShader portal portal portal
+
