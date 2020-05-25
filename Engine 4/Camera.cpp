@@ -197,7 +197,8 @@ bool Camera::isBoxInView(Bounds bounds, glm::mat4 modelMatrix)
 //	return false;
 			
 	//bounds = bounds.applyMatrix(getTransform() * modelMatrix);
-	return viewFrustum.viewSpaceBoxInFrustum(getTransformMatrix() * modelMatrix, bounds);
+	return isBoxInViewSpace(bounds, modelMatrix);
+	//return viewFrustum.viewSpaceBoxInFrustum(getTransformMatrix() * modelMatrix, bounds);
 }
 
 bool Camera::isScaleInView(glm::mat4 modelMatrix)
@@ -286,7 +287,13 @@ bool Camera::isScaleInView(glm::mat4 modelMatrix)
 	*/
 }
 
-glm::vec4 Camera::getViewSpaceBoundingBox(glm::mat4 modelMatrix)
+bool Camera::isBoxInViewSpace(Bounds bounds, glm::mat4 modelMatrix)
+{
+	glm::vec4 portalBounds = getViewSpaceBoundingBox(modelMatrix, bounds.low, bounds.high);
+	return boundsOverlap(portalBounds.xy(), portalBounds.zw(), glm::vec2(-1, -1), glm::vec2(1, 1));
+}
+
+glm::vec4 Camera::getViewSpaceBoundingBox(glm::mat4 modelMatrix, glm::vec3 low, glm::vec3 high)
 {
 	///MVP
 	glm::mat4 MMatrix = modelMatrix;
@@ -296,14 +303,14 @@ glm::vec4 Camera::getViewSpaceBoundingBox(glm::mat4 modelMatrix)
 	std::vector<glm::vec4> points;
 
 	//get all points og the bounding box in viewspace
-	points.push_back(MVmatrix * glm::vec4(-0.5, -0.5, -0.5, 1));
-	points.push_back(MVmatrix * glm::vec4(-0.5, -0.5,  0.5, 1));
-	points.push_back(MVmatrix * glm::vec4(-0.5,  0.5, -0.5, 1));
-	points.push_back(MVmatrix * glm::vec4(-0.5,  0.5,  0.5, 1));
-	points.push_back(MVmatrix * glm::vec4( 0.5, -0.5, -0.5, 1));
-	points.push_back(MVmatrix * glm::vec4( 0.5, -0.5,  0.5, 1));
-	points.push_back(MVmatrix * glm::vec4( 0.5,  0.5, -0.5, 1));
-	points.push_back(MVmatrix * glm::vec4( 0.5,  0.5,  0.5, 1));
+	points.push_back(MVmatrix * glm::vec4(low.x, low.y, low.z, 1));
+	points.push_back(MVmatrix * glm::vec4(low.x, low.y, high.z, 1));
+	points.push_back(MVmatrix * glm::vec4(low.x,  high.y, low.z, 1));
+	points.push_back(MVmatrix * glm::vec4(low.x,  high.y, high.z, 1));
+	points.push_back(MVmatrix * glm::vec4(high.x, low.y, low.z, 1));
+	points.push_back(MVmatrix * glm::vec4(high.x, low.y, high.z, 1));
+	points.push_back(MVmatrix * glm::vec4(high.x,  high.y, low.z, 1));
+	points.push_back(MVmatrix * glm::vec4(high.x,  high.y, high.z, 1));
 	//points.push_back(MVmatrix * glm::vec4(-0.5, -0.5, 0.0, 1));
 	//points.push_back(MVmatrix * glm::vec4( 0.5, -0.5, 0.0, 1));
 	//points.push_back(MVmatrix * glm::vec4(-0.5,  0.5, 0.0, 1));
@@ -423,7 +430,7 @@ glm::vec4 Camera::getViewSpaceBoundingBox(glm::mat4 modelMatrix)
 	
 	if (numberOfBehind == pts.size() || numOfBehindProper == pts.size())
 	{
-		return glm::vec4(-3, -3, -3, -3);
+		//return glm::vec4(-3, -3, -3, -3);
 	}
 
 	glm::vec2 oMax = pts[0];
@@ -613,6 +620,18 @@ glm::vec4 Camera::getViewSpaceBoundingBox(glm::mat4 modelMatrix)
 	}//*/
 
 	//return glm::vec4(oMin.x, oMin.y, oMax.x, oMax.y);
+}
+
+bool Camera::boundsOverlap(glm::vec2 aMin, glm::vec2 aMax, glm::vec2 bMin, glm::vec2 bMax)
+{
+	if (bMax.x >= aMin.x && bMin.x <= aMax.x && bMax.y >= aMin.y && bMin.y <= aMax.y)
+	{
+		if (!(aMin.x == aMax.x || aMin.y == aMax.y || bMin.x == bMax.x || bMin.y == bMax.y))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 bool Camera::inView(glm::vec3 p)

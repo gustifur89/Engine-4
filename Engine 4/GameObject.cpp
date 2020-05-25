@@ -18,6 +18,7 @@ GameObject::GameObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shade
 	friction = 0.0;
 	collisionReactEnabled = true;
 	physiceEnabled = true;
+	gravityAffected = true;
 	neverDisable = false;
 	noClip = false;
 }
@@ -64,7 +65,8 @@ void GameObject::render(std::shared_ptr<Camera> camera, glm::mat4 parentTransfor
 	}
 	else if (mesh)
 	{
-		if (true || camera->isBoxInView(mesh->bounds, parentTransform * this->transform.getTransformMatrix()))
+		//if (true || camera->isBoxInView(mesh->bounds, parentTransform * this->transform.getTransformMatrix()))
+		if (camera->isBoxInView(mesh->bounds, parentTransform * this->transform.getTransformMatrix()))
 		{
 			this->renderFunc(camera, parentTransform);
 		}

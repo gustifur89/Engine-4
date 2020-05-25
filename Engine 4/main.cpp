@@ -8,6 +8,7 @@
 #include "GrapplingHook.h"
 #include "SkyBox.h"
 #include "Portal.h"
+#include "Network.h"
 
 void checkGLError(std::string tag)
 {
@@ -26,6 +27,10 @@ void checkGLError(std::string tag)
 glm::vec3 cameraRotation;
 glm::quat cameraOrientation = glm::quat(glm::radians(glm::vec3(0,0,0)));
 Toggle movemodeToggle;
+float playerFriction = 0.8;
+float playerElasticity = 0.0;
+float playerRadius = 0.4;
+
 void move(IOManager& IO, std::shared_ptr<GameObject> player)
 {
 	bool w = IO.isKeyPressed(GLFW_KEY_W);
@@ -373,9 +378,7 @@ int main()
 	std::shared_ptr<WindowShader> windowShader = WindowShader::loadShader("screen", "window");
 	windowShader->setGlobalLight(glm::normalize(glm::vec3(-1, 1, -1)));
 	windowShader->setAmbient(1.0);
-
 	Primitive::init();
-
 	IO.setWindowShader(windowShader);
 
 	std::shared_ptr<PortalShader> portalInternalShader = PortalShader::loadShader("portalDepthClear");
@@ -439,7 +442,6 @@ int main()
 	std::shared_ptr<SkyBoxTexture> sb_stars = SkyBoxTexture::loadFromFile(starsFiles, GL_LINEAR_MIPMAP_LINEAR, true);
 
 	std::shared_ptr<GameObject> stage(new GameObject);
-	checkGLError("");
 	
 	//makeBunchOfStuff(stage, cubeMesh, colorShader, 25);
 	//makeBunchOfStuff(stage, sphereMesh, colorShader, 25);
@@ -470,7 +472,6 @@ int main()
 	skyBox->texture = sb_stars;
 	skyBox->transform.setScale(0.1, 0.1, 0.1);
 	stage->addChild(skyBox);
-	//IO.setSkyBox(skyBox);
 
 	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	floor->transform.setPosition(0, 0, 0);
@@ -498,6 +499,7 @@ int main()
 	Toggle mouseLockToggle;
 	Toggle shootToggle;
 	Toggle physicsToggle;
+	Toggle toggleA;
 	Toggle noClip;
 	float shootDelay = 1.0f / 10.0f;
 	float reloadTime = 0.0f;
@@ -512,9 +514,9 @@ int main()
 	glm::vec3 handOffset(0, -0.1, 0);
 	hand->transform.setPosition(handOffset);
 	player->addChild(hand);
-	player->friction = 0.8;
-	player->elasticity = 0.0;
-	player->radius = 0.2;//0.6
+	player->friction = playerFriction;
+	player->elasticity = playerElasticity;
+	player->radius = playerRadius;
 	player->neverDisable = true;
 	player->collisionReactEnabled = true;
 		
@@ -525,6 +527,17 @@ int main()
 	glm::vec3 gravity = 30.0f * glm::vec3(0, -1, 0);
 
 	Portal::loadPortalList(stage, WIDTH, HEIGHT, portalShader, portalMesh, "portals.txt");
+
+	std::shared_ptr<Server> network;
+	if (network = std::static_pointer_cast<Server>(Network::makeNetwork(Network::NETWORK_TYPE::SERVER, "addressServer.txt")))
+	{
+		network->start();
+		//sleeps until the server starts...
+		while (!network->connectionValid) { Sleep(10); };
+	}
+
+	std::shared_ptr<Client> networkClient = std::static_pointer_cast<Client>(Network::makeNetwork(Network::NETWORK_TYPE::CLIENT, "addressClient.txt"));
+	networkClient->start();
 
 	do
 	{
@@ -597,12 +610,64 @@ int main()
 			player->velocity.y = vy;
 		}
 
-
+		//Network:
+		if (toggleA.toggle(IO.isKeyPressed(GLFW_KEY_M)))
+		{
+			std::string msg = "heyo ";
+			msg += std::to_string(IO.deltaTime);
+			networkClient->msgBuffer.push(msg);
+		}
+		while (networkClient->clientsToAdd.size())
+		{
+			int r = rand() % 155 + 100;
+			int g = rand() % 155 + 100;
+			int b = rand() % 155 + 100;
+			std::shared_ptr<GameObjectColor> nPlayer = Primitive::makeSphere(playerRadius, colorShader, r, g, b, 3.0);
+			nPlayer->transform.setPosition(0, 0, 0);
+			stage->addChild(nPlayer);
+			nPlayer->friction = playerFriction;
+			nPlayer->elasticity = playerElasticity;
+			nPlayer->radius = playerRadius;
+			nPlayer->neverDisable = true;
+			nPlayer->collisionReactEnabled = true;
+			nPlayer->gravityAffected = false;
+			physicsList.push_back(nPlayer);
+			networkClient->clientsToAdd.front()->clientObject = nPlayer;
+			networkClient->clientsToAdd.pop();
+			std::cout << "NEW PLAYER!!!!!\n";
+		}
+		for (auto const& clientPair : networkClient->clientMap)
+		{
+			//read the pos/vel
+			if (clientPair.second)
+			{
+				if (!clientPair.second->updateMutex)
+				{
+					clientPair.second->updateMutex = true;
+					glm::vec3 posInt, velInt;
+					while (clientPair.second->posQue.size() > 0)
+					{
+						posInt = clientPair.second->posQue.front();
+						clientPair.second->posQue.pop();
+					}
+					while (clientPair.second->velQue.size() > 0)
+					{
+						velInt = clientPair.second->velQue.front();
+						clientPair.second->velQue.pop();
+					}
+					clientPair.second->clientObject->transform.setPosition(posInt);
+					clientPair.second->clientObject->velocity = velInt;
+					clientPair.second->updateMutex = false;
+				}
+			}
+		}
+		
 
 		//apply physics to everything
 		for (std::shared_ptr<GameObject> object : physicsList)
 		{
-			object->velocity += gravity * dt;
+			if(object->gravityAffected)
+				object->velocity += gravity * dt;
 
 			if (glm::length(object->velocity) > maxSpeed)
 			{
@@ -639,6 +704,8 @@ int main()
 		
 		skyBox->transform.rotate(dt * glm::normalize(glm::vec3(((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0), ((rand() % 10000) / 10000.0))));
 		
+		
+		networkClient->updateNetworkPosVel(player->transform.getPosition(), player->velocity);
 		Portal::preRenderPortals(camera, 2);
 		windowShader->setViewMatrix(camera->getTransformMatrix());
 		IO.display(camera, stage);

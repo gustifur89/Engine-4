@@ -70,6 +70,7 @@ public:
 	bool mouseLockedState;
 	double deltaMouseX, deltaMouseY;
 	double r, g, b;
+	double lastFrameTime;
 	std::string title;
 	float deltaTime;
 	std::shared_ptr<Shader> windowShader;

@@ -406,15 +406,8 @@ glm::mat4 Portal::getObliqueProjectionMatrix(std::shared_ptr<Camera> camera)
 	return newProjection;
 }
 
-bool Portal::boundsOverlap(glm::vec2 aMin, glm::vec2 aMax, glm::vec2 bMin, glm::vec2 bMax, bool output)
+/*bool Portal::boundsOverlap(glm::vec2 aMin, glm::vec2 aMax, glm::vec2 bMin, glm::vec2 bMax)
 {
-	if (output)
-	{
-		std::cout << "a: " << aMin.x << " , " << aMax.x << "  :  " << aMin.y << " , " << aMax.y << "\n";
-		std::cout << "b: " << bMin.x << " , " << bMax.x << "  :  " << bMin.y << " , " << bMax.y << "\n";
-	}
-
-
 	if (bMax.x >= aMin.x && bMin.x <= aMax.x && bMax.y >= aMin.y && bMin.y <= aMax.y)
 	{
 		//if (!(((aMin.x == aMax.x) && (bMin.x == bMax.x)) || ((aMin.x == aMax.x) && (bMin.x == bMax.x))))
@@ -424,7 +417,7 @@ bool Portal::boundsOverlap(glm::vec2 aMin, glm::vec2 aMax, glm::vec2 bMin, glm::
 		}
 	}
 	return false;
-}
+}*/
 
 glm::mat4 Portal::getAdjustedPortalMatrix(std::shared_ptr<Camera> camera)
 {
@@ -486,7 +479,7 @@ bool Portal::action(std::shared_ptr<GameObject> object, glm::vec3 difference, bo
 	glm::vec3 ptOnSurface;
 	glm::vec3 remainder;
 
-	if (tri0.rayIntersectsTriangle(thisP, nextP, &ptOnSurface, &remainder))
+	if (tri0.rayIntersectsTriangle(thisP, nextP, &ptOnSurface, &remainder) || tri1.rayIntersectsTriangle(thisP, nextP, &ptOnSurface, &remainder))
 	{
 		//update position...
 		glm::mat4 m = otherPortal->transform.getTransformMatrix() * glm::inverse(this->transform.getTransformMatrix()) * object->transform.getTransformMatrix();
@@ -498,16 +491,19 @@ bool Portal::action(std::shared_ptr<GameObject> object, glm::vec3 difference, bo
 		glm::vec4 perspective;
 		glm::decompose(m, scale, rotation, translation, skew, perspective);
 
+		object->transform.setRotation(rotation);
 		*newRot = rotation;
 
 		*teleThisPt = otherPortal->transform.getTransformMatrix() * glm::inverse(this->transform.getTransformMatrix()) * glm::vec4(thisP, 1);
 		*teleNextPt = otherPortal->transform.getTransformMatrix() * glm::inverse(this->transform.getTransformMatrix()) * glm::vec4(nextP, 1);
 		object->transform.setRotation(rotation);
-		//object->transform.setPosition(translation);
+		//update velocity
+		object->velocity = otherPortal->transform.getTransformMatrix() * glm::inverse(this->transform.getTransformMatrix()) * glm::vec4(object->velocity, 0);
 		*didTeleport = true;
 		return true;
 	}
-	if (tri1.rayIntersectsTriangle(thisP, nextP, &ptOnSurface, &remainder))
+	/*
+	if (false && tri1.rayIntersectsTriangle(thisP, nextP, &ptOnSurface, &remainder))
 	{
 		glm::mat4 m = otherPortal->transform.getTransformMatrix() * glm::inverse(this->transform.getTransformMatrix()) * object->transform.getTransformMatrix();
 
@@ -523,9 +519,13 @@ bool Portal::action(std::shared_ptr<GameObject> object, glm::vec3 difference, bo
 
 		*teleThisPt = otherPortal->transform.getTransformMatrix() * glm::inverse(this->transform.getTransformMatrix()) * glm::vec4(thisP, 1);
 		*teleNextPt = otherPortal->transform.getTransformMatrix() * glm::inverse(this->transform.getTransformMatrix()) * glm::vec4(nextP, 1);
+		object->transform.setRotation(rotation);
+		//update velocity
+		object->velocity = otherPortal->transform.getTransformMatrix() * glm::inverse(this->transform.getTransformMatrix()) * glm::vec4(object->velocity, 0);
 		*didTeleport = true;
 		return true;
 	}
+	*/
 	return false;
 }
 
@@ -619,7 +619,7 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int max
 				glm::vec2 oMin = glm::vec2(otherBox.xy());
 				glm::vec2 oMax = glm::vec2(otherBox.zw());
 
-				if (boundsOverlap(oMin, oMax, pMin, pMax, false))
+				if (Camera::boundsOverlap(oMin, oMax, pMin, pMax))
 				{
 					portalList[i]->portalRender(portalCam, drawDepth + 1, maxDepth, portalList, false);
 				}
@@ -774,7 +774,7 @@ void Portal::preRenderPortals(std::shared_ptr<Camera> camera, int depth)
 		glm::vec2 sMax = glm::vec2( 1,  1);
 		glm::vec2 sMin = glm::vec2(-1, -1);
 
-		if (boundsOverlap(oMin, oMax, sMin, sMax))
+		if (Camera::boundsOverlap(oMin, oMax, sMin, sMax))
 		{
 			portalList[i]->portalRender(camera, 0, depth, portalList, true);
 		}

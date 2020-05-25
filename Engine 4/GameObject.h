@@ -39,6 +39,7 @@ public:
 	float dynamicFriction;
 	float radius;
 	bool collisionReactEnabled;
+	bool gravityAffected;
 	bool physiceEnabled;
 	bool neverDisable;
 	static float stopSpeed;

@@ -22,7 +22,7 @@ bool IOManager::createWindow(int width, int height, std::string title, int fps)
 	this->aspectRatio = (double) width / height;
 	this->fps = fps;
 	this->timeDelay = 1.0 / fps;
-
+	lastFrameTime = 0.0;
 	glewExperimental = true;
 	if (!glfwInit())
 	{
@@ -137,12 +137,20 @@ bool IOManager::isWindowOpen()
 
 void IOManager::delay(double timeDelay)
 {
-	double sTime = glfwGetTime();
+	/*double sTime = glfwGetTime();
 
 	while (glfwGetTime() - sTime < timeDelay)
 	{
 
 	}
+	*/
+
+	while (glfwGetTime() - lastFrameTime < timeDelay)
+	{
+
+	}
+
+	lastFrameTime = glfwGetTime();
 }
 
 // ===================== IOManager - Keyboard/mouse =============================
