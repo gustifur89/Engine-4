@@ -52,7 +52,6 @@ GBufferRenderTexture::GBufferRenderTexture(int width, int height)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, normTex, 0);
 
-
 	// The depth buffer
 	depthrenderbuffer = 0;
 	glGenRenderbuffers(1, &depthrenderbuffer);
@@ -113,7 +112,7 @@ ScreenBufferRenderTexture::ScreenBufferRenderTexture(int width, int height)
 	depthTex = 0;
 	glGenTextures(1, &depthTex);
 	glBindTexture(GL_TEXTURE_2D, depthTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -121,6 +120,17 @@ ScreenBufferRenderTexture::ScreenBufferRenderTexture(int width, int height)
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, depthTex, 0);
 	
 
+	// The DepthStencil buffer
+	stencilrenderbuffer = 0;
+	glGenRenderbuffers(1, &stencilrenderbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, stencilrenderbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencilrenderbuffer);
+
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	/*
 	// The depth buffer
 	depthrenderbuffer = 0;
 	glGenRenderbuffers(1, &depthrenderbuffer);
@@ -128,13 +138,15 @@ ScreenBufferRenderTexture::ScreenBufferRenderTexture(int width, int height)
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 	
-
 	// The Stencil buffer
 	stencilrenderbuffer = 0;
 	glGenRenderbuffers(1, &stencilrenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, stencilrenderbuffer);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencilrenderbuffer);
+	*/
+
+
 
 	// Set the list of draw buffers.
 	GLenum DrawBuffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
@@ -142,7 +154,7 @@ ScreenBufferRenderTexture::ScreenBufferRenderTexture(int width, int height)
 
 	//check if it is okay
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		fprintf(stderr, "cannot create render texture\n");
+		fprintf(stderr, "cannot create render texture : ScreenBufferRenderTexture\n");
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
