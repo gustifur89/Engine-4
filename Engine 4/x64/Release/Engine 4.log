@@ -1,12 +1,53 @@
-﻿  FileReader.cpp
+﻿  main.cpp
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(12,29): warning C4305: 'initializing': truncation from 'double' to 'const float'
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(583,1): warning C4305: 'initializing': truncation from 'double' to 'float'
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(641,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(642,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(724,18): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(33,27): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(35,25): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(107,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(108,18): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(139,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(140,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(236,15): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(237,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(267,57): warning C4305: '=': truncation from 'double' to 'T'
+          with
+          [
+              T=float
+          ]
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(268,59): warning C4305: '=': truncation from 'double' to 'T'
+          with
+          [
+              T=float
+          ]
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(354,80): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(354,62): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(354,44): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(357,39): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(441,42): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(465,51): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(475,24): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(478,41): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(533,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(534,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(535,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(536,38): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(537,17): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(538,17): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(540,144): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(540,141): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(540,138): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(540,150): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(548,25): warning C4305: '=': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(563,43): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(598,155): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(598,152): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\main.cpp(598,149): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   Generating code
-  11 of 2787 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
+  2 of 2809 functions (<0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    29 functions had inline decision re-evaluated but remain unchanged
+    34 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Engine 4.vcxproj -> C:\Users\Sean Coleman\source\repos\Engine 4\x64\Release\Engine 4.exe

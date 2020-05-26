@@ -1,10 +1,35 @@
-Texture t_blue_32 blue_32.png GL_LINEAR_MIPMAP_LINEAR true
-Texture t_BakedRender cargoBake.png GL_NEAREST false
-SkyBoxTexture sb_stars 
-	test_1_right.png
-	test_1_left.png
-	test_1_top.png
-	test_1_bottom.png
-	test_1_front.png
-	test_1_back.png
+Texture blue_32 blue_32.png GL_LINEAR_MIPMAP_LINEAR true
+Texture cargoHauler cargoBake.png GL_NEAREST false
+Texture yellowRoom texBake.png GL_NEAREST false
+//SkyBoxTexture deepSpace
+//	test_1_right.png
+//	test_1_left.png
+//	test_1_top.png
+//	test_1_bottom.png
+//	test_1_front.png
+//	test_1_back.png
+//	GL_LINEAR_MIPMAP_LINEAR true
+SkyBoxTexture blueSky 
+	BlueSky_right.png
+	BlueSky_left.png
+	BlueSky_top.png
+	BlueSky_bottom.png
+	BlueSky_front.png
+	BlueSky_back.png
 	GL_LINEAR_MIPMAP_LINEAR true
+//SkyBoxTexture redSky 
+//	skyMap_4.png
+//	skyMap_2.png
+//	skyMap_3.png
+//	skyMap_1.png
+//	skyMap_5.png
+//	skyMap_0.png
+//	GL_LINEAR_MIPMAP_LINEAR true
+//SkyBoxTexture purpleSky 
+//	s_right.png
+//	s_left.png
+//	s_top.png
+//	s_bottom.png
+//	s_front.png
+//	s_back.png
+//	GL_LINEAR_MIPMAP_LINEAR true

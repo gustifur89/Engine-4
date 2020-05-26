@@ -28,11 +28,13 @@ void checkGLError(std::string tag)
 
 glm::vec3 cameraRotation;
 glm::quat cameraOrientation = glm::quat(glm::radians(glm::vec3(0,0,0)));
+bool cameraMode = true;
 Toggle movemodeToggle;
 float playerFriction = 0.8;
 float playerElasticity = 0.0;
 float playerRadius = 0.2;
 float slipRange = 1.0; // this is the radius of uncertainty the network players can be in before it snaps
+float fov = 120.0;
 
 void move(IOManager& IO, std::shared_ptr<GameObject> player)
 {
@@ -220,6 +222,7 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 
 	double mouseSensitivity = 0.4;
 
+
 	if (IO.getMouseLockState()) {
 		
 		/*double deltaPitch = IO.deltaMouseY * mouseSensitivity;
@@ -232,9 +235,43 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 
 		float pitch = IO.deltaMouseY * mouseSensitivity;
 		float yaw = -IO.deltaMouseX * mouseSensitivity;
-		glm::quat framePitch = glm::quat(glm::radians(glm::vec3(pitch, 0, 0)));
-		glm::quat frameYaw = glm::quat(glm::radians(glm::vec3(0, yaw, 0)));
-		cameraOrientation = frameYaw * cameraOrientation * framePitch;
+		if (cameraMode)
+		{
+			//euler
+			cameraRotation = glm::degrees(glm::eulerAngles(cameraOrientation));
+			if (std::fabs(cameraRotation.z) >= 90) {
+				cameraRotation.x += 180.f;
+				cameraRotation.y = 180.f - cameraRotation.y;
+				cameraRotation.z += 180.f;
+			}
+		
+			if(fabs(cameraRotation.z) < 10.0)
+				cameraRotation.z = 0.0;
+			if (fabs(cameraRotation.z - 360) < 10.0)
+				cameraRotation.z = 360.0;
+			cameraRotation.x += pitch;
+			cameraRotation.y += yaw;
+
+			//clamping the angles...
+			if (cameraRotation.x > 180)
+			{
+				if (cameraRotation.x < 271) cameraRotation.x = 271;
+			}
+			else
+			{
+				if (cameraRotation.x > 89.9) cameraRotation.x = 89.9;
+				if (cameraRotation.x < -89.9) cameraRotation.x = -89.9;
+			}
+			cameraOrientation = glm::quat(glm::radians(cameraRotation));
+		}
+		else
+		{
+			//quats
+			glm::quat framePitch = glm::quat(glm::radians(glm::vec3(pitch, 0, 0)));
+			glm::quat frameYaw = glm::quat(glm::radians(glm::vec3(0, yaw, 0)));
+			cameraOrientation = frameYaw * cameraOrientation * framePitch;
+		}
+		
 		/*float cPitch = glm::degrees(glm::eulerAngles(cameraOrientation)).x;
 		if (cPitch > 89)
 		{
@@ -247,7 +284,6 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 			cameraOrientation = cameraOrientation * framePitch;
 		}*/
 	}
-
 
 	player->transform.setRotation(cameraOrientation);
 
@@ -390,80 +426,20 @@ int main()
 	Portal::setInternalShader(std::static_pointer_cast<PortalShader>(shaderCollection["portalInternal"]));
 	Portal::setDebugShader(std::static_pointer_cast<Shader>(shaderCollection["debug"]));
 
-
-	/*
-	std::shared_ptr<Texture> t_blue_32 = Texture::loadFromFile("blue_32.png", GL_LINEAR_MIPMAP_LINEAR, true);
-	std::shared_ptr<Texture> t_BakedRender = Texture::loadFromFile("cargoBake.png", GL_NEAREST, false); // TextureBake RenderTexture TexBake TexBake0																								  
-	/*std::vector<std::string> starsFiles ={
-		"s_right.png",
-		"s_left.png",
-		"s_top.png",
-		"s_bottom.png",
-		"s_front.png",
-		"s_back.png",
-	};* /
-	/*std::vector<std::string> starsFiles ={
-		"skyMap_4.png",	//skyMap_2// -
-		"skyMap_2.png",	//skyMap_4
-		"skyMap_3.png",	//skyMap_3 // -
-		"skyMap_1.png",	//skyMap_1 // -
-		"skyMap_5.png",	//skyMap_5 // -
-		"skyMap_0.png"	//skyMap_0 // -
-	};* /
-	std::vector<std::string> starsFiles = {
-		"test_1_right.png",		//skyMap_2// -
-		"test_1_left.png",		//skyMap_4
-		"test_1_top.png",		//skyMap_3 // -
-		"test_1_bottom.png",	//skyMap_1 // -
-		"test_1_front.png",		//skyMap_5 // -
-		"test_1_back.png"		//skyMap_0 // -
-	};
-	/*std::vector<std::string> starsFiles = {
-		"BlueSky_right.png",		//skyMap_2// -
-		"BlueSky_left.png",			//skyMap_4
-		"BlueSky_top.png",			//skyMap_3 // -
-		"BlueSky_bottom.png",		//skyMap_1 // -
-		"BlueSky_front.png",		//skyMap_5 // -
-		"BlueSky_back.png"			//skyMap_0 // -
-	}; * /
-	std::shared_ptr<SkyBoxTexture> sb_stars = SkyBoxTexture::loadFromFile(starsFiles, GL_LINEAR_MIPMAP_LINEAR, true);
-	*/
 	std::shared_ptr<GameObject> stage(new GameObject);
 	
-	//makeBunchOfStuff(stage, cubeMesh, colorShader, 25);
-	//makeBunchOfStuff(stage, sphereMesh, colorShader, 25);
-	//makeBunchOfStuff(stage, smoothTorusMesh, colorShader, 25);
-	/*
-	Physics physicsSim;
-	physicsSim.setGravity(glm::vec3(0, -6, 0));
-	physicsSim.setBounceBoundary(glm::vec3(15));
-
-	glm::vec3 maxBound(12,30,12);
-	glm::vec3 minBound(-12, 2, -12);
-	glm::vec3 difBound = maxBound - minBound;*/
-
-	/*
-	std::shared_ptr<GameObjectColor> floor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	floor->transform.setPosition(0,0,0);
-	floor->shader = colorShader;
-	floor->mesh = arbitMesh;
-	stage->addChild(floor);
-	*/
-
-	SkyBox* skyBox_ = new SkyBox();
-
-	std::shared_ptr<SkyBox> skyBox = std::shared_ptr<SkyBox>(skyBox_);
-	skyBox->shader = std::static_pointer_cast<SkyBoxShader>(shaderCollection["skybox"]);//skyboxShader;
+	std::shared_ptr<SkyBox> skyBox = std::shared_ptr<SkyBox>(new SkyBox());
+	skyBox->shader = std::static_pointer_cast<SkyBoxShader>(shaderCollection["skybox"]);
 	skyBox->transform.setRotation(180, 0, 0);
-	skyBox->texture = std::static_pointer_cast<SkyBoxTexture>(textureCollection["sb_stars"]);;
+	skyBox->texture = std::static_pointer_cast<SkyBoxTexture>(textureCollection["blueSky"]);;
 	skyBox->transform.setScale(0.1, 0.1, 0.1);
 	stage->addChild(skyBox);
 
 	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	floor->transform.setPosition(0, 0, 0);
 	floor->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
-	floor->texture = textureCollection["t_BakedRender"];//t_BakedRender;
-	floor->mesh = meshCollection["cargoHauler"];//bakedMesh; baked
+	floor->texture = textureCollection["yellowRoom"];//t_BakedRender; cargoHauler
+	floor->mesh = meshCollection["yellowRoom"];//bakedMesh; baked cargoHauler
 	stage->addChild(floor);
 
 //	std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);
@@ -480,7 +456,7 @@ int main()
 	//nFloor->mesh = nStage;
 	//stage->addChild(nFloor);
 
-	std::shared_ptr<Camera> camera(new Camera(90.0f, IO.aspectRatio, 0.1f, 100.0f));
+	std::shared_ptr<Camera> camera(new Camera(fov, IO.aspectRatio, 0.1f, 100.0f));
 	
 	Toggle mouseLockToggle;
 	Toggle shootToggle;

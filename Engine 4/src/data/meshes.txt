@@ -8,5 +8,5 @@ ColorMesh grapplingHook GrapplingHook
 ColorMesh portal portalMesh
 TextureMesh texCube textCube
 TextureMesh texGround testGround_tex
-TextureMesh baked Yellow_room
+TextureMesh yellowRoom Yellow_room
 TextureMesh cargoHauler cargo_hauler
