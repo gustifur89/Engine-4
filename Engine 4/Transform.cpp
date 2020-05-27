@@ -83,8 +83,14 @@ glm::vec3 Transform::getPosition()
 }
 
 glm::vec3 Transform::getRotation()
-{ 
-	return glm::degrees(glm::eulerAngles(rotation));
+{
+	glm::vec3 rots = glm::degrees(glm::eulerAngles(rotation));
+	if (std::fabs(rots.z) >= 90) {
+		rots.x += 180.f;
+		rots.y = 180.f - rots.y;
+		rots.z += 180.f;
+	}
+	return rots;// glm::degrees(glm::eulerAngles(rotation));
 }
 
 glm::quat Transform::getRotationQuat()

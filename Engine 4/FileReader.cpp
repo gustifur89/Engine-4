@@ -32,16 +32,44 @@ std::map<std::string, std::shared_ptr<Mesh>> FileReader::readMeshFile(std::strin
 		{
 			std::string name;
 			std::string meshFile;
-			file >> name >> meshFile;
-			std::shared_ptr<ColorMesh> colMesh = ColorMesh::loadFromFile(meshFile);
+			std::string type;
+			std::string animType;
+			file >> type >> animType >> name >> meshFile;
+			std::shared_ptr<ColorMesh> colMesh;
+			if (type == "ply")
+			{
+				if(animType == "static")
+					colMesh = ColorMesh::loadFromFilePLY(meshFile);
+				if (animType == "dynamic")
+					colMesh = ColorMesh::loadFromFilePLY(meshFile, true);
+			}
+			if (colMesh == NULL) {
+				std::cout << "Failled to create mesh : " << meshFile << "\n";
+			}
 			meshCollection[name] = colMesh;
 		}
 		else if (line == "TextureMesh")
 		{
 			std::string name;
 			std::string meshFile;
-			file >> name >> meshFile;
-			std::shared_ptr<TextureMesh> texMesh = TextureMesh::loadFromFile(meshFile);
+			std::string type;
+			std::string animType;
+			file >> type >> animType >> name >> meshFile;
+			std::shared_ptr<TextureMesh> texMesh;
+			if (type == "ply")
+			{
+				if (animType == "static")
+					texMesh = TextureMesh::loadFromFilePLY(meshFile);
+				if (animType == "dynamic")
+					texMesh = TextureMesh::loadFromFilePLY(meshFile, true);
+			}
+			else if (type == "obj")
+			{
+				texMesh = TextureMesh::loadFromFileOBJ(meshFile);
+			}
+			if (texMesh == NULL) {
+				std::cout << "Failled to create mesh : " << meshFile << "\n";
+			}
 			meshCollection[name] = texMesh;
 		}
 	}
@@ -207,4 +235,45 @@ std::map<std::string, std::shared_ptr<Texture>> FileReader::readTextureFile(std:
 
 	return textureCollection;
 
+}
+
+void FileReader::setPlayerSettings(std::string fileName, float* fov, float* sensitivity, float* speed)
+{
+	fileName = std::string("src/data/") + fileName;
+	std::ifstream file;
+	file = std::ifstream(fileName);
+
+	if (file.fail())
+	{
+		fprintf(stderr, "failed to load file at : ");
+		fprintf(stderr, fileName.c_str());
+		fprintf(stderr, "\n");
+		return;
+	}
+
+	while (!file.eof())
+	{
+		std::string line;
+		file >> line;
+
+		//test for comment
+		if (line.find("//") != -1)
+		{
+			//skip to next line...
+			std::getline(file, line);
+		}
+
+		if (line == "fov")
+		{
+			file >> *fov;
+		}
+		else if (line == "sensitivity")
+		{
+			file >> *sensitivity;
+		}
+		else if (line == "speed")
+		{
+			file >> *speed;
+		}
+	}
 }

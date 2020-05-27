@@ -1,6 +1,5 @@
 #include "Header.h"
 #include "IOManager.h"
-//#include "WindowShader.h"
 #include "Shader.h"
 #include "Toggle.h"
 #include "Primitives.h"
@@ -34,7 +33,9 @@ float playerFriction = 0.8;
 float playerElasticity = 0.0;
 float playerRadius = 0.2;
 float slipRange = 1.0; // this is the radius of uncertainty the network players can be in before it snaps
-float fov = 120.0;
+float fov = 94.0;
+float playerSpeed = 10.0;
+float playerSensitivity = 0.4;
 
 void move(IOManager& IO, std::shared_ptr<GameObject> player)
 {
@@ -174,7 +175,7 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 
 	bool slow = IO.isKeyPressed(GLFW_KEY_Q);
 
-	float speed = 10.0;
+	float speed = playerSpeed;
 	float jumpSpeed = 8.0;
 
 	float xSpeed = 0.0;
@@ -238,30 +239,31 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 		if (cameraMode)
 		{
 			//euler
-			cameraRotation = glm::degrees(glm::eulerAngles(cameraOrientation));
+			//cameraRotation = glm::degrees(glm::eulerAngles(cameraOrientation));
+			//if (std::fabs(cameraRotation.z) >= 90) {
+			//	cameraRotation.x += 180.f;
+			//	cameraRotation.y = 180.f - cameraRotation.y;
+			//	cameraRotation.z += 180.f;
+			//}
+		
+			//if(fabs(cameraRotation.z) < 10.0)
+			//	cameraRotation.z = 0.0;
+			//if (fabs(cameraRotation.z - 360) < 10.0)
+			//	cameraRotation.z = 360.0;
+
+			/*cameraRotation = glm::degrees(glm::eulerAngles(cameraOrientation));
 			if (std::fabs(cameraRotation.z) >= 90) {
 				cameraRotation.x += 180.f;
 				cameraRotation.y = 180.f - cameraRotation.y;
 				cameraRotation.z += 180.f;
-			}
-		
-			if(fabs(cameraRotation.z) < 10.0)
-				cameraRotation.z = 0.0;
-			if (fabs(cameraRotation.z - 360) < 10.0)
-				cameraRotation.z = 360.0;
+			}*/
+
 			cameraRotation.x += pitch;
 			cameraRotation.y += yaw;
 
 			//clamping the angles...
-			if (cameraRotation.x > 180)
-			{
-				if (cameraRotation.x < 271) cameraRotation.x = 271;
-			}
-			else
-			{
-				if (cameraRotation.x > 89.9) cameraRotation.x = 89.9;
-				if (cameraRotation.x < -89.9) cameraRotation.x = -89.9;
-			}
+			if (cameraRotation.x > 89.9) cameraRotation.x = 89.9;
+			if (cameraRotation.x < -89.9) cameraRotation.x = -89.9;
 			cameraOrientation = glm::quat(glm::radians(cameraRotation));
 		}
 		else
@@ -418,6 +420,8 @@ int main()
 	std::map<std::string, std::shared_ptr<Shader>> shaderCollection = FileReader::readShaderFile("shaders.txt");
 	std::map<std::string, std::shared_ptr<Mesh>> meshCollection = FileReader::readMeshFile("meshes.txt");
 	std::map<std::string, std::shared_ptr<Texture>> textureCollection = FileReader::readTextureFile("textures.txt");
+	FileReader::setPlayerSettings("settings.txt", &fov, &playerSensitivity, &playerSpeed);
+
 
 	std::static_pointer_cast<WindowShader>(shaderCollection["window"])->setGlobalLight(glm::normalize(glm::vec3(-1, 1, -1)));
 	std::static_pointer_cast<WindowShader>(shaderCollection["window"])->setAmbient(1.0);
@@ -449,6 +453,13 @@ int main()
 	std::shared_ptr<TempSoup> empty = std::shared_ptr<TempSoup>(new TempSoup);
 	empty->create(NULL, glm::mat4(1.0));
 
+	std::shared_ptr<GameObjectTexture> figure = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	figure->transform.setPosition(0, 0, -6);
+	figure->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
+	figure->texture = textureCollection["blankFigureTex"];
+	figure->mesh = meshCollection["figure"];
+	stage->addChild(figure);
+
 	//std::shared_ptr<ColorMesh> nStage = ColorMesh::meshFromTriangles(tree->triangles, 100, 100, 100, 0.1);
 	//std::shared_ptr<GameObjectColor> nFloor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
 	//nFloor->transform.setPosition(0, 0, 0);
@@ -468,20 +479,25 @@ int main()
 	
 	float dt = 1.0 / 30.0f;
 
-	std::shared_ptr<GameObjectColor> player = std::shared_ptr<GameObjectColor>(new GameObjectColor);
+	std::shared_ptr<GameObjectTexture> player = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	player->transform.setPosition(0, 0.2, 0);
-	stage->addChild(player);
-
-	std::shared_ptr<GameObject> hand = std::shared_ptr<GameObject>(new GameObject);
-	glm::vec3 handOffset(0, -0.1, 0);
-	hand->transform.setPosition(handOffset);
-	player->addChild(hand);
+//	player->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
+//	player->texture = textureCollection["blankFigureTex"];
+//	player->mesh = meshCollection["figure"];
 	player->friction = playerFriction;
 	player->elasticity = playerElasticity;
 	player->radius = playerRadius;
 	player->neverDisable = true;
 	player->collisionReactEnabled = true;
-		
+//	stage->addChild(player);
+
+	//player mesh
+	std::shared_ptr<GameObjectTexture> playerMesh = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	playerMesh->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
+	playerMesh->texture = textureCollection["blankFigureTex"];
+	playerMesh->mesh = meshCollection["figure"];
+	stage->addChild(playerMesh);
+	   		
 	std::vector<std::shared_ptr<GameObject>> physicsList;
 	physicsList.push_back(player);
 	float maxSpeed = 40.0;
@@ -501,6 +517,13 @@ int main()
 
 	std::shared_ptr<Client> networkClient = std::static_pointer_cast<Client>(Network::makeNetwork(Network::NETWORK_TYPE::CLIENT, "addressClient.txt"));
 	networkClient->start();
+	
+
+	std::shared_ptr<AnimationData> anim0 = AnimationData::loadFromFilePLY("figure2_run", 16);
+	std::map<std::string, std::shared_ptr<AnimationData>> animationTest;
+	animationTest["run"] = anim0;
+	figure->animations = animationTest;
+	
 
 	checkGLError("setup");
 
@@ -710,12 +733,21 @@ int main()
 		
 		cameraOrientation = player->transform.getRotationQuat();
 		camera->setRotation(cameraOrientation);
-		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));
-		hand->transform.setRotation(cameraRotation);
-		
+		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));		
+
+
+		//update player mesh based on player
+		playerMesh->transform.setPosition(player->transform);
+		playerMesh->transform.setRotation(glm::vec3(0, player->transform.getRotation().y,0));
+
+		figure->updateAnimation(dt, "run");
+
+
 
 		networkClient->updateNetworkPosVel(player->transform.getPosition(), player->velocity);
+		playerMesh->visible = true;
 		Portal::preRenderPortals(camera, 2);
+		playerMesh->visible = false;
 		std::static_pointer_cast<WindowShader>(shaderCollection["window"])->setViewMatrix(camera->getTransformMatrix());
 		IO.display(camera, stage);
 		checkGLError("in");

@@ -1,6 +1,8 @@
 Texture blue_32 blue_32.png GL_LINEAR_MIPMAP_LINEAR true
 Texture cargoHauler cargoBake.png GL_NEAREST false
 Texture yellowRoom texBake.png GL_NEAREST false
+Texture figureTex figureTex.png GL_NEAREST false
+Texture blankFigureTex figure2_test.png GL_NEAREST false
 //SkyBoxTexture deepSpace
 //	test_1_right.png
 //	test_1_left.png

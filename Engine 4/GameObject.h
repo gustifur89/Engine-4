@@ -45,6 +45,10 @@ public:
 	static float stopSpeed;
 	bool noClip;
 
+	//animation stuff
+	std::map<std::string, std::shared_ptr<AnimationData>> animations;
+	int currentFrame;
+	void updateAnimation(double time, std::string state);
 
 	glm::vec3 velocity;
 	

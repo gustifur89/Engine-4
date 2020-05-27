@@ -98,9 +98,9 @@ std::shared_ptr<ColorMesh> Primitive::sphere = NULL;
 
 void Primitive::init()
 {
-	capsuleCap = ColorMesh::loadFromFile("capsuleCap");
-	capsuleCyl = ColorMesh::loadFromFile("capsuleCyl");
-	cube = ColorMesh::loadFromFile("cube");
-	sphere = ColorMesh::loadFromFile("smoothSphere");
+	capsuleCap = ColorMesh::loadFromFilePLY("capsuleCap");
+	capsuleCyl = ColorMesh::loadFromFilePLY("capsuleCyl");
+	cube = ColorMesh::loadFromFilePLY("cube");
+	sphere = ColorMesh::loadFromFilePLY("smoothSphere");
 }
 

@@ -44,6 +44,42 @@ void GameObject::cleanUp(std::shared_ptr<GameObject> object, bool removeChildren
 
 }
 
+void GameObject::updateAnimation(double time, std::string state)
+{
+	if (!mesh->dynamic)
+	{
+		std::cout << "This mesh is not dynamic. Use the flag \"dynamic\" to load it as dynamic for animations\n";
+		return;
+	}
+	std::shared_ptr<AnimationData> animation = animations[state];
+	if (!animation)
+	{
+		std::cout << "invalud state " << state << ". Cannot render.\n";
+		return;
+	}
+	std::vector<GLfloat> nVerts;
+	std::vector<GLfloat> nNorms;
+	std::vector<GLfloat> nColorData;
+	std::vector<GLuint> nIndex;
+
+	currentFrame = (currentFrame + 1) % animation->numFrames;
+	
+	nVerts = animation->vertexBuffer[currentFrame];
+	nNorms = animation->normalBuffer[currentFrame];
+	nIndex = animation->indexBuffer[currentFrame];
+	nColorData = animation->colorDataBuffer[currentFrame];
+
+	//vertex
+	this->mesh->updateVertexVBO(0, 3, mesh->vertVBOId, nVerts);
+	//nroms
+	this->mesh->updateVertexVBO(1, 3, mesh->normVBOId, nNorms);
+	//nColorData
+	this->mesh->updateVertexVBO(2, mesh->colorDataSize, mesh->colorDataVBOId, nColorData);
+	//nroms
+	this->mesh->updateIndexVBO(mesh->indexVBOId, nIndex);
+
+}
+
 void GameObject::setMass(float mass)
 {
 	this->mass = mass;

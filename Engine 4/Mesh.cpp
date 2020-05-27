@@ -1,5 +1,6 @@
 #include "Mesh.h"
 
+
 // ================================== Mesh =====================================
 
 Mesh::Mesh()
@@ -186,6 +187,17 @@ void Mesh::bindIndexVBO(std::vector<GLuint> indexes)
 	unbindVAO();
 }
 
+void Mesh::bindDynamicIndexVBO(std::vector<GLuint> indexes, GLuint* indexID)
+{
+	bindVAO();
+	glGenBuffers(1, &elementbufferID);
+	*indexID = elementbufferID;
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbufferID);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexes.size() * sizeof(GLuint), &indexes[0], GL_DYNAMIC_DRAW);
+	indexCount = indexes.size();
+	unbindVAO();
+}
+
 void Mesh::bindVertexAttribVBO(int attrib, int size, std::vector<GLfloat> data)
 {
 	bindVAO();
@@ -218,6 +230,69 @@ void Mesh::bindVertexAttribVBO(int attrib, int size, std::vector<GLfloat> data)
 //	vbos.push_back(vertexbufferID);
 }
 
+void Mesh::bindDynamicVertexAttribVBO(int attrib, int size, std::vector<GLfloat> data, GLuint* vboID)
+{
+	bindVAO();
+
+	GLuint vertexbufferID;
+	// Generate 1 buffer, put the resulting identifier in vertexbuffer
+	glGenBuffers(1, &vertexbufferID);
+	bufferIDs.push_back(vertexbufferID);
+	*vboID = vertexbufferID;
+	// The following commands will talk about our 'vertexbuffer' buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferID);
+	// Give our vertices to OpenGL.
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), &data[0], GL_DYNAMIC_DRAW);
+
+	// 1st attribute buffer : vertices
+	glEnableVertexAttribArray(attrib);
+	glVertexAttribPointer(
+		attrib,             // attribute
+		size,               // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
+	glDisableVertexAttribArray(attrib);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	unbindVAO();
+
+	bufferAttribs.push_back(attrib);
+	numVBOs++;
+	//	vbos.push_back(vertexbufferID);
+}
+
+void Mesh::updateVertexVBO(int attrib, int size, GLuint vertexbufferID, std::vector<GLfloat> data)
+{
+	bindVAO();
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferID);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), &data[0], GL_DYNAMIC_DRAW);
+
+	glEnableVertexAttribArray(attrib);
+	glVertexAttribPointer(
+		attrib,             // attribute
+		size,               // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
+	glDisableVertexAttribArray(attrib);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	unbindVAO();
+}
+
+void Mesh::updateIndexVBO(GLuint vertexbufferID, std::vector<GLuint> indexes)
+{
+	bindVAO();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbufferID);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexes.size() * sizeof(GLuint), &indexes[0], GL_DYNAMIC_DRAW);
+	indexCount = indexes.size();
+	unbindVAO();
+}
+
 void Mesh::render()
 {
 	glBindVertexArray(VertexArrayID);
@@ -231,7 +306,7 @@ void Mesh::render()
 
 // ================================== ColorMesh =====================================
 
-std::shared_ptr<ColorMesh> ColorMesh::loadFromFile(std::string fileName)
+std::shared_ptr<ColorMesh> ColorMesh::loadFromFilePLY(std::string fileName, bool dynamic)
 {
 
 	fileName = std::string("src/meshes/") + fileName + std::string(".ply");
@@ -398,10 +473,29 @@ std::shared_ptr<ColorMesh> ColorMesh::loadFromFile(std::string fileName)
 
 	mesh->bindIndexVBO(mesh->indexBuffer);
 
-	mesh->bindVertexAttribVBO(0, 3, mesh->vertexBuffer);
-	mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
-	mesh->bindVertexAttribVBO(2, 3, mesh->colorBuffer);
+	if (dynamic)
+	{
+		//dynamic Verts/norm for animations
+		mesh->bindDynamicIndexVBO(mesh->indexBuffer, &mesh->indexVBOId);
+
+		mesh->bindDynamicVertexAttribVBO(0, 3, mesh->vertexBuffer, &mesh->vertVBOId);
+		mesh->bindDynamicVertexAttribVBO(1, 3, mesh->normalBuffer, &mesh->normVBOId);
+		mesh->bindDynamicVertexAttribVBO(2, 3, mesh->colorBuffer, &mesh->colorDataVBOId);
+		mesh->colorDataSize = 3;
+
+	}
+	else
+	{
+		//static Verts/norms for non animations
+		mesh->bindIndexVBO(mesh->indexBuffer);
+
+		mesh->bindVertexAttribVBO(0, 3, mesh->vertexBuffer);
+		mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
+		mesh->bindVertexAttribVBO(2, 3, mesh->colorBuffer);
+	}
+
 	mesh->recalculateBounds();
+	mesh->dynamic = dynamic;
 	return mesh;
 }
 
@@ -581,7 +675,7 @@ std::shared_ptr<ColorMesh> ColorMesh::triangle()
 
 // ================================== TextureMesh =====================================
 
-std::shared_ptr<TextureMesh> TextureMesh::loadFromFile(std::string fileName)
+std::shared_ptr<TextureMesh> TextureMesh::loadFromFilePLY(std::string fileName, bool dynamic)
 {
 
 	fileName = std::string("src/meshes/") + fileName + std::string(".ply");
@@ -639,11 +733,190 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFile(std::string fileName)
 				{
 					alphaChannel = true;
 				}
+				if (type == "red" || type == "green" || type == "blue")
+				{
+					rgbChannel = true;
+				}
 			}
-			if (type == "float")
+		}
+
+		else if (line == "end_header")
+		{
+			vertexes = true;
+			break;
+		}
+
+	}
+
+	while (true)
+	{
+		if (file.eof())
+			return std::shared_ptr<TextureMesh>(NULL);;
+
+		if (vertexes)
+		{
+			if (count_v == vertex_number)
+			{
+				//exit
+				vertexes = false;
+				faces = true;
+			}
+			else
+			{
+
+				//read vertex
+				float x, y, z, nx, ny, nz;
+				float u, v;// r, g, b;
+				file >> x >> z >> y >> nx >> nz >> ny;	//y and z switch
+				file >> u >> v;
+				if (rgbChannel)
+				{
+					int r, g, b;
+					file >> r >> g >> b;
+				}
+				if (alphaChannel)
+				{
+					int a;
+					file >> a;
+				}
+
+				mesh->vertexBuffer.push_back(-x);
+				mesh->vertexBuffer.push_back(y);
+				mesh->vertexBuffer.push_back(z);
+
+				mesh->normalBuffer.push_back(-nx);
+				mesh->normalBuffer.push_back(ny);
+				mesh->normalBuffer.push_back(nz);
+
+				mesh->uvBuffer.push_back(u);
+				mesh->uvBuffer.push_back(1.0 - v);
+				count_v++;
+			}
+		}
+		else if (faces)
+		{
+			if (count_f == face_number)
+			{
+				//exit
+				break;
+			}
+			else
+			{
+				//read vertex;
+
+				int num_v;			//whether it is triangles or quads
+				int v1, v2, v3, v4;
+				file >> num_v;
+				if (num_v == 3)
+				{
+					file >> v1 >> v2 >> v3;
+					mesh->indexBuffer.push_back(v1);
+					mesh->indexBuffer.push_back(v2);
+					mesh->indexBuffer.push_back(v3);
+				}
+				else if (num_v == 4)
+				{
+					file >> v1 >> v2 >> v3 >> v4;
+					mesh->indexBuffer.push_back(v1);
+					mesh->indexBuffer.push_back(v2);
+					mesh->indexBuffer.push_back(v3);
+
+					mesh->indexBuffer.push_back(v1);
+					mesh->indexBuffer.push_back(v3);
+					mesh->indexBuffer.push_back(v4);
+				}
+
+				count_f++;
+			}
+		}
+	}
+	file.close();
+
+	mesh->vertexCount = mesh->vertexBuffer.size() / 3;
+
+	if (dynamic)
+	{
+		//dynamic Verts/norm for animations
+		mesh->bindDynamicIndexVBO(mesh->indexBuffer, &mesh->indexVBOId);
+
+		mesh->bindDynamicVertexAttribVBO(0, 3, mesh->vertexBuffer, &mesh->vertVBOId);
+		mesh->bindDynamicVertexAttribVBO(1, 3, mesh->normalBuffer, &mesh->normVBOId);
+		mesh->bindDynamicVertexAttribVBO(2, 2, mesh->uvBuffer, &mesh->colorDataVBOId);
+		mesh->colorDataSize = 2;
+	}
+	else
+	{
+		//static Verts/norms for non animations
+		mesh->bindIndexVBO(mesh->indexBuffer);
+		
+		mesh->bindVertexAttribVBO(0, 3, mesh->vertexBuffer);
+		mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
+		mesh->bindVertexAttribVBO(2, 2, mesh->uvBuffer);
+	}
+
+	mesh->recalculateBounds();
+	mesh->dynamic = dynamic;
+	return mesh;
+}
+
+std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
+{
+	fileName = std::string("src/meshes/") + fileName + std::string(".obj");
+	std::ifstream file;
+	file = std::ifstream(fileName);
+
+	if (file.fail())
+	{
+		fprintf(stderr, "failed to load file at : ");
+		fprintf(stderr, fileName.c_str());
+		fprintf(stderr, "\n");
+		return std::shared_ptr<TextureMesh>(NULL);
+	}
+	std::shared_ptr<TextureMesh> mesh(new TextureMesh());
+
+	std::string line;
+
+	int vertex_number = 0;
+	int face_number = 0;
+	int count_v = 0;
+	int count_f = 0;
+	bool vertexes = false;
+	bool faces = false;
+	bool alphaChannel = false;
+	bool rgbChannel = false;
+
+	while (true)
+	{
+		//assumes you get 9 in.
+		file >> line;
+		if (file.eof())
+			return std::shared_ptr<TextureMesh>(NULL);
+
+		if (line == "element")
+		{
+			std::string type;
+			file >> type;
+			if (type == "vertex")
+			{
+				file >> vertex_number;
+			}
+			if (type == "face")
+			{
+				file >> face_number;
+			}
+		}
+		else if (line == "property")
+		{
+			std::string type;
+			file >> type;
+			if (type == "uchar")
 			{
 				file >> type;
-				if (type == "r" || type == "g" || type == "b")
+				if (type == "alpha")
+				{
+					alphaChannel = true;
+				}
+				if (type == "red" || type == "green" || type == "blue")
 				{
 					rgbChannel = true;
 				}
@@ -677,12 +950,15 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFile(std::string fileName)
 				float x, y, z, nx, ny, nz;
 				float u, v;// r, g, b;
 				file >> x >> z >> y >> nx >> nz >> ny;	//y and z switch
+				file >> u >> v;
 				if (rgbChannel)
 				{
-					float r, g, b;
+					int r, g, b;
 					file >> r >> g >> b;
+
+					std::cout << r << ", " << g << ", " << b << "\n";
+
 				}
-				file >> u >> v;
 				if (alphaChannel)
 				{
 					int a;
@@ -750,4 +1026,438 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFile(std::string fileName)
 	mesh->bindVertexAttribVBO(2, 2, mesh->uvBuffer);
 	mesh->recalculateBounds();
 	return mesh;
+}
+
+// ================================= GenereicMesh =====================
+
+std::shared_ptr<GenericMesh> GenericMesh::loadFromFilePLY(std::string fileName, bool dynamic)
+{
+	fileName = std::string("src/meshes/") + fileName + std::string(".ply");
+	std::ifstream file;
+	file = std::ifstream(fileName);
+
+	if (file.fail())
+	{
+		fprintf(stderr, "failed to load file at : ");
+		fprintf(stderr, fileName.c_str());
+		fprintf(stderr, "\n");
+		return std::shared_ptr<GenericMesh>(NULL);
+	}
+	std::shared_ptr<GenericMesh> mesh(new GenericMesh());
+
+	std::string line;
+
+	int vertex_number = 0;
+	int face_number = 0;
+	int count_v = 0;
+	int count_f = 0;
+	bool vertexes = false;
+	bool faces = false;
+
+	bool alphaChannel = false;
+	bool rgbChannel = false;
+	bool uv = false;
+
+	if (uv)
+	{
+		mesh->type = TYPE::TEXTURE;
+	}
+	else if (rgbChannel)
+	{
+		mesh->type = TYPE::COLOR;
+	}
+	else
+	{
+		mesh->type = TYPE::NO_COLOR;
+	}
+
+	while (true)
+	{
+		//assumes you get 9 in.
+		file >> line;
+		if (file.eof())
+			return std::shared_ptr<GenericMesh>(NULL);
+
+		if (line == "element")
+		{
+			std::string type;
+			file >> type;
+			if (type == "vertex")
+			{
+				file >> vertex_number;
+			}
+			if (type == "face")
+			{
+				file >> face_number;
+			}
+		}
+		else if (line == "property")
+		{
+			std::string type;
+			file >> type;
+			if (type == "uchar")
+			{
+				file >> type;
+				if (type == "alpha")
+				{
+					alphaChannel = true;
+				}
+				if (type == "red" || type == "green" || type == "blue")
+				{
+					rgbChannel = true;
+				}
+			}
+			if (type == "float")
+			{
+				file >> type;
+				if (type == "s" || type == "t")
+				{
+					uv = true;
+				}
+			}
+		}
+
+		else if (line == "end_header")
+		{
+			vertexes = true;
+			break;
+		}
+
+	}
+
+	while (true)
+	{
+		if (file.eof())
+			return std::shared_ptr<GenericMesh>(NULL);
+
+		if (vertexes)
+		{
+			if (count_v == vertex_number)
+			{
+				//exit
+				vertexes = false;
+				faces = true;
+			}
+			else
+			{
+
+				//read vertex
+				float x, y, z, nx, ny, nz;
+				file >> x >> z >> y >> nx >> nz >> ny;	//y and z switch
+
+				if (uv)
+				{
+					float u, v;
+					file >> u >> v;
+					mesh->colorDataBuffer.push_back(u);
+					mesh->colorDataBuffer.push_back(1.0 - v);
+				}
+				if (rgbChannel)
+				{
+					int r, g, b;
+					file >> r >> g >> b;
+					if (!uv)
+					{
+						//if uv is active, then we don't want to render color... probably.
+						mesh->colorDataBuffer.push_back(r / 255.0);
+						mesh->colorDataBuffer.push_back(g / 255.0);
+						mesh->colorDataBuffer.push_back(b / 255.0);
+					}
+				}
+				
+				if (alphaChannel)
+				{
+					int a;
+					file >> a;
+				}
+
+				mesh->vertexBuffer.push_back(-x);
+				mesh->vertexBuffer.push_back(y);
+				mesh->vertexBuffer.push_back(z);
+
+				mesh->normalBuffer.push_back(-nx);
+				mesh->normalBuffer.push_back(ny);
+				mesh->normalBuffer.push_back(nz);
+
+				count_v++;
+			}
+		}
+		else if (faces)
+		{
+			if (count_f == face_number)
+			{
+				//exit
+				break;
+			}
+			else
+			{
+				//read vertex;
+
+				int num_v;			//whether it is triangles or quads
+				int v1, v2, v3, v4;
+				file >> num_v;
+				if (num_v == 3)
+				{
+					file >> v1 >> v2 >> v3;
+					mesh->indexBuffer.push_back(v1);
+					mesh->indexBuffer.push_back(v2);
+					mesh->indexBuffer.push_back(v3);
+				}
+				else if (num_v == 4)
+				{
+					file >> v1 >> v2 >> v3 >> v4;
+					mesh->indexBuffer.push_back(v1);
+					mesh->indexBuffer.push_back(v2);
+					mesh->indexBuffer.push_back(v3);
+
+					mesh->indexBuffer.push_back(v1);
+					mesh->indexBuffer.push_back(v3);
+					mesh->indexBuffer.push_back(v4);
+				}
+
+				count_f++;
+			}
+		}
+	}
+	file.close();
+	
+
+	mesh->vertexCount = mesh->vertexBuffer.size() / 3;
+
+	if (dynamic)
+	{
+		//dynamic Verts/norm for animations
+		mesh->bindDynamicIndexVBO(mesh->indexBuffer, &mesh->indexVBOId);
+
+		mesh->bindDynamicVertexAttribVBO(0, 3, mesh->vertexBuffer, &mesh->vertVBOId);
+		mesh->bindDynamicVertexAttribVBO(1, 3, mesh->normalBuffer, &mesh->normVBOId);
+		if (uv)
+		{
+			mesh->bindDynamicVertexAttribVBO(2, 2, mesh->colorDataBuffer, &mesh->colorDataVBOId);
+			mesh->colorDataSize = 2;
+		}
+		else if (rgbChannel)
+		{
+			mesh->bindDynamicVertexAttribVBO(2, 3, mesh->colorDataBuffer, &mesh->colorDataVBOId);
+			mesh->colorDataSize = 3;
+		}
+	}
+	else
+	{
+		//static Verts/norms for non animations
+		mesh->bindIndexVBO(mesh->indexBuffer);
+
+		mesh->bindVertexAttribVBO(0, 3, mesh->vertexBuffer);
+		mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
+		if (uv)
+		{
+			mesh->bindVertexAttribVBO(2, 2, mesh->colorDataBuffer);
+			mesh->colorDataSize = 2;
+		}
+		else if (rgbChannel)
+		{
+			mesh->bindVertexAttribVBO(2, 2, mesh->colorDataBuffer);
+			mesh->colorDataSize = 3;
+		}
+	}
+
+	mesh->recalculateBounds();
+	mesh->dynamic = dynamic;
+	return mesh;
+}
+
+// ============================ AnimationData ====================
+
+std::shared_ptr<AnimationData> AnimationData::loadFromFilePLY(std::string fileName, int numFrames)
+{
+	std::shared_ptr<AnimationData> frames = std::shared_ptr<AnimationData>(new AnimationData());
+	frames->numFrames = numFrames;
+
+	frames->vertexBuffer.resize(numFrames);
+	frames->normalBuffer.resize(numFrames);
+	frames->indexBuffer.resize(numFrames);
+	frames->colorDataBuffer.resize(numFrames);
+
+	std::string filePath = std::string("src/meshes/") + fileName + std::string("/") + fileName;
+	std::string line;
+
+	for (int i = 1; i <= numFrames; i++)
+	{
+		fileName = filePath + std::to_string(i) + std::string(".ply");
+		std::ifstream file;
+		file = std::ifstream(fileName);
+
+		if (file.fail())
+		{
+			fprintf(stderr, "failed to load file at : ");
+			fprintf(stderr, fileName.c_str());
+			fprintf(stderr, "\n");
+			return std::shared_ptr<AnimationData>(NULL);
+		}
+
+		std::string line;
+
+		int vertex_number = 0;
+		int face_number = 0;
+		int count_v = 0;
+		int count_f = 0;
+		bool vertexes = false;
+		bool faces = false;
+
+		bool alphaChannel = false;
+		bool rgbChannel = false;
+		bool uv = false;
+
+
+		while (true)
+		{
+			//assumes you get 9 in.
+			file >> line;
+			if (file.eof())
+				return std::shared_ptr<AnimationData>(NULL);
+
+			if (line == "element")
+			{
+				std::string type;
+				file >> type;
+				if (type == "vertex")
+				{
+					file >> vertex_number;
+				}
+				if (type == "face")
+				{
+					file >> face_number;
+				}
+			}
+			else if (line == "property")
+			{
+				std::string type;
+				file >> type;
+				if (type == "uchar")
+				{
+					file >> type;
+					if (type == "alpha")
+					{
+						alphaChannel = true;
+					}
+					if (type == "red" || type == "green" || type == "blue")
+					{
+						rgbChannel = true;
+					}
+				}
+				if (type == "float")
+				{
+					file >> type;
+					if (type == "s" || type == "t")
+					{
+						uv = true;
+					}
+				}
+			}
+
+			else if (line == "end_header")
+			{
+				vertexes = true;
+				break;
+			}
+
+		}
+
+		while (true)
+		{
+			if (file.eof())
+				return std::shared_ptr<AnimationData>(NULL);
+
+			if (vertexes)
+			{
+				if (count_v == vertex_number)
+				{
+					//exit
+					vertexes = false;
+					faces = true;
+				}
+				else
+				{
+
+					//read vertex
+					float x, y, z, nx, ny, nz;
+					file >> x >> z >> y >> nx >> nz >> ny;	//y and z switch
+
+					if (uv)
+					{
+						float u, v;
+						file >> u >> v;
+						frames->colorDataBuffer[i - 1].push_back(u);
+						frames->colorDataBuffer[i - 1].push_back(1.0 - v);
+					}
+					if (rgbChannel)
+					{
+						int r, g, b;
+						file >> r >> g >> b;
+						if (!uv)
+						{
+							//if uv is active, then we don't want to render color... probably.
+							frames->colorDataBuffer[i - 1].push_back(r / 255.0);
+							frames->colorDataBuffer[i - 1].push_back(g / 255.0);
+							frames->colorDataBuffer[i - 1].push_back(b / 255.0);
+						}
+					}
+					if (alphaChannel)
+					{
+						int a;
+						file >> a;
+					}
+
+					frames->vertexBuffer[i - 1].push_back(-x);
+					frames->vertexBuffer[i - 1].push_back(y);
+					frames->vertexBuffer[i - 1].push_back(z);
+
+					frames->normalBuffer[i - 1].push_back(-nx);
+					frames->normalBuffer[i - 1].push_back(ny);
+					frames->normalBuffer[i - 1].push_back(nz);
+
+					count_v++;
+				}
+			}
+			else if (faces)
+			{
+				if (count_f == face_number)
+				{
+					//exit
+					break;
+				}
+				else
+				{
+					//read vertex;
+
+					int num_v;			//whether it is triangles or quads
+					int v1, v2, v3, v4;
+					file >> num_v;
+					if (num_v == 3)
+					{
+						file >> v1 >> v2 >> v3;
+						frames->indexBuffer[i - 1].push_back(v1);
+						frames->indexBuffer[i - 1].push_back(v2);
+						frames->indexBuffer[i - 1].push_back(v3);
+					}
+					else if (num_v == 4)
+					{
+						file >> v1 >> v2 >> v3 >> v4;
+						frames->indexBuffer[i - 1].push_back(v1);
+						frames->indexBuffer[i - 1].push_back(v2);
+						frames->indexBuffer[i - 1].push_back(v3);
+
+						frames->indexBuffer[i - 1].push_back(v1);
+						frames->indexBuffer[i - 1].push_back(v3);
+						frames->indexBuffer[i - 1].push_back(v4);
+					}
+
+					count_f++;
+				}
+			}
+		}
+		file.close();
+	}
+
+	return frames;
 }

@@ -1,12 +1,13 @@
-ColorMesh cube cube
-ColorMesh torus torus
-ColorMesh sphere smoothSphere
-ColorMesh arbit testGround
-ColorMesh tris tris
-ColorMesh grapplingHook GrapplingHook
+ColorMesh ply static cube cube
+ColorMesh ply static torus torus
+ColorMesh ply static sphere smoothSphere
+ColorMesh ply static arbit testGround
+ColorMesh ply static tris tris
+ColorMesh ply static grapplingHook GrapplingHook
 //this shouldn't be read....
-ColorMesh portal portalMesh
-TextureMesh texCube textCube
-TextureMesh texGround testGround_tex
-TextureMesh yellowRoom Yellow_room
-TextureMesh cargoHauler cargo_hauler
+ColorMesh ply static portal portalMesh
+TextureMesh ply static texCube textCube
+TextureMesh ply static texGround testGround_tex
+TextureMesh ply static yellowRoom Yellow_room
+TextureMesh ply static cargoHauler cargo_hauler
+TextureMesh ply dynamic figure figure2
