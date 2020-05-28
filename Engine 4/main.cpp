@@ -32,10 +32,15 @@ Toggle movemodeToggle;
 float playerFriction = 0.8;
 float playerElasticity = 0.0;
 float playerRadius = 0.2;
-float slipRange = 1.0; // this is the radius of uncertainty the network players can be in before it snaps
+float teleportRange = 3.0; // this is the radius of uncertainty the network players can be in before it snaps
 float fov = 94.0;
 float playerSpeed = 10.0;
+float playerJump = 10.0;
 float playerSensitivity = 0.4;
+float playerHeight = 1.32;
+float slipPercentPerSecond = 12.0;
+float slipRotPercentPerSecond = 12.0;
+std::string playerTex = "blankFigureTex";
 
 void move(IOManager& IO, std::shared_ptr<GameObject> player)
 {
@@ -164,6 +169,38 @@ void move(IOManager& IO, std::shared_ptr<GameObject> player)
 	//player->transform.translate(speedModifier * IO.deltaTime * vel);
 }
 
+void animatePlayer(std::shared_ptr<GameObject> player, std::shared_ptr<GameObject> playerMesh, float dt, std::string* state)
+{
+	if (!player->onGround)
+	{
+		//jump
+		playerMesh->updateAnimation(dt, "jump");
+		*state = "jump";
+	}
+	else if (glm::length(player->velocity) != 0)
+	{
+		//run
+		playerMesh->updateAnimation(dt, "run");
+		*state = "run";
+	}
+	else
+	{
+		//stand
+		playerMesh->updateAnimation(dt, "stand");
+		*state = "stand";
+	}
+	playerMesh->transform.setPosition(player->transform.getPosition() - glm::vec3(0, player->radius, 0));
+	playerMesh->transform.setRotation(glm::vec3(0, player->transform.getRotation().y + 180, 0));
+
+}
+
+void setAnimation(std::shared_ptr<GameObject> player, std::shared_ptr<GameObject> playerMesh, float dt, std::string state)
+{
+	playerMesh->updateAnimation(dt, state);
+	playerMesh->transform.setPosition(player->transform.getPosition() - glm::vec3(0, player->radius, 0));
+	playerMesh->transform.setRotation(glm::vec3(0, player->transform.getRotation().y + 180, 0));
+}
+
 glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> player)
 {
 	bool w = IO.isKeyPressed(GLFW_KEY_W);
@@ -176,7 +213,7 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 	bool slow = IO.isKeyPressed(GLFW_KEY_Q);
 
 	float speed = playerSpeed;
-	float jumpSpeed = 8.0;
+	float jumpSpeed = playerJump;
 
 	float xSpeed = 0.0;
 	float ySpeed = 0.0;
@@ -374,7 +411,7 @@ glm::vec3 collisionResolution(glm::vec3 velocity, glm::vec3 normal, float fricti
 	return newVelocity;
 }
 
-void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, std::shared_ptr<CollisionStructure> collider)
+void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, float dt, std::shared_ptr<CollisionStructure> collider)
 {
 	if (!object->physiceEnabled && !object->neverDisable) return;
 	glm::vec3 thisP = object->transform.getPosition();
@@ -391,15 +428,35 @@ void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, std
 	object->transform.setRotation(newRot);
 	glm::vec3 nP = nextP;
 
+	bool didHitGround = false;
+
 	if (!object->noClip && collider->collide(object->radius, thisP, nextP, &nP, &faceNorm, 4))
 	{
 		if (object->collisionReactEnabled)
 			object->velocity = collisionResolution(object->velocity, faceNorm, object->friction, object->elasticity);
 
+		float upVal = faceNorm.y;
+
+		if (faceNorm.y > 0.0)
+		{
+			object->onGround = true;
+			didHitGround = true;
+		}
+
 		//need to collide to stop.
 		if (glm::length(nP - thisP) < GameObject::stopSpeed)
 		{
 			object->physiceEnabled = false;
+		}
+	}
+
+	if (!didHitGround)
+	{
+		//if it didn't hit ground.. update coyote time
+		object->offgroundTime += dt;
+		if (object->offgroundTime > GameObject::coyoteTime)
+		{
+			object->onGround = false;
 		}
 	}
 
@@ -420,7 +477,7 @@ int main()
 	std::map<std::string, std::shared_ptr<Shader>> shaderCollection = FileReader::readShaderFile("shaders.txt");
 	std::map<std::string, std::shared_ptr<Mesh>> meshCollection = FileReader::readMeshFile("meshes.txt");
 	std::map<std::string, std::shared_ptr<Texture>> textureCollection = FileReader::readTextureFile("textures.txt");
-	FileReader::setPlayerSettings("settings.txt", &fov, &playerSensitivity, &playerSpeed);
+	FileReader::setPlayerSettings("settings.txt", &fov, &playerSensitivity, &playerSpeed, &playerTex);
 
 
 	std::static_pointer_cast<WindowShader>(shaderCollection["window"])->setGlobalLight(glm::normalize(glm::vec3(-1, 1, -1)));
@@ -442,7 +499,7 @@ int main()
 	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	floor->transform.setPosition(0, 0, 0);
 	floor->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
-	floor->texture = textureCollection["yellowRoom"];//t_BakedRender; cargoHauler
+	floor->texture = textureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
 	floor->mesh = meshCollection["yellowRoom"];//bakedMesh; baked cargoHauler
 	stage->addChild(floor);
 
@@ -454,11 +511,32 @@ int main()
 	empty->create(NULL, glm::mat4(1.0));
 
 	std::shared_ptr<GameObjectTexture> figure = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
-	figure->transform.setPosition(0, 0, -6);
-	figure->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
-	figure->texture = textureCollection["blankFigureTex"];
-	figure->mesh = meshCollection["figure"];
-	stage->addChild(figure);
+	figure->transform.setPosition(-4, 0.3, -6.5);
+	//figure->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
+	//figure->texture = textureCollection["blankFigureTex"];
+	//figure->mesh = meshCollection["figure"];
+	//figure phsyics
+	figure->transform.setRotation(glm::vec3(0, 90, 0));
+	figure->friction = 0.0;// playerFriction;
+	figure->elasticity = playerElasticity;
+	figure->radius = playerRadius;
+	figure->velocity = glm::vec3(0, 0, 0);
+	figure->collisionReactEnabled = true;
+	figure->neverDisable = true;
+	//stage->addChild(figure);
+	std::shared_ptr<GameObjectTexture> figureMesh = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	figureMesh->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
+	figureMesh->texture = textureCollection["blankFigureTex"];
+	figureMesh->mesh = meshCollection["figure"];
+	stage->addChild(figureMesh);
+
+	std::shared_ptr<GameObjectTexture> shotgun = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	shotgun->transform.setPosition(glm::vec3(-2, 2, -6));
+	shotgun->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
+	shotgun->texture = textureCollection["shotgun"];
+	shotgun->mesh = meshCollection["shotgun"];
+	stage->addChild(shotgun);
+
 
 	//std::shared_ptr<ColorMesh> nStage = ColorMesh::meshFromTriangles(tree->triangles, 100, 100, 100, 0.1);
 	//std::shared_ptr<GameObjectColor> nFloor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
@@ -480,10 +558,8 @@ int main()
 	float dt = 1.0 / 30.0f;
 
 	std::shared_ptr<GameObjectTexture> player = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
-	player->transform.setPosition(0, 0.2, 0);
-//	player->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
-//	player->texture = textureCollection["blankFigureTex"];
-//	player->mesh = meshCollection["figure"];
+	player->transform.setPosition(0, 6, -0.6);
+	player->transform.setRotation(glm::vec3(0, 140, 0));
 	player->friction = playerFriction;
 	player->elasticity = playerElasticity;
 	player->radius = playerRadius;
@@ -494,12 +570,13 @@ int main()
 	//player mesh
 	std::shared_ptr<GameObjectTexture> playerMesh = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	playerMesh->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
-	playerMesh->texture = textureCollection["blankFigureTex"];
+	playerMesh->texture = textureCollection[playerTex];//blankFigureTex
 	playerMesh->mesh = meshCollection["figure"];
 	stage->addChild(playerMesh);
 	   		
 	std::vector<std::shared_ptr<GameObject>> physicsList;
 	physicsList.push_back(player);
+	physicsList.push_back(figure);
 	float maxSpeed = 40.0;
 
 	glm::vec3 gravity = 30.0f * glm::vec3(0, -1, 0);
@@ -518,15 +595,22 @@ int main()
 	std::shared_ptr<Client> networkClient = std::static_pointer_cast<Client>(Network::makeNetwork(Network::NETWORK_TYPE::CLIENT, "addressClient.txt"));
 	networkClient->start();
 	
-
-	std::shared_ptr<AnimationData> anim0 = AnimationData::loadFromFilePLY("figure2_run", 16);
+	std::shared_ptr<AnimationData> animRun = AnimationData::loadFromFilePLY("figure2_run", 16);
+	std::shared_ptr<AnimationData> animStand = AnimationData::loadFromFilePLY("figure2_stand", 1);
+	std::shared_ptr<AnimationData> animJump = AnimationData::loadFromFilePLY("figure2_jump", 1);
 	std::map<std::string, std::shared_ptr<AnimationData>> animationTest;
-	animationTest["run"] = anim0;
-	figure->animations = animationTest;
-	
+	animationTest["run"] = animRun;
+	animationTest["stand"] = animStand;
+	animationTest["jump"] = animJump;
+	figureMesh->animations = animationTest;
+	playerMesh->animations = animationTest;
+	std::string currentState;
+
+	Toggle testJumpToggle;
 
 	checkGLError("setup");
 
+	networkClient->updateNametex("big boy", playerTex);
 	do
 	{
 		dt = IO.deltaTime;
@@ -536,12 +620,12 @@ int main()
 		}
 
 		//if (shootToggle.toggle(IO.isMouseDown(GLFW_MOUSE_BUTTON_1)))
-		shootToggle.toggle(IO.isMouseDown(GLFW_KEY_B));
+		shootToggle.toggle(IO.isKeyPressed(GLFW_KEY_B));
 		if(shootToggle.getState() && IO.isMouseDown(GLFW_MOUSE_BUTTON_1) && shootDelay <= reloadTime)
 		{
 			reloadTime = 0.0;
 			//spawn a fancy ball.
-			for (int i = 0; i < 10; i++)
+			for (int i = 0; i < 3; i++)
 			{
 				int r = rand() % 255;
 				int g = rand() % 255;
@@ -585,6 +669,33 @@ int main()
 		player->noClip = physicsToggle.getState();
 
 
+
+		//move figure
+		if (IO.isKeyPressed(GLFW_KEY_H))
+		{
+			glm::vec3 vel = playerSpeed * figure->transform.getTransformedZ();
+			figure->velocity.x = vel.x;
+			figure->velocity.z = vel.z;
+		}
+		else if (IO.isKeyPressed(GLFW_KEY_J))
+		{
+			glm::vec3 vel = -playerSpeed * figure->transform.getTransformedZ();
+			figure->velocity.x = vel.x;
+			figure->velocity.z = vel.z;
+		}
+		else
+		{
+			glm::vec3 vel(0);
+			figure->velocity.x = vel.x;
+			figure->velocity.z = vel.z;
+		}
+		if (testJumpToggle.toggle(IO.isKeyPressed(GLFW_KEY_G)))
+		{
+			figure->velocity.y = playerJump;
+		}
+
+
+
 		//now move character based on input.
 		glm::vec3 controlVelocity = getControllerVelocity(IO, player);
 		
@@ -603,29 +714,39 @@ int main()
 		//Network:
 		if (toggleA.toggle(IO.isKeyPressed(GLFW_KEY_M)))
 		{
-			std::string msg = "heyo ";
-			msg += std::to_string(IO.deltaTime);
-			networkClient->msgBuffer.push(msg);
+			networkClient->updateNametex("big boy", playerTex);
 		}
+
 		while (networkClient->clientsToAdd.size())
 		{
 			int r = rand() % 155 + 100;
 			int g = rand() % 155 + 100;
 			int b = rand() % 155 + 100;
-			std::shared_ptr<GameObjectColor> nPlayer = Primitive::makeSphere(playerRadius, std::static_pointer_cast<ColorShader>(shaderCollection["color"]), r, g, b, 3.0);
+			std::shared_ptr<GameObjectTexture> nPlayer = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+			//Player
 			nPlayer->transform.setPosition(0, 0, 0);
-			stage->addChild(nPlayer);
-			nPlayer->friction = playerFriction;
-			nPlayer->elasticity = playerElasticity;
+			//stage->addChild(nPlayer);
+			nPlayer->friction = 0.0;// playerFriction;
+			nPlayer->elasticity = 0.0;// playerElasticity;
 			nPlayer->radius = playerRadius;
 			nPlayer->neverDisable = true;
 			nPlayer->collisionReactEnabled = true;
-			nPlayer->gravityAffected = false;
+			nPlayer->gravityAffected = false; // ============= FALSE =============
 			physicsList.push_back(nPlayer);
 			networkClient->clientsToAdd.front()->clientObject = nPlayer;
 			networkClient->clientsToAdd.pop();
+			std::shared_ptr<GameObjectTexture> nPlayerMesh = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+			nPlayerMesh->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
+			nPlayerMesh->texture = textureCollection["blankFigureTex"];
+			nPlayerMesh->mesh = meshCollection["figure"];
+			nPlayerMesh->animations = animationTest;
+			stage->addChild(nPlayerMesh);
+			networkClient->clientsToAdd.front()->clientDisplayObject = nPlayerMesh;
 			std::cout << "NEW PLAYER!!!!!\n";
 		}
+
+		float slipFrac = slipPercentPerSecond * dt;
+		float slipRotFrac = slipRotPercentPerSecond * dt;
 		for (auto const& clientPair : networkClient->clientMap)
 		{
 			//read the pos/vel
@@ -666,6 +787,16 @@ int main()
 				if (!clientPair.second->updateMutex)
 				{
 					clientPair.second->updateMutex = true;
+					if (clientPair.second->velQue.size() > 0)
+					{
+						glm::vec3 velInt;
+						while (clientPair.second->velQue.size() > 0)
+						{
+							velInt = clientPair.second->velQue.front();
+							clientPair.second->velQue.pop();
+						}
+						clientPair.second->clientObject->velocity = velInt;
+					}
 					if (clientPair.second->posQue.size() > 0)
 					{
 						glm::vec3 posInt;
@@ -675,25 +806,70 @@ int main()
 							clientPair.second->posQue.pop();
 						}
 						//check the snap
-						float slip = glm::length(posInt - clientPair.second->clientObject->transform.getPosition());
-						if (slip > slipRange)
-						{
-							clientPair.second->clientObject->transform.setPosition(posInt);
-						}
+						//float slip = glm::length(posInt - clientPair.second->clientObject->transform.getPosition());
+						//if (slip > slipRange)
+						//{
+						//	clientPair.second->clientObject->transform.setPosition(posInt);
+						//}
+						clientPair.second->goalPos = posInt;
 						//clientPair.second->clientObject->transform.setPosition(posInt);
 					}
-					if (clientPair.second->velQue.size() > 0)
-					{
-						glm::vec3 velInt;
-						while (clientPair.second->velQue.size() > 0)
-						{
-							velInt = clientPair.second->velQue.front();
-							clientPair.second->velQue.pop();
-							clientPair.second->clientObject->velocity = velInt;
-						}
+					if (glm::length(clientPair.second->clientObject->velocity) == 0.0)//<= dt * glm::length(gravity))
+					{		
+						clientPair.second->clientObject->friction = 20.0;
 					}
+					else
+					{
+						clientPair.second->clientObject->friction = 0.0;
+					}
+					glm::vec3 pos = clientPair.second->clientObject->transform.getPosition();
+					glm::vec3 dif = clientPair.second->goalPos - pos;
+					clientPair.second->clientObject->transform.setPosition(pos + slipFrac * (dif));
+					if (glm::length(dif) >= teleportRange)
+					{
+						clientPair.second->clientObject->transform.setPosition(clientPair.second->goalPos);
+					}
+					if (clientPair.second->rotQue.size() > 0)
+					{
+						float rotInt;
+						while (clientPair.second->rotQue.size() > 0)
+						{
+							rotInt = clientPair.second->rotQue.front();
+							clientPair.second->rotQue.pop();							
+						}
+						//clientPair.second->clientObject->transform.setRotation(glm::vec3(0, rotInt, 0));
+						clientPair.second->goalRot = rotInt;
+					}
+					float rot = clientPair.second->clientObject->transform.getRotation().y;
+					float nRot = Geometry::lerpAngleDeg(rot, clientPair.second->goalRot, slipRotFrac);
+					clientPair.second->clientObject->transform.setRotation(glm::vec3(0, nRot, 0));
+					if (clientPair.second->stateQue.size() > 0)
+					{
+						std::string stateInt;
+						while (clientPair.second->stateQue.size() > 0)
+						{
+							stateInt = clientPair.second->stateQue.front();
+							clientPair.second->stateQue.pop();
+						}
+						//clientPair.second->clientObject->transform.setRotation(glm::vec3(0, rotInt, 0));
+						clientPair.second->currentState = stateInt;
+					}
+					if (clientPair.second->updateName)
+					{
+						std::string name = clientPair.second->name;
+						std::string clientTex = clientPair.second->texture;
+						std::cout << "player"<<clientPair.first << " name is " << name << " : texture is " << clientTex << "\n";
+						std::static_pointer_cast<GameObjectTexture>(clientPair.second->clientDisplayObject)->texture = textureCollection[clientTex];
+						clientPair.second->updateName = false;
+					}
+					//give it a gravity push down to make sure animations work.. "will push up later..."
+					//clientPair.second->clientObject->velocity += gravity * dt;
+					setAnimation(clientPair.second->clientObject, clientPair.second->clientDisplayObject, dt, clientPair.second->currentState);
 					clientPair.second->updateMutex = false;
 				}
+				//animate...
+				//std::string state;
+				//animatePlayer(clientPair.second->clientObject, clientPair.second->clientDisplayObject, dt, &state);
 			}
 		}
 		
@@ -708,7 +884,7 @@ int main()
 				object->velocity = maxSpeed * glm::normalize(object->velocity);
 			}
 		
-			tryMoveObject(object, dt * object->velocity, tree);
+			tryMoveObject(object, dt * object->velocity, dt, tree);
 
 			/*
 			if (glm::length(object->velocity) > 0.0)
@@ -731,20 +907,20 @@ int main()
 			*/
 		}
 		
+
+
 		cameraOrientation = player->transform.getRotationQuat();
 		camera->setRotation(cameraOrientation);
-		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));		
+		//camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));		
+		camera->setPosition(player->transform.getPosition() + glm::vec3(0, -player->radius + playerHeight, 0));
 
 
-		//update player mesh based on player
-		playerMesh->transform.setPosition(player->transform);
-		playerMesh->transform.setRotation(glm::vec3(0, player->transform.getRotation().y,0));
+		//animate meshes
+		std::string playerState, figureState;
+		animatePlayer(player, playerMesh, dt, &playerState);
+		animatePlayer(figure, figureMesh, dt, &figureState);		
 
-		figure->updateAnimation(dt, "run");
-
-
-
-		networkClient->updateNetworkPosVel(player->transform.getPosition(), player->velocity);
+		networkClient->updateNetworkPosVel(player->transform.getPosition(), player->velocity, player->transform.getRotation().y, playerState);
 		playerMesh->visible = true;
 		Portal::preRenderPortals(camera, 2);
 		playerMesh->visible = false;

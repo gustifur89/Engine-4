@@ -14,6 +14,6 @@ public:
 	static std::map<std::string, std::shared_ptr<Mesh>> readMeshFile(std::string fileName);
 	static std::map<std::string, std::shared_ptr<Shader>> readShaderFile(std::string fileName);
 	static std::map<std::string, std::shared_ptr<Texture>> readTextureFile(std::string fileName);
-	static void setPlayerSettings(std::string fileName, float* fov, float* sensitivity, float* speed);
+	static void setPlayerSettings(std::string fileName, float* fov, float* sensitivity, float* speed, std::string* playerTex);
 };
 

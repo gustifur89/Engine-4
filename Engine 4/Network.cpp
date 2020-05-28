@@ -45,7 +45,7 @@ void Network::ReadAddressFromFile(std::string fileName, std::string* address, in
 
 }
 
-std::string Network::packData(int id, glm::vec3 position, glm::vec3 velocity)
+std::string Network::packData(int id, glm::vec3 position, glm::vec3 velocity, float rot, std::string state)
 {
 	char buffer[FLOAT_SIZE];
 	std::string out = "";// std::to_string(id);
@@ -71,6 +71,14 @@ std::string Network::packData(int id, glm::vec3 position, glm::vec3 velocity)
 	out += ",";
 	//vel z
 	snprintf(buffer, sizeof buffer, "%f", velocity.z);
+	out += buffer;
+	out += ",";
+	//rot
+	snprintf(buffer, sizeof buffer, "%f", rot);
+	out += buffer;
+	out += ",";
+	//state
+	snprintf(buffer, sizeof buffer, "%s", state);
 	out += buffer;
 	return out;
 }
@@ -98,19 +106,30 @@ std::shared_ptr<Network> Network::makeNetwork(NETWORK_TYPE type, std::string add
 	return network;
 }
 
-void Network::readPacketData(std::string data, glm::vec3* position, glm::vec3* velocity)
+void Network::readPacketData(std::string data, glm::vec3* position, glm::vec3* velocity, float* rot, std::string* state)
 {
 	int firstComma = data.find(",");
 	int secondComma = firstComma + 1 + (data.substr(firstComma + 1, data.length() + 1).find(","));
 	int thirdComma = secondComma + 1 + (data.substr(secondComma + 1, data.length() + 1).find(","));
 	int fourthComma = thirdComma + 1 + (data.substr(thirdComma + 1, data.length() + 1).find(","));
 	int fifthComma = fourthComma + 1 + (data.substr(fourthComma + 1, data.length() + 1).find(","));
+	int sixthComma = fifthComma + 1 + (data.substr(fifthComma + 1, data.length() + 1).find(","));
+	int seventhComma = sixthComma + 1 + (data.substr(sixthComma + 1, data.length() + 1).find(","));
 	position->x = std::stof(data.substr(0, firstComma));
 	position->y = std::stof(data.substr(firstComma+1, secondComma));
 	position->z = std::stof(data.substr(secondComma+1, thirdComma));
 	velocity->x = std::stof(data.substr(thirdComma+1, fourthComma));
 	velocity->y = std::stof(data.substr(fourthComma+1, fifthComma));
-	velocity->z = std::stof(data.substr(fifthComma+1, data.length()+1));
+	velocity->z = std::stof(data.substr(fifthComma+1, sixthComma));
+	*rot = std::stof(data.substr(sixthComma + 1, seventhComma));
+	*state = data.substr(seventhComma +1, data.length()+1);
+}
+
+void Network::readNameData(std::string msg, std::string* name, std::string* texture)
+{
+	int firstComma = msg.find(",");
+	*name = msg.substr(0, firstComma);
+	*texture = msg.substr(firstComma + 1, msg.length() + 1);
 }
 
 // =============== Server ==================
@@ -131,7 +150,7 @@ void Server::ParseData(ENetHost* server, char* data)
 	int id;
 	std::string msg;
 	ParsePacket(data, &type, &id, &msg);
-
+	std::cout << data << "\n";
 	switch (type)
 	{
 		case Network::TYPE_FLAG::UPDATE:
@@ -150,12 +169,20 @@ void Server::ParseData(ENetHost* server, char* data)
 
 		}
 		break;
-		case Network::TYPE_FLAG::NEW_USER:
+		case Network::TYPE_FLAG::NAME_UPDATE:
 		{
 			//BroadcastPacket(server, PacketData::MakeServerPacket(TYPE_FLAG::NEW_USER, id, msg));
 			//BroadcastPacket(server, data);
 			//BroadcastPacket(server, PacketData::MakeServerPacket(TYPE_FLAG::NEW_USER, id, msg));
 			//clientMap[id]->SetUsername(msg);
+			while (heartbeatMutex) { Sleep(1); };
+			heartbeatMutex = true;
+			if (clientMap[id])
+			{
+				clientMap[id]->nameTexData = data;
+				clientMap[id]->updateName = true;
+			}			
+			heartbeatMutex = false;
 		}
 		break;
 	}
@@ -180,18 +207,25 @@ void* Server::serverHeartbeat(ENetHost* server)
 	while (running)
 	{
 		Sleep(HEARTBEAT_TIMESTEP);
-
+		std::cout << "thump\n";
 		while (heartbeatMutex) { Sleep(1); };
 		heartbeatMutex = true;
 		//go through and send all updates
 		for (auto const& x : clientMap)
 		{
-			if (x.second->didUpdate)
+			if (x.second)
 			{
-				BroadcastPacket(server, x.second->lastUpdate);
-				x.second->didUpdate = false;
+				if (x.second->didUpdate)
+				{
+					BroadcastPacket(server, x.second->lastUpdate);
+					x.second->didUpdate = false;
+				}
+				if (x.second->updateName)
+				{
+					BroadcastPacket(server, x.second->nameTexData);
+					x.second->updateName = false;
+				}
 			}
-			
 		}
 		heartbeatMutex = false;
 	}
@@ -282,12 +316,22 @@ void* Server::server()
 					msg += std::to_string(x.second->getID());
 					msg += "|";
 					msg += "";
-					SendPacket(event.peer, msg);
+					BroadcastPacket(server, msg);
+					//SendPacket(event.peer, msg);
 				}
 				//send all the people's pos and vels
 				for (auto const& x : clientMap)
 				{
-					SendPacket(event.peer, x.second->lastUpdate);
+					if(x.second->lastUpdate != "")
+						BroadcastPacket(server, x.second->lastUpdate);
+						//SendPacket(event.peer, x.second->lastUpdate);
+				}
+				//send all the people's name/tex
+				for (auto const& x : clientMap)
+				{
+					if(x.second->nameTexData != "")
+						BroadcastPacket(server, x.second->nameTexData);
+						//SendPacket(event.peer, x.second->nameTexData);
 				}
 
 				//create the new client for the new guy
@@ -300,7 +344,7 @@ void* Server::server()
 				initUpdate += "|";
 				initUpdate += std::to_string(new_player_id);
 				initUpdate += "|";
-				initUpdate += "0.0,0.0,0.0,0.0,0.0,0.0"; // pos = (0,0,0), vel = (0,0,0)
+				initUpdate += "0.0,0.0,0.0,0.0,0.0,0.0,0.0,stand"; // pos = (0,0,0), vel = (0,0,0)
 				clientMap[new_player_id]->lastUpdate = initUpdate;
 				clientMap[new_player_id]->didUpdate = true;
 
@@ -375,7 +419,7 @@ void Client::ParseData(char* data)
 	int id;
 	std::string msg;
 	ParsePacket(data, &type, &id, &msg);
-
+	//std::cout << data << "\n";
 	switch (type)
 	{
 		case Network::TYPE_FLAG::UPDATE:
@@ -391,12 +435,16 @@ void Client::ParseData(char* data)
 					while (clientMap[id]->updateMutex) { Sleep(1); }
 
 					clientMap[id]->updateMutex = true;
-					std::cout << id << " : " << msg << "\n";
+					//std::cout << id << " : " << msg << "\n";
 					glm::vec3 pos, vel;
-					Network::readPacketData(msg, &pos, &vel);
+					float rot;
+					std::string state;
+					Network::readPacketData(msg, &pos, &vel, &rot, &state);
 										
 					clientMap[id]->posQue.push(pos);
 					clientMap[id]->velQue.push(vel);
+					clientMap[id]->rotQue.push(rot);
+					clientMap[id]->stateQue.push(state);
 					clientMap[id]->updateMutex = false;
 				}
 				
@@ -409,6 +457,21 @@ void Client::ParseData(char* data)
 			{
 				clientMap[id] = new ClientData(id);
 				clientsToAdd.push(clientMap[id]);
+			}
+		}
+		break;
+		case Network::TYPE_FLAG::NAME_UPDATE:
+		{
+			if (id != clientID)
+			{
+				if (clientMap[id])
+				{
+					while (clientMap[id]->updateMutex) { Sleep(1); }
+					clientMap[id]->updateMutex = true;
+					clientMap[id]->updateName = true;
+					Network::readNameData(msg, &clientMap[id]->name, &clientMap[id]->texture);
+					clientMap[id]->updateMutex = false;
+				}
 			}
 		}
 		break;
@@ -459,12 +522,21 @@ void Client::SendPacket(ENetPeer* peer, std::string data)
 	enet_peer_send(peer, 0, packet);
 }
 
-void Client::updateNetworkPosVel(glm::vec3 pos, glm::vec3 vel)
+void Client::updateNetworkPosVel(glm::vec3 pos, glm::vec3 vel, float rot, std::string state)
 {
 	updateMutex = true;
 	posQue.push(pos);
 	velQue.push(vel);
+	rotQue.push(rot);
+	stateQue.push(state);
 	updateMutex = false;
+}
+
+void Client::updateNametex(std::string name, std::string tex)
+{
+	this->name = name;
+	this->tex = tex;
+	newNameTex = true;
 }
 
 void Client::start()
@@ -477,6 +549,8 @@ void* Client::client()
 {
 	clientID = -1;
 	updateMutex = false;
+	newNameTex = false;
+	stateInt = "stand";
 	if (enet_initialize() != 0)
 	{
 		std::cout << "error occured while initializing ENet\n";
@@ -587,11 +661,21 @@ void* Client::msgLoop(ENetHost* client, ENetPeer* peer)
 			velInt = velQue.front();
 			velQue.pop();
 		}
+		while (rotQue.size() > 0)
+		{
+			rotInt = rotQue.front();
+			rotQue.pop();
+		}
+		while (stateQue.size() > 0)
+		{
+			stateInt = stateQue.front();
+			stateQue.pop();
+		}
 
 		//we only update if velocity changes. Because the simulations should sinc well enough
 		// but velocity changes simulation much more than position...
 		//if (posInt != oldPos || velInt != oldVel)
-		if (velInt != oldVel)
+		/*if (posInt != oldPos || velInt != oldVel || rotInt != oldRot || stateInt != oldState)
 		{
 			//new values so update
 			std::string msg = "";
@@ -599,10 +683,38 @@ void* Client::msgLoop(ENetHost* client, ENetPeer* peer)
 			msg += "|";
 			msg += std::to_string(clientID);
 			msg += "|";
-			msg += Network::packData(clientID, posInt, velInt);
+			msg += Network::packData(clientID, posInt, velInt, rotInt, stateInt);
 			SendPacket(peer, msg);
 			oldVel = velInt;
 			oldPos = posInt;
+			oldRot = rotInt;
+			oldState = stateInt;
+		}*/
+		//new values so update
+		std::string msg = "";
+		msg += std::to_string(Network::TYPE_FLAG::UPDATE);
+		msg += "|";
+		msg += std::to_string(clientID);
+		msg += "|";
+		msg += Network::packData(clientID, posInt, velInt, rotInt, stateInt);
+		SendPacket(peer, msg);
+		oldVel = velInt;
+		oldPos = posInt;
+		oldRot = rotInt;
+		oldState = stateInt;
+
+
+		if (newNameTex)
+		{
+			//send new name/tex
+			std::string msg = "";
+			msg += std::to_string(Network::TYPE_FLAG::NAME_UPDATE);
+			msg += "|";
+			msg += std::to_string(clientID);
+			msg += "|";
+			msg += name +std::string(",") + tex;
+			SendPacket(peer, msg);
+			newNameTex = false;
 		}
 
 		//if (msg == "exit")

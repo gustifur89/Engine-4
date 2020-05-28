@@ -478,6 +478,21 @@ public:
 		return glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
 	}
 
+	static float lerpAngleRad(float angle0, float angle1, float t)
+	{
+		// get normalised direction from joint to mouse
+		glm::vec2 desired_dir = glm::normalize(glm::vec2(cos(angle1), sin(angle1)));
+		// get current direction
+		glm::vec2 current_dir = glm::normalize(glm::vec2(cos(angle0), sin(angle0)));
+		// ease the current direction to the target direction
+		current_dir += (desired_dir - current_dir) * t;
+		return atan2(current_dir.y, current_dir.x);
+	}
+
+	static float lerpAngleDeg(float angle0, float angle1, float t)
+	{
+		return TO_DEG * lerpAngleRad(TO_RAD * angle0, TO_RAD * angle1, t);
+	}
 };
 
 class Frustum

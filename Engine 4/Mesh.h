@@ -18,6 +18,9 @@ protected:
 	std::vector<GLuint> bufferAttribs;
 	bool hasBound;
 
+	static std::vector<std::string> split(std::string str, std::string delim);
+	static void parseOBJVert(std::string vert, int* vIndx, int* uvIndx, int* nIndx);
+
 public:
 	Mesh();
 	~Mesh();
@@ -90,16 +93,13 @@ public:
 	TYPE type;
 	std::vector<GLfloat> colorDataBuffer;
 
-	static std::shared_ptr<GenericMesh> loadFromFilePLY(std::string fileName, bool dynamic = false);
+	static std::shared_ptr<GenericMesh> loadFromFilePLY(std::string fileName, bool dynamic = false, bool fullFIlePath = false);
 };
 
 class AnimationData
 {
 public:
-	std::vector<std::vector<GLfloat>> vertexBuffer;
-	std::vector<std::vector<GLfloat>> normalBuffer;
-	std::vector<std::vector<GLuint>> indexBuffer;
-	std::vector<std::vector<GLfloat>> colorDataBuffer; // color or uv
+	std::vector<std::shared_ptr<GenericMesh>> frames;
 	int numFrames;
 
 	static std::shared_ptr<AnimationData> loadFromFilePLY(std::string fileName, int numFrames);

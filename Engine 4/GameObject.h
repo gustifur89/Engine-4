@@ -44,6 +44,9 @@ public:
 	bool neverDisable;
 	static float stopSpeed;
 	bool noClip;
+	static float coyoteTime;
+	float offgroundTime;
+	bool onGround;
 
 	//animation stuff
 	std::map<std::string, std::shared_ptr<AnimationData>> animations;

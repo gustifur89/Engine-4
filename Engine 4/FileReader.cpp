@@ -72,6 +72,26 @@ std::map<std::string, std::shared_ptr<Mesh>> FileReader::readMeshFile(std::strin
 			}
 			meshCollection[name] = texMesh;
 		}
+		else if (line == "GenericMesh")
+		{
+			std::string name;
+			std::string meshFile;
+			std::string type;
+			std::string animType;
+			file >> type >> animType >> name >> meshFile;
+			std::shared_ptr<GenericMesh> genMesh;
+			if (type == "ply")
+			{
+				if (animType == "static")
+					genMesh = GenericMesh::loadFromFilePLY(meshFile);
+				if (animType == "dynamic")
+					genMesh = GenericMesh::loadFromFilePLY(meshFile, true);
+			}
+			if (genMesh == NULL) {
+				std::cout << "Failled to create mesh : " << meshFile << "\n";
+			}
+			meshCollection[name] = genMesh;
+		}
 	}
 
 	return meshCollection;
@@ -237,7 +257,7 @@ std::map<std::string, std::shared_ptr<Texture>> FileReader::readTextureFile(std:
 
 }
 
-void FileReader::setPlayerSettings(std::string fileName, float* fov, float* sensitivity, float* speed)
+void FileReader::setPlayerSettings(std::string fileName, float* fov, float* sensitivity, float* speed, std::string* playerTex)
 {
 	fileName = std::string("src/data/") + fileName;
 	std::ifstream file;
@@ -274,6 +294,10 @@ void FileReader::setPlayerSettings(std::string fileName, float* fov, float* sens
 		else if (line == "speed")
 		{
 			file >> *speed;
+		}
+		else if (line == "playerTexture")
+		{
+			file >> *playerTex;
 		}
 	}
 }

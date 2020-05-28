@@ -1,13 +1,14 @@
-ColorMesh ply static cube cube
-ColorMesh ply static torus torus
-ColorMesh ply static sphere smoothSphere
-ColorMesh ply static arbit testGround
-ColorMesh ply static tris tris
-ColorMesh ply static grapplingHook GrapplingHook
+GenericMesh ply static cube cube
+GenericMesh ply static torus torus
+GenericMesh ply static sphere smoothSphere
+GenericMesh ply static arbit testGround
+GenericMesh ply static tris tris
+GenericMesh ply static grapplingHook GrapplingHook
 //this shouldn't be read....
-ColorMesh ply static portal portalMesh
-TextureMesh ply static texCube textCube
-TextureMesh ply static texGround testGround_tex
-TextureMesh ply static yellowRoom Yellow_room
-TextureMesh ply static cargoHauler cargo_hauler
-TextureMesh ply dynamic figure figure2
+GenericMesh ply static portal portalMesh
+GenericMesh ply static texCube textCube
+GenericMesh ply static texGround testGround_tex
+GenericMesh ply static yellowRoom Yellow_room
+GenericMesh ply static cargoHauler cargo_hauler
+GenericMesh ply static figure figure2
+TextureMesh obj static shotgun shotgun

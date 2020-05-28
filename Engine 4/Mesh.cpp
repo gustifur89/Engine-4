@@ -304,6 +304,30 @@ void Mesh::render()
 	glBindVertexArray(0);
 }
 
+std::vector<std::string> Mesh::split(std::string str, std::string delim)
+{
+	std::vector<std::string> out;
+	size_t pos = 0;
+	std::string token;
+	while ((pos = str.find(delim)) != std::string::npos) {
+		token = str.substr(0, pos);
+		//std::cout << token << std::endl;
+		if(token.length() > 0)
+			out.push_back(token);
+		str.erase(0, pos + delim.length());
+	}
+	out.push_back(str);
+	return out;
+}
+
+void Mesh::parseOBJVert(std::string vert, int* vIndx, int* uvIndx, int* nIndx)
+{
+	std::vector<std::string> strs = Mesh::split(vert, "/");
+	*vIndx = std::stoi(strs[0]);
+	*uvIndx = std::stoi(strs[1]);
+	*nIndx = std::stoi(strs[2]);
+}
+
 // ================================== ColorMesh =====================================
 
 std::shared_ptr<ColorMesh> ColorMesh::loadFromFilePLY(std::string fileName, bool dynamic)
@@ -874,145 +898,195 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
 	}
 	std::shared_ptr<TextureMesh> mesh(new TextureMesh());
 
+	std::vector<glm::vec3> verts;
+	std::vector<glm::vec3> norms;
+	std::vector<glm::vec2> uvs;
+
 	std::string line;
 
-	int vertex_number = 0;
-	int face_number = 0;
-	int count_v = 0;
-	int count_f = 0;
-	bool vertexes = false;
-	bool faces = false;
-	bool alphaChannel = false;
-	bool rgbChannel = false;
-
-	while (true)
+	while (!file.eof())
 	{
-		//assumes you get 9 in.
 		file >> line;
-		if (file.eof())
-			return std::shared_ptr<TextureMesh>(NULL);
-
-		if (line == "element")
+		if (line == "v")
 		{
-			std::string type;
-			file >> type;
-			if (type == "vertex")
+			//vertex
+			float x, y, z;
+			file >> x >> y >> z;
+			verts.push_back(glm::vec3(x,y,z));
+			//verts.push_back(-x);
+			//verts.push_back(y);
+			//verts.push_back(z);
+		}
+		else if (line == "vn")
+		{
+			//normal
+			float nx, ny, nz;
+			file >> nx >> ny >> nz;
+			norms.push_back(glm::vec3(nx, ny, nz));
+			//norms.push_back(-nx);
+			//norms.push_back(ny);
+			//norms.push_back(nz);
+		}
+		else if (line == "vt")
+		{
+			//uv
+			float u, v;
+			file >> u >> v;
+			uvs.push_back(glm::vec2(u, 1.0 - v));
+			//uvs.push_back(u);
+			//uvs.push_back(1.0 - v);
+		}
+		else if (line == "f")
+		{
+			//face
+			//extract the entire line. To find out if we are using quad or tri...
+			std::getline(file, line);
+			std::vector<std::string> vindx = Mesh::split(line, " ");
+			if (vindx.size() == 3)
 			{
-				file >> vertex_number;
+				//need to construct the buffers....
+				//v1
+				int vi, uvi, ni;
+				Mesh::parseOBJVert(vindx[0], &vi, &uvi, &ni);
+				glm::vec3 v = verts[vi - 1];
+				glm::vec3 n = norms[ni - 1];
+				glm::vec2 uv = uvs[uvi - 1];
+				mesh->vertexBuffer.push_back(v.x);
+				mesh->vertexBuffer.push_back(v.y);
+				mesh->vertexBuffer.push_back(v.z);
+				mesh->normalBuffer.push_back(n.x);
+				mesh->normalBuffer.push_back(n.y);
+				mesh->normalBuffer.push_back(n.z);
+				mesh->uvBuffer.push_back(uv.x);
+				mesh->uvBuffer.push_back(uv.y);
+				mesh->indexBuffer.push_back(mesh->indexBuffer.size());//just make it sequtially...
+				//v2
+				Mesh::parseOBJVert(vindx[1], &vi, &uvi, &ni);
+				v = verts[vi - 1];
+				n = norms[ni - 1];
+				uv = uvs[uvi - 1];
+				mesh->vertexBuffer.push_back(v.x);
+				mesh->vertexBuffer.push_back(v.y);
+				mesh->vertexBuffer.push_back(v.z);
+				mesh->normalBuffer.push_back(n.x);
+				mesh->normalBuffer.push_back(n.y);
+				mesh->normalBuffer.push_back(n.z);
+				mesh->uvBuffer.push_back(uv.x);
+				mesh->uvBuffer.push_back(uv.y);
+				mesh->indexBuffer.push_back(mesh->indexBuffer.size());
+				//v3
+				Mesh::parseOBJVert(vindx[2], &vi, &uvi, &ni);
+				v = verts[vi - 1];
+				n = norms[ni - 1];
+				uv = uvs[uvi - 1];
+				mesh->vertexBuffer.push_back(v.x);
+				mesh->vertexBuffer.push_back(v.y);
+				mesh->vertexBuffer.push_back(v.z);
+				mesh->normalBuffer.push_back(n.x);
+				mesh->normalBuffer.push_back(n.y);
+				mesh->normalBuffer.push_back(n.z);
+				mesh->uvBuffer.push_back(uv.x);
+				mesh->uvBuffer.push_back(uv.y);
+				mesh->indexBuffer.push_back(mesh->indexBuffer.size());
 			}
-			if (type == "face")
+			else if (vindx.size() == 4)
 			{
-				file >> face_number;
+				//v1
+				int vi, uvi, ni;
+				Mesh::parseOBJVert(vindx[0], &vi, &uvi, &ni);
+				glm::vec3 v = verts[vi - 1];
+				glm::vec3 n = norms[ni - 1];
+				glm::vec2 uv = uvs[uvi - 1];
+				mesh->vertexBuffer.push_back(v.x);
+				mesh->vertexBuffer.push_back(v.y);
+				mesh->vertexBuffer.push_back(v.z);
+				mesh->normalBuffer.push_back(n.x);
+				mesh->normalBuffer.push_back(n.y);
+				mesh->normalBuffer.push_back(n.z);
+				mesh->uvBuffer.push_back(uv.x);
+				mesh->uvBuffer.push_back(uv.y);
+				mesh->indexBuffer.push_back(mesh->indexBuffer.size());//just make it sequtially...
+				//v2
+				Mesh::parseOBJVert(vindx[1], &vi, &uvi, &ni);
+				v = verts[vi - 1];
+				n = norms[ni - 1];
+				uv = uvs[uvi - 1];
+				mesh->vertexBuffer.push_back(v.x);
+				mesh->vertexBuffer.push_back(v.y);
+				mesh->vertexBuffer.push_back(v.z);
+				mesh->normalBuffer.push_back(n.x);
+				mesh->normalBuffer.push_back(n.y);
+				mesh->normalBuffer.push_back(n.z);
+				mesh->uvBuffer.push_back(uv.x);
+				mesh->uvBuffer.push_back(uv.y);
+				mesh->indexBuffer.push_back(mesh->indexBuffer.size());
+				//v3
+				Mesh::parseOBJVert(vindx[2], &vi, &uvi, &ni);
+				v = verts[vi - 1];
+				n = norms[ni - 1];
+				uv = uvs[uvi - 1];
+				mesh->vertexBuffer.push_back(v.x);
+				mesh->vertexBuffer.push_back(v.y);
+				mesh->vertexBuffer.push_back(v.z);
+				mesh->normalBuffer.push_back(n.x);
+				mesh->normalBuffer.push_back(n.y);
+				mesh->normalBuffer.push_back(n.z);
+				mesh->uvBuffer.push_back(uv.x);
+				mesh->uvBuffer.push_back(uv.y);
+				mesh->indexBuffer.push_back(mesh->indexBuffer.size());
+
+				//second tri
+				//v1
+				Mesh::parseOBJVert(vindx[0], &vi, &uvi, &ni);
+				v = verts[vi - 1];
+				n = norms[ni - 1];
+				uv = uvs[uvi - 1];
+				mesh->vertexBuffer.push_back(v.x);
+				mesh->vertexBuffer.push_back(v.y);
+				mesh->vertexBuffer.push_back(v.z);
+				mesh->normalBuffer.push_back(n.x);
+				mesh->normalBuffer.push_back(n.y);
+				mesh->normalBuffer.push_back(n.z);
+				mesh->uvBuffer.push_back(uv.x);
+				mesh->uvBuffer.push_back(uv.y);
+				mesh->indexBuffer.push_back(mesh->indexBuffer.size());
+				//v3
+				Mesh::parseOBJVert(vindx[2], &vi, &uvi, &ni);
+				v = verts[vi - 1];
+				n = norms[ni - 1];
+				uv = uvs[uvi - 1];
+				mesh->vertexBuffer.push_back(v.x);
+				mesh->vertexBuffer.push_back(v.y);
+				mesh->vertexBuffer.push_back(v.z);
+				mesh->normalBuffer.push_back(n.x);
+				mesh->normalBuffer.push_back(n.y);
+				mesh->normalBuffer.push_back(n.z);
+				mesh->uvBuffer.push_back(uv.x);
+				mesh->uvBuffer.push_back(uv.y);
+				mesh->indexBuffer.push_back(mesh->indexBuffer.size());
+				//v4
+				Mesh::parseOBJVert(vindx[3], &vi, &uvi, &ni);
+				v = verts[vi - 1];
+				n = norms[ni - 1];
+				uv = uvs[uvi - 1];
+				mesh->vertexBuffer.push_back(v.x);
+				mesh->vertexBuffer.push_back(v.y);
+				mesh->vertexBuffer.push_back(v.z);
+				mesh->normalBuffer.push_back(n.x);
+				mesh->normalBuffer.push_back(n.y);
+				mesh->normalBuffer.push_back(n.z);
+				mesh->uvBuffer.push_back(uv.x);
+				mesh->uvBuffer.push_back(uv.y);
+				mesh->indexBuffer.push_back(mesh->indexBuffer.size());
 			}
 		}
-		else if (line == "property")
+		else if (line == "usemtl")
 		{
-			std::string type;
-			file >> type;
-			if (type == "uchar")
-			{
-				file >> type;
-				if (type == "alpha")
-				{
-					alphaChannel = true;
-				}
-				if (type == "red" || type == "green" || type == "blue")
-				{
-					rgbChannel = true;
-				}
-			}
-		}
+			//texture...
+			//Need to figure this one out....
 
-		else if (line == "end_header")
-		{
-			vertexes = true;
-			break;
-		}
+			//will figure out late...
 
-	}
-
-	while (true)
-	{
-		if (file.eof())
-			return std::shared_ptr<TextureMesh>(NULL);;
-
-		if (vertexes)
-		{
-			if (count_v == vertex_number)
-			{
-				//exit
-				vertexes = false;
-				faces = true;
-			}
-			else
-			{
-				//read vertex;
-				float x, y, z, nx, ny, nz;
-				float u, v;// r, g, b;
-				file >> x >> z >> y >> nx >> nz >> ny;	//y and z switch
-				file >> u >> v;
-				if (rgbChannel)
-				{
-					int r, g, b;
-					file >> r >> g >> b;
-
-					std::cout << r << ", " << g << ", " << b << "\n";
-
-				}
-				if (alphaChannel)
-				{
-					int a;
-					file >> a;
-				}
-
-				mesh->vertexBuffer.push_back(-x);
-				mesh->vertexBuffer.push_back(y);
-				mesh->vertexBuffer.push_back(z);
-
-				mesh->normalBuffer.push_back(-nx);
-				mesh->normalBuffer.push_back(ny);
-				mesh->normalBuffer.push_back(nz);
-
-				mesh->uvBuffer.push_back(u);
-				mesh->uvBuffer.push_back(1.0 - v);
-				count_v++;
-			}
-		}
-		else if (faces)
-		{
-			if (count_f == face_number)
-			{
-				//exit
-				break;
-			}
-			else
-			{
-				//read vertex;
-
-				int num_v;			//whether it is triangles or quads
-				int v1, v2, v3, v4;
-				file >> num_v;
-				if (num_v == 3)
-				{
-					file >> v1 >> v2 >> v3;
-					mesh->indexBuffer.push_back(v1);
-					mesh->indexBuffer.push_back(v2);
-					mesh->indexBuffer.push_back(v3);
-				}
-				else if (num_v == 4)
-				{
-					file >> v1 >> v2 >> v3 >> v4;
-					mesh->indexBuffer.push_back(v1);
-					mesh->indexBuffer.push_back(v2);
-					mesh->indexBuffer.push_back(v3);
-
-					mesh->indexBuffer.push_back(v1);
-					mesh->indexBuffer.push_back(v3);
-					mesh->indexBuffer.push_back(v4);
-				}
-
-				count_f++;
-			}
 		}
 	}
 	file.close();
@@ -1030,9 +1104,11 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
 
 // ================================= GenereicMesh =====================
 
-std::shared_ptr<GenericMesh> GenericMesh::loadFromFilePLY(std::string fileName, bool dynamic)
+std::shared_ptr<GenericMesh> GenericMesh::loadFromFilePLY(std::string fileName, bool dynamic, bool fullFIlePath)
 {
-	fileName = std::string("src/meshes/") + fileName + std::string(".ply");
+	if(!fullFIlePath)
+		fileName = std::string("src/meshes/") + fileName + std::string(".ply");
+	
 	std::ifstream file;
 	file = std::ifstream(fileName);
 
@@ -1270,194 +1346,20 @@ std::shared_ptr<GenericMesh> GenericMesh::loadFromFilePLY(std::string fileName, 
 
 std::shared_ptr<AnimationData> AnimationData::loadFromFilePLY(std::string fileName, int numFrames)
 {
-	std::shared_ptr<AnimationData> frames = std::shared_ptr<AnimationData>(new AnimationData());
-	frames->numFrames = numFrames;
 
-	frames->vertexBuffer.resize(numFrames);
-	frames->normalBuffer.resize(numFrames);
-	frames->indexBuffer.resize(numFrames);
-	frames->colorDataBuffer.resize(numFrames);
-
+	std::shared_ptr<AnimationData> animation = std::shared_ptr<AnimationData>(new AnimationData());
+	animation->numFrames = numFrames;
+	animation->frames.resize(numFrames);
+	
 	std::string filePath = std::string("src/meshes/") + fileName + std::string("/") + fileName;
 	std::string line;
 
 	for (int i = 1; i <= numFrames; i++)
 	{
 		fileName = filePath + std::to_string(i) + std::string(".ply");
-		std::ifstream file;
-		file = std::ifstream(fileName);
-
-		if (file.fail())
-		{
-			fprintf(stderr, "failed to load file at : ");
-			fprintf(stderr, fileName.c_str());
-			fprintf(stderr, "\n");
-			return std::shared_ptr<AnimationData>(NULL);
-		}
-
-		std::string line;
-
-		int vertex_number = 0;
-		int face_number = 0;
-		int count_v = 0;
-		int count_f = 0;
-		bool vertexes = false;
-		bool faces = false;
-
-		bool alphaChannel = false;
-		bool rgbChannel = false;
-		bool uv = false;
-
-
-		while (true)
-		{
-			//assumes you get 9 in.
-			file >> line;
-			if (file.eof())
-				return std::shared_ptr<AnimationData>(NULL);
-
-			if (line == "element")
-			{
-				std::string type;
-				file >> type;
-				if (type == "vertex")
-				{
-					file >> vertex_number;
-				}
-				if (type == "face")
-				{
-					file >> face_number;
-				}
-			}
-			else if (line == "property")
-			{
-				std::string type;
-				file >> type;
-				if (type == "uchar")
-				{
-					file >> type;
-					if (type == "alpha")
-					{
-						alphaChannel = true;
-					}
-					if (type == "red" || type == "green" || type == "blue")
-					{
-						rgbChannel = true;
-					}
-				}
-				if (type == "float")
-				{
-					file >> type;
-					if (type == "s" || type == "t")
-					{
-						uv = true;
-					}
-				}
-			}
-
-			else if (line == "end_header")
-			{
-				vertexes = true;
-				break;
-			}
-
-		}
-
-		while (true)
-		{
-			if (file.eof())
-				return std::shared_ptr<AnimationData>(NULL);
-
-			if (vertexes)
-			{
-				if (count_v == vertex_number)
-				{
-					//exit
-					vertexes = false;
-					faces = true;
-				}
-				else
-				{
-
-					//read vertex
-					float x, y, z, nx, ny, nz;
-					file >> x >> z >> y >> nx >> nz >> ny;	//y and z switch
-
-					if (uv)
-					{
-						float u, v;
-						file >> u >> v;
-						frames->colorDataBuffer[i - 1].push_back(u);
-						frames->colorDataBuffer[i - 1].push_back(1.0 - v);
-					}
-					if (rgbChannel)
-					{
-						int r, g, b;
-						file >> r >> g >> b;
-						if (!uv)
-						{
-							//if uv is active, then we don't want to render color... probably.
-							frames->colorDataBuffer[i - 1].push_back(r / 255.0);
-							frames->colorDataBuffer[i - 1].push_back(g / 255.0);
-							frames->colorDataBuffer[i - 1].push_back(b / 255.0);
-						}
-					}
-					if (alphaChannel)
-					{
-						int a;
-						file >> a;
-					}
-
-					frames->vertexBuffer[i - 1].push_back(-x);
-					frames->vertexBuffer[i - 1].push_back(y);
-					frames->vertexBuffer[i - 1].push_back(z);
-
-					frames->normalBuffer[i - 1].push_back(-nx);
-					frames->normalBuffer[i - 1].push_back(ny);
-					frames->normalBuffer[i - 1].push_back(nz);
-
-					count_v++;
-				}
-			}
-			else if (faces)
-			{
-				if (count_f == face_number)
-				{
-					//exit
-					break;
-				}
-				else
-				{
-					//read vertex;
-
-					int num_v;			//whether it is triangles or quads
-					int v1, v2, v3, v4;
-					file >> num_v;
-					if (num_v == 3)
-					{
-						file >> v1 >> v2 >> v3;
-						frames->indexBuffer[i - 1].push_back(v1);
-						frames->indexBuffer[i - 1].push_back(v2);
-						frames->indexBuffer[i - 1].push_back(v3);
-					}
-					else if (num_v == 4)
-					{
-						file >> v1 >> v2 >> v3 >> v4;
-						frames->indexBuffer[i - 1].push_back(v1);
-						frames->indexBuffer[i - 1].push_back(v2);
-						frames->indexBuffer[i - 1].push_back(v3);
-
-						frames->indexBuffer[i - 1].push_back(v1);
-						frames->indexBuffer[i - 1].push_back(v3);
-						frames->indexBuffer[i - 1].push_back(v4);
-					}
-
-					count_f++;
-				}
-			}
-		}
-		file.close();
+		animation->frames[i - 1] = GenericMesh::loadFromFilePLY(fileName, false, true);
 	}
+	
 
-	return frames;
+	return animation;
 }
