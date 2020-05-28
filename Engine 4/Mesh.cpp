@@ -699,6 +699,36 @@ std::shared_ptr<ColorMesh> ColorMesh::triangle()
 
 // ================================== TextureMesh =====================================
 
+void TextureMesh::recalculateBoundsSub()
+{
+	glm::vec3 mins = subMeshes[0]->bounds.low;
+	glm::vec3 maxs = subMeshes[0]->bounds.high;
+	for (int i = 1; i < subMeshes.size(); i++)
+	{
+		mins = glm::min(mins, subMeshes[i]->bounds.low);
+		maxs = glm::max(maxs, subMeshes[i]->bounds.high);
+	}
+	this->bounds = Bounds(mins, maxs);
+}
+
+std::shared_ptr<TextureMesh> TextureMesh::meshFromData(std::vector<GLfloat> vertexBuffer, std::vector<GLfloat> normalBuffer, std::vector<GLfloat> uvBuffer, std::vector<GLuint> indexBuffer)
+{
+	std::shared_ptr<TextureMesh> mesh(new TextureMesh());
+	mesh->vertexBuffer = vertexBuffer;
+	mesh->normalBuffer = normalBuffer;
+	mesh->uvBuffer = uvBuffer;
+	mesh->indexBuffer = indexBuffer;
+	mesh->vertexCount = mesh->vertexBuffer.size() / 3;
+
+	mesh->bindIndexVBO(mesh->indexBuffer);
+
+	mesh->bindVertexAttribVBO(0, 3, mesh->vertexBuffer);
+	mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
+	mesh->bindVertexAttribVBO(2, 2, mesh->uvBuffer);
+	mesh->recalculateBounds();
+	return mesh;
+}
+
 std::shared_ptr<TextureMesh> TextureMesh::loadFromFilePLY(std::string fileName, bool dynamic)
 {
 
@@ -871,11 +901,13 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFilePLY(std::string fileName, 
 	else
 	{
 		//static Verts/norms for non animations
+		
 		mesh->bindIndexVBO(mesh->indexBuffer);
 		
 		mesh->bindVertexAttribVBO(0, 3, mesh->vertexBuffer);
 		mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
 		mesh->bindVertexAttribVBO(2, 2, mesh->uvBuffer);
+		//	mesh = TextureMesh::meshFromData(mesh->vertexBuffer, mesh->normalBuffer, mesh->uvBuffer, mesh->indexBuffer);
 	}
 
 	mesh->recalculateBounds();
@@ -897,10 +929,16 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
 		return std::shared_ptr<TextureMesh>(NULL);
 	}
 	std::shared_ptr<TextureMesh> mesh(new TextureMesh());
-
+	mesh->multiMesh = false;
 	std::vector<glm::vec3> verts;
 	std::vector<glm::vec3> norms;
 	std::vector<glm::vec2> uvs;
+
+	std::vector<GLfloat> vertexBufferTemp;
+	std::vector<GLfloat> normalBufferTemp;
+	std::vector<GLfloat> uvBufferTemp;
+	std::vector<GLuint> indexBufferTemp;
+
 
 	std::string line;
 
@@ -910,9 +948,9 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
 		if (line == "v")
 		{
 			//vertex
-			float x, y, z;
-			file >> x >> y >> z;
-			verts.push_back(glm::vec3(x,y,z));
+			float x, y, z; 
+			file >> x >> y >> z; // swap x, z
+			verts.push_back(glm::vec3(-x,y,-z));
 			//verts.push_back(-x);
 			//verts.push_back(y);
 			//verts.push_back(z);
@@ -921,8 +959,8 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
 		{
 			//normal
 			float nx, ny, nz;
-			file >> nx >> ny >> nz;
-			norms.push_back(glm::vec3(nx, ny, nz));
+			file >> nx >> ny >> nz; // swap x, z
+			norms.push_back(glm::vec3(-nx, ny, -nz));
 			//norms.push_back(-nx);
 			//norms.push_back(ny);
 			//norms.push_back(nz);
@@ -1083,22 +1121,55 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
 		else if (line == "usemtl")
 		{
 			//texture...
-			//Need to figure this one out....
+			file >> line;
+			mesh->materialNames.push_back(line);
 
-			//will figure out late...
-
+			if (mesh->materialNames.size() > 1)
+			{
+				//this is a multi
+				mesh->multiMesh = true;
+				mesh->subMeshes.push_back(TextureMesh::meshFromData(mesh->vertexBuffer, mesh->normalBuffer, mesh->uvBuffer, mesh->indexBuffer));
+				//reset all the buffers for the next submesh
+				vertexBufferTemp.insert(std::end(vertexBufferTemp), std::begin(mesh->vertexBuffer), std::end(mesh->vertexBuffer));
+				normalBufferTemp.insert(std::end(normalBufferTemp), std::begin(mesh->normalBuffer), std::end(mesh->normalBuffer));
+				uvBufferTemp.insert(std::end(uvBufferTemp), std::begin(mesh->uvBuffer), std::end(mesh->uvBuffer));
+				indexBufferTemp.insert(std::end(indexBufferTemp), std::begin(mesh->indexBuffer), std::end(mesh->indexBuffer));
+				
+				mesh->vertexBuffer.resize(0);
+				mesh->normalBuffer.resize(0);
+				mesh->uvBuffer.resize(0);
+				mesh->indexBuffer.resize(0);
+			}
 		}
 	}
 	file.close();
 
-	mesh->vertexCount = mesh->vertexBuffer.size() / 3;
+	if (mesh->multiMesh)
+	{
+		//make the last one...
+		mesh->subMeshes.push_back(TextureMesh::meshFromData(mesh->vertexBuffer, mesh->normalBuffer, mesh->uvBuffer, mesh->indexBuffer));
+	
+		//need to calculate the bounds....
+		mesh->recalculateBoundsSub();
 
-	mesh->bindIndexVBO(mesh->indexBuffer);
+		
+		mesh->vertexBuffer = vertexBufferTemp;
+		mesh->normalBuffer = normalBufferTemp;
+		mesh->uvBuffer = uvBufferTemp;
+		mesh->indexBuffer = indexBufferTemp;
+	}
+	else
+	{
+		//non multi... like usual
+		mesh->vertexCount = mesh->vertexBuffer.size() / 3;
 
-	mesh->bindVertexAttribVBO(0, 3, mesh->vertexBuffer);
-	mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
-	mesh->bindVertexAttribVBO(2, 2, mesh->uvBuffer);
-	mesh->recalculateBounds();
+		mesh->bindIndexVBO(mesh->indexBuffer);
+
+		mesh->bindVertexAttribVBO(0, 3, mesh->vertexBuffer);
+		mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
+		mesh->bindVertexAttribVBO(2, 2, mesh->uvBuffer);
+		mesh->recalculateBounds();
+	}
 	return mesh;
 }
 

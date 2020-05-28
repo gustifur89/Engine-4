@@ -88,11 +88,14 @@ class GameObjectTexture : public GameObject
 public:
 	GameObjectTexture(std::shared_ptr<TextureMesh> mesh, std::shared_ptr<TextureShader> shader);
 	GameObjectTexture() : GameObjectTexture(NULL, NULL) {}
+	bool multiMesh;
 	float shininess;
 	glm::mat4 colorMatrix;
+	std::vector<std::shared_ptr<Texture>> multiTextures;
 	std::shared_ptr<Texture> texture;
 	std::shared_ptr<TextureShader> shader;
 
+	void assignMultiTextures(std::map<std::string, std::shared_ptr<Texture>> textureCollection);
 	void setShininess(float shininess);
 	void setFillColor(int r, int g, int b);
 	void renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform);

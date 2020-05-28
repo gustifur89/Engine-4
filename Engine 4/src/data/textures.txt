@@ -6,6 +6,15 @@ Texture blankFigureTex figure2_test.png GL_NEAREST false
 Texture cartTex carts2Blank.png GL_NEAREST false
 Texture shotgun shotgunTex.png GL_NEAREST false
 Texture shadowTex shadowBake.png GL_NEAREST false
+
+Texture Yellow yellow.png GL_NEAREST false
+Texture Blue blue.png GL_NEAREST false
+Texture Leaf leaf.png GL_NEAREST false
+Texture Concrete concrete.png GL_NEAREST false
+Texture Brick brick.png GL_NEAREST false
+Texture Wood wood.png GL_NEAREST false
+Texture Green green.png GL_NEAREST false
+
 //SkyBoxTexture deepSpace
 //	test_1_right.png
 //	test_1_left.png

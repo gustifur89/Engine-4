@@ -499,8 +499,10 @@ int main()
 	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	floor->transform.setPosition(0, 0, 0);
 	floor->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
-	floor->texture = textureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
-	floor->mesh = meshCollection["yellowRoom"];//bakedMesh; baked cargoHauler
+	floor->mesh = meshCollection["yellowRoomObj"];//bakedMesh; baked cargoHauler yellowRoomObj
+	floor->multiMesh = true;
+	floor->assignMultiTextures(textureCollection);//textureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
+	//floor->texture == stextureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
 	stage->addChild(floor);
 
 //	std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);

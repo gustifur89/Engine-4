@@ -74,8 +74,14 @@ class TextureMesh : public Mesh
 {
 public:
 	GLuint uvBufferID;
+	std::vector<std::shared_ptr<TextureMesh>> subMeshes;
+	std::vector<std::string> materialNames;
+	bool multiMesh;
 	std::vector<GLfloat> uvBuffer;
 
+	void recalculateBoundsSub();
+
+	static std::shared_ptr<TextureMesh> meshFromData(std::vector<GLfloat> vertexBuffer, std::vector<GLfloat> normalBuffer, std::vector<GLfloat> uvBuffer, std::vector<GLuint> indexBuffer);
 	static std::shared_ptr<TextureMesh> loadFromFilePLY(std::string fileName, bool dynamic = false);
 	static std::shared_ptr<TextureMesh> loadFromFileOBJ(std::string fileName);
 };

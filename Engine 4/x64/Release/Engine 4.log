@@ -1,4 +1,4 @@
-﻿  Mesh.cpp
+﻿  GameObject.cpp
 C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\shared\minwindef.h(130,1): warning C4005: 'APIENTRY': macro redefinition
 C:\Users\Sean Coleman\Documents\project\Project\GLFW\glfw-3.3.bin.WIN64\include\GLFW\glfw3.h(104): message : see previous definition of 'APIENTRY'
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(12,29): warning C4305: 'initializing': truncation from 'double' to 'const float'
@@ -9,107 +9,14 @@ C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\TempGeometry.h(724,18): war
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Geometry.h(494,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Geometry.h(494,39): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Geometry.h(494,17): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(26,49): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(70,46): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=int
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(186,29): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(197,29): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(292,29): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(450,35): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=GLfloat
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(451,35): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=GLfloat
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(452,35): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=GLfloat
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(496,51): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(816,34): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=GLfloat
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(859,51): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(962,57): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=std::seed_seq::result_type
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(976,57): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=std::seed_seq::result_type
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(990,57): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=std::seed_seq::result_type
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1008,57): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=std::seed_seq::result_type
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1022,57): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=std::seed_seq::result_type
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1036,57): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=std::seed_seq::result_type
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1052,57): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=std::seed_seq::result_type
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1066,57): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=std::seed_seq::result_type
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1080,57): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=std::seed_seq::result_type
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1094,51): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1229,42): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=GLfloat
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1238,41): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=GLfloat
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1239,41): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=GLfloat
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1240,41): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=GLfloat
-          ]
-C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\Mesh.cpp(1301,51): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\GameObject.cpp(5,35): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\GameObject.cpp(6,35): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\GameObject.cpp(17,22): warning C4305: '=': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\GameObject.cpp(18,23): warning C4305: '=': truncation from 'double' to 'float'
+C:\Users\Sean Coleman\source\repos\Engine 4\Engine 4\GameObject.cpp(67,18): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   Generating code
-  2 of 3177 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  4 of 3360 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    37 functions had inline decision re-evaluated but remain unchanged
+    16 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Engine 4.vcxproj -> C:\Users\Sean Coleman\source\repos\Engine 4\x64\Release\Engine 4.exe

@@ -203,6 +203,33 @@ void GameObjectTexture::setFillColor(int r, int g, int b)
 	colorMatrix[3][3] = 1.0f;
 }
 
+void GameObjectTexture::assignMultiTextures(std::map<std::string, std::shared_ptr<Texture>> textureCollection)
+{
+	if (mesh)
+	{
+		std::shared_ptr<TextureMesh> tMesh = std::static_pointer_cast<TextureMesh>(mesh);
+		if (multiMesh && tMesh->multiMesh)
+		{
+			for (int i = 0; i < tMesh->materialNames.size(); i++)
+			{
+				std::string texName = tMesh->materialNames[i];
+				std::shared_ptr<Texture> tex = textureCollection[texName];
+				if (!tex)
+				{
+					std::cout << "Error. Cannot assign textures. Texture " << texName << " not found in collection. Make sure it is included in the textures.\n";
+					multiTextures.resize(0);
+					return;
+				}
+				multiTextures.push_back(tex);
+			}
+		}
+	}
+	else
+	{
+		std::cout << "You need to attach a mesh before calling assignMultiTextures\n";
+	}
+}
+
 void GameObjectTexture::setShininess(float shininess)
 {
 	this->shininess = shininess;
@@ -216,13 +243,37 @@ void GameObjectTexture::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 par
 	glm::mat4 depMVPmatrix = camera->getDepthProjectionMatrix() * MVMatrix;
 //	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MVMatrix));
 	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MMatrix));
-
-	if (shader && mesh && texture)
+	if (shader && mesh && ((texture && !multiMesh)||(multiMesh && multiTextures.size() > 0)))
 	{
-		shader->useShader();
-		shader->setTexture(texture);
-		shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, MMatrix, depMVPmatrix, shininess, colorMatrix);
-		mesh->render();
+		
+		if (multiMesh)
+		{
+			
+			//std::cout << tMesh->subMeshes.size() << " yeow\n";
+			//std::cout << "yeow\n";
+			shader->useShader();
+			shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, MMatrix, depMVPmatrix, shininess, colorMatrix);
+
+			std::shared_ptr<TextureMesh> tMesh = std::static_pointer_cast<TextureMesh>(mesh);
+			for (int i = 0; i < tMesh->subMeshes.size(); i++)
+			{
+				
+				//shader->setTexture(texture);
+				//shader->setTexture(multiTextures[i]);
+				
+				shader->setTexture(multiTextures[i]);
+				
+				tMesh->subMeshes[i]->render();
+			}
+
+		}
+		else
+		{
+			shader->useShader();
+			shader->setTexture(texture);
+			shader->setMatrixes(MVPmatrix, MVMatrix, NMmatrix, MMatrix, depMVPmatrix, shininess, colorMatrix);
+			mesh->render();
+		}
 	}
 }
 
