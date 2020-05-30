@@ -505,9 +505,11 @@ bool BSP::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1
 			radius = std::static_pointer_cast<Sphere>(collider)->radius;
 			hit = Node::collideSphere(radius, root, v0, v1, out, norm);
 		}
-		else if (type == Collider::TYPE::SPHERE)
+		else if (type == Collider::TYPE::CYLINDER)
 		{
-
+			radius = std::static_pointer_cast<Cylinder>(collider)->radius;
+			hieght = std::static_pointer_cast<Cylinder>(collider)->hieght;
+			hit = Node::collideCylinder(radius, hieght, root, v0, v1, out, norm);
 		}
 
 
@@ -1291,6 +1293,7 @@ bool BSP::Node::collideSphere(float radius, std::shared_ptr<Node> node, glm::vec
 
 bool BSP::Node::collideCylinder(float radius, float hieght, std::shared_ptr<Node> node, glm::vec3 v0, glm::vec3 v1, glm::vec3* impactPt, glm::vec3& nv0)
 {
+	//https://github.com/melax/sandbox/blob/master/testbsp/bspcollide.cpp
 	if (node->leaf == LEAF::EMPTY)
 	{
 		//terminates in an empty area
@@ -1299,23 +1302,23 @@ bool BSP::Node::collideCylinder(float radius, float hieght, std::shared_ptr<Node
 	if (node->leaf == LEAF::SOLID)
 	{
 		//hitting a solid area
-
-		//if (nv0 != glm::vec3(0))
-
 		*impactPt = v0;
 		impactNormal = nv0;
 		return true;
 	}
 
+	float offset_up = -glm::dot(getTangentPointOnCylinder(radius, hieght, -node->plane.xyz()), -node->plane.xyz());
+	float offset_down = glm::dot(getTangentPointOnCylinder(radius, hieght, node->plane.xyz()), node->plane.xyz());
+
 	glm::vec3 w0, w1, nw0;
 	bool hit = false;
 	//if (segmentUnder(node->plane, v0, v1, nv0, &w0, &w1, &nw0))
-	if (segmentUnder(glm::vec4(node->plane.xyz(), node->plane.w - radius), v0, v1, nv0, &w0, &w1, &nw0))
+	if (segmentUnder(glm::vec4(node->plane.xyz(), node->plane.w + offset_up), v0, v1, nv0, &w0, &w1, &nw0))
 	{
 		hit |= collideSphere(radius, node->back, w0, w1, &v1, nw0);
 	}
 	//if (segmentOver(node->plane, v0, v1, nv0, &w0, &w1, &nw0))
-	if (segmentOver(glm::vec4(node->plane.xyz(), node->plane.w + radius), v0, v1, nv0, &w0, &w1, &nw0))
+	if (segmentOver(glm::vec4(node->plane.xyz(), node->plane.w + offset_down), v0, v1, nv0, &w0, &w1, &nw0))
 	{
 		hit |= collideSphere(radius, node->front, w0, w1, &v1, nw0);
 	}
@@ -1327,6 +1330,22 @@ bool BSP::Node::collideCylinder(float radius, float hieght, std::shared_ptr<Node
 
 	return hit;
 
+}
+
+glm::vec3 BSP::Node::getTangentPointOnCylinder(float radius, float hieght, const glm::vec3& normal)
+{
+	glm::vec3 pt;
+	float xyMag = sqrtf(normal.x * normal.x + normal.y * normal.y);
+	if (xyMag == 0.0f)
+	{
+		xyMag = 1.0f;
+	}
+
+	pt.x = radius * normal.x / xyMag;
+	pt.y = radius * normal.y / xyMag;
+	pt.z = (normal.z > 0.0f) ? hieght / 2 : -hieght / 2;
+
+	return pt;
 }
 
 /*

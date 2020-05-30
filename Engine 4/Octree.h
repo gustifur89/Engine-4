@@ -113,6 +113,7 @@ public:
 		static bool collideSphere(float radius, std::shared_ptr<Node> node, glm::vec3 v0, glm::vec3 v1, glm::vec3* impactPt, glm::vec3& nv0);
 
 		static bool collideCylinder(float radius, float hieght, std::shared_ptr<Node> node, glm::vec3 v0, glm::vec3 v1, glm::vec3* impactPt, glm::vec3& nv0);
+		static glm::vec3 getTangentPointOnCylinder(float radius, float hieght, const glm::vec3& normal);
 
 		int leaf;
 		static int count;

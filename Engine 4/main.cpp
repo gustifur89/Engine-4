@@ -37,7 +37,8 @@ float fov = 94.0;
 float playerSpeed = 10.0;
 float playerJump = 10.0;
 float playerSensitivity = 0.4;
-float playerHeight = 0.0; // 1.32
+float playerHeight = 1.6;
+float eyeHeight = 1.32;
 float slipPercentPerSecond = 12.0;
 float slipRotPercentPerSecond = 12.0;
 std::string playerTex = "blankFigureTex";
@@ -596,7 +597,8 @@ int main()
 	std::shared_ptr<GameObjectTexture> player = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	player->transform.setPosition(0, 6, -0.6);
 	player->transform.setRotation(glm::vec3(0, 140, 0));
-	player->collider = std::shared_ptr<Sphere>(new Sphere(playerRadius));
+	//player->collider = std::shared_ptr<Sphere>(new Sphere(playerRadius));
+	player->collider = std::shared_ptr<Cylinder>(new Cylinder(playerRadius, playerHeight));
 	player->friction = playerFriction;
 	player->elasticity = playerElasticity;
 	player->radius = playerRadius;
@@ -952,7 +954,7 @@ int main()
 		cameraOrientation = player->transform.getRotationQuat();
 		camera->setRotation(cameraOrientation);
 		//camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));		
-		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, -player->radius + playerHeight, 0));
+		camera->setPosition(player->transform.getPosition() + glm::vec3(0, -playerHeight/2.0f + eyeHeight, 0));
 
 		//test bsp
 		/*
