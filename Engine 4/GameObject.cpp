@@ -257,12 +257,7 @@ void GameObjectTexture::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 par
 			std::shared_ptr<TextureMesh> tMesh = std::static_pointer_cast<TextureMesh>(mesh);
 			for (int i = 0; i < tMesh->subMeshes.size(); i++)
 			{
-				
-				//shader->setTexture(texture);
-				//shader->setTexture(multiTextures[i]);
-				
 				shader->setTexture(multiTextures[i]);
-				
 				tMesh->subMeshes[i]->render();
 			}
 

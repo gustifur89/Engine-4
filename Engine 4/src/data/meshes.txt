@@ -13,3 +13,6 @@ TextureMesh obj static yellowRoomObj Yellow_room
 GenericMesh ply static cargoHauler cargo_hauler
 GenericMesh ply static figure figure2
 TextureMesh obj static shotgun shotgun
+GenericMesh ply static area area_collider
+ColorMesh ply static baseNine Base_Nine
+GenericMesh ply static aster aster

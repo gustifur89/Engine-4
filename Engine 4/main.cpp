@@ -426,12 +426,15 @@ void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, flo
 		portal->action(object, difference, &didTeleport, &thisP, &nextP, &newRot);
 	}
 	object->transform.setRotation(newRot);
+
 	glm::vec3 nP = nextP;
 
 	bool didHitGround = false;
 
 	if (!object->noClip && collider->collide(object->radius, thisP, nextP, &nP, &faceNorm, 4))
 	{
+		std::cout << "collide?\n";
+
 		if (object->collisionReactEnabled)
 			object->velocity = collisionResolution(object->velocity, faceNorm, object->friction, object->elasticity);
 
@@ -489,6 +492,26 @@ int main()
 
 	std::shared_ptr<GameObject> stage(new GameObject);
 	
+	
+	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	floor->transform.setPosition(0, 0, 0);
+	floor->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
+	floor->mesh = meshCollection["yellowRoom"];//bakedMesh; baked cargoHauler yellowRoomObj yellowRoomObj
+	floor->texture = textureCollection["yellowRoom"];//t_BakedRender; cargoHauler yellowRoom
+	//floor->multiMesh = true;
+	//floor->assignMultiTextures(textureCollection);//textureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
+	floor->visible = false;
+	stage->addChild(floor);
+
+//	std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);
+	/*
+	std::shared_ptr<TempSoup> tree = std::shared_ptr<TempSoup>(new TempSoup);
+//	std::shared_ptr<Octree> tree = std::shared_ptr<Octree>(new Octree);
+	tree->create(stage, glm::mat4(1.0));
+	std::shared_ptr<TempSoup> empty = std::shared_ptr<TempSoup>(new TempSoup);
+	empty->create(NULL, glm::mat4(1.0));
+	*/
+
 	std::shared_ptr<SkyBox> skyBox = std::shared_ptr<SkyBox>(new SkyBox());
 	skyBox->shader = std::static_pointer_cast<SkyBoxShader>(shaderCollection["skybox"]);
 	skyBox->transform.setRotation(180, 0, 0);
@@ -496,21 +519,6 @@ int main()
 	skyBox->transform.setScale(0.1, 0.1, 0.1);
 	stage->addChild(skyBox);
 
-	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
-	floor->transform.setPosition(0, 0, 0);
-	floor->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
-	floor->mesh = meshCollection["yellowRoomObj"];//bakedMesh; baked cargoHauler yellowRoomObj
-	floor->multiMesh = true;
-	floor->assignMultiTextures(textureCollection);//textureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
-	//floor->texture == stextureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
-	stage->addChild(floor);
-
-//	std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);
-	std::shared_ptr<TempSoup> tree = std::shared_ptr<TempSoup>(new TempSoup);
-//	std::shared_ptr<Octree> tree = std::shared_ptr<Octree>(new Octree);
-	tree->create(stage, glm::mat4(1.0));
-	std::shared_ptr<TempSoup> empty = std::shared_ptr<TempSoup>(new TempSoup);
-	empty->create(NULL, glm::mat4(1.0));
 
 	std::shared_ptr<GameObjectTexture> figure = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	figure->transform.setPosition(-4, 0.3, -6.5);
@@ -538,6 +546,32 @@ int main()
 	shotgun->texture = textureCollection["shotgun"];
 	shotgun->mesh = meshCollection["shotgun"];
 	stage->addChild(shotgun);
+
+
+	
+	std::shared_ptr<GameObjectTexture> fakseBud = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	fakseBud->transform.setPosition(0, -10, 0);
+	fakseBud->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
+	fakseBud->mesh = meshCollection["aster"];//bakedMesh; baked cargoHauler yellowRoomObj yellowRoomObj
+	fakseBud->texture = textureCollection["asterTex"];
+	std::cout << meshCollection["asterTex"] << "\n";
+	std::cout << fakseBud->mesh << "\n";
+	//fakseBud->texture = textureCollection["yellowRoom"];//t_BakedRender; cargoHauler yellowRoom
+	//floor->visible = false;
+	//stage->addChild(fakseBud);
+	
+	std::cout << " - " << fakseBud << "\n";
+	std::shared_ptr<BSP> bspTest = std::shared_ptr<BSP>(new BSP);
+	bspTest->create(fakseBud, glm::mat4(1.0));
+	meshCollection["bsp"] = bspTest->getMesh();
+
+	//meshCollection["bsp"] = bspTest->getMeshTest(stage, glm::mat4(1.0));
+
+	std::shared_ptr<GameObjectColor> bspObject = std::shared_ptr<GameObjectColor>(new GameObjectColor);
+	//bspObject->transform.setPosition(0, 1, 0);
+	bspObject->shader = std::static_pointer_cast<ColorShader>(shaderCollection["color"]);
+	bspObject->mesh = meshCollection["bsp"];
+	stage->addChild(bspObject);
 
 
 	//std::shared_ptr<ColorMesh> nStage = ColorMesh::meshFromTriangles(tree->triangles, 100, 100, 100, 0.1);
@@ -611,6 +645,10 @@ int main()
 	Toggle testJumpToggle;
 
 	checkGLError("setup");
+
+
+	std::shared_ptr<CollisionStructure> collider = bspTest;
+
 
 	networkClient->updateNametex("big boy", playerTex);
 	do
@@ -886,7 +924,7 @@ int main()
 				object->velocity = maxSpeed * glm::normalize(object->velocity);
 			}
 		
-			tryMoveObject(object, dt * object->velocity, dt, tree);
+			tryMoveObject(object, dt * object->velocity, dt, collider);//tree
 
 			/*
 			if (glm::length(object->velocity) > 0.0)

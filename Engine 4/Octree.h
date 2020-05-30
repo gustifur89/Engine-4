@@ -1,6 +1,7 @@
 #pragma once
 #include "Header.h"
 #include "GameObject.h"
+#include "Geometry.h"
 #include "TempGeometry.h"
 
 class CollisionStructure
@@ -60,4 +61,59 @@ public:
 
 };
 
+class BSP : public CollisionStructure
+{
+protected:
+	void appendObject(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform);
+
+public:
+	class Node
+	{
+	private:
+		static const float COINCIDENT_MARGAIN;
+		enum SIDE
+		{
+			COINCIDENT,
+			FRONT,
+			BACK,
+			SPANNING
+		};
+		enum LEAF
+		{
+			NOT_LEAF,
+			SOLID,
+			EMPTY
+		};
+
+		static int getPtSide(glm::vec3 pt, glm::vec4 plane);
+		static int getPolySide(std::shared_ptr<Poly> polygon, glm::vec4 plane);
+
+		void splitPoly(std::shared_ptr<Poly> poly, std::shared_ptr<Poly>* frontPart, std::shared_ptr<Poly>* backPart);
+		int getPtSide(glm::vec3 pt);
+		int getPolySide(std::shared_ptr<Poly> polygon);
+	public:
+		void create(std::vector<std::shared_ptr<Poly>> polygons, int maxPolys, int side);
+		void appendPolys(std::vector<std::shared_ptr<Poly>>* polygons);
+		bool rayUnder(glm::vec4 plane, float offset, glm::vec3 v0, glm::vec3 v1, glm::vec3* w0, glm::vec3* w1);
+		bool rayOver(glm::vec4 plane, float offset, glm::vec3 v0, glm::vec3 v1, glm::vec3* w0, glm::vec3* w1);
+		bool collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, float* t);
+		std::shared_ptr<Poly> root;
+		glm::vec4 plane;
+		std::vector<std::shared_ptr<Poly>> polygons;
+		std::shared_ptr<Node> front;
+		std::shared_ptr<Node> back;
+		int leaf;
+		static int count;
+	};
+	
+	std::vector<std::shared_ptr<Poly>> polygons;
+	std::shared_ptr<Node> root;
+
+	bool collide(float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level);
+	void create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform);
+
+	void makeOnlyTris(std::vector<std::shared_ptr<Poly>>* polygons);
+	std::shared_ptr<ColorMesh> getMesh();
+	std::shared_ptr<ColorMesh> getMeshTest(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform);
+};
 

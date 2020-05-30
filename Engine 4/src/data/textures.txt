@@ -6,6 +6,7 @@ Texture blankFigureTex figure2_test.png GL_NEAREST false
 Texture cartTex carts2Blank.png GL_NEAREST false
 Texture shotgun shotgunTex.png GL_NEAREST false
 Texture shadowTex shadowBake.png GL_NEAREST false
+Texture asterTex asterTex.png GL_NEAREST false
 
 Texture Yellow yellow.png GL_NEAREST false
 Texture Blue blue.png GL_NEAREST false

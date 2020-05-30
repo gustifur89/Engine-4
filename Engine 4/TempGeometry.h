@@ -818,3 +818,46 @@ public:
 	}
 };
 
+class Poly
+{
+public:
+	Poly(std::vector<glm::vec3> pts, glm::vec3 norm, glm::vec4 plane)
+	{
+		this->pts = pts;
+		this->norm = norm;
+		this->plane = plane;
+	}
+
+	void applyMatrixSelf(glm::mat4 matrix, glm::mat4 normalMatrix)
+	{
+		for (int i = 0; i < pts.size(); i++)
+		{
+			pts[i] = matrix * glm::vec4(pts[i], 1.0);
+		}
+		norm = normalMatrix * glm::vec4(norm, 0.0);
+		plane = glm::vec4(norm, -glm::dot(norm, pts[0]));
+	}
+	
+	static glm::vec3 getIntersection(glm::vec3 ptA, glm::vec3 ptB, glm::vec4 plane)
+	{
+		//https://www.cs.princeton.edu/courses/archive/fall00/cs426/lectures/raycast/sld017.htm
+		glm::vec3 v = ptB - ptA;
+		float t = -(glm::dot(ptA, plane.xyz()) + plane.w) / glm::dot(plane.xyz(), v);
+		return ptA + t * (v);
+	}
+
+	glm::vec3 getIntersection(glm::vec3 ptA, glm::vec3 ptB)
+	{
+		return getIntersection(ptA, ptB, plane);
+		/*
+		//https://www.cs.princeton.edu/courses/archive/fall00/cs426/lectures/raycast/sld017.htm
+		glm::vec3 v = ptB - ptA;
+		float t = -(glm::dot(ptA, plane.xyz()) + plane.w) / glm::dot(plane.xyz(), v);
+		return ptA + t * (v);
+		*/
+	}
+
+	std::vector<glm::vec3> pts;
+	glm::vec3 norm;
+	glm::vec4 plane;
+};

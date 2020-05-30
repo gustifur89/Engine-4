@@ -30,6 +30,7 @@ public:
 	void setUpVAO();
 
 	std::vector<std::shared_ptr<MeshTriangle>> getTrianglesFromMesh(glm::mat4 transform);
+	std::vector<std::shared_ptr<Poly>> getPolygonsFromMesh(glm::mat4 transform);
 
 	void updateVertexVBO(int attrib, int size, GLuint vertexbufferID, std::vector<GLfloat> data);
 	void updateIndexVBO(GLuint vertexbufferID, std::vector<GLuint> indexes);
@@ -65,6 +66,7 @@ public:
 	void bindArrays();
 
 	static std::shared_ptr<ColorMesh> meshFromTriangles(std::vector<std::shared_ptr<MeshTriangle>> triangleList, int r, int g, int b, float thickness = 0.0);
+	static std::shared_ptr<ColorMesh> meshFromPolygons(std::vector<std::shared_ptr<Poly>> polygons, int r, int g, int b, float thickness = 0.0);
 	static std::shared_ptr<ColorMesh> triangle();
 	static std::shared_ptr<ColorMesh> loadFromFilePLY(std::string fileName, bool dynamic = false);
 	static std::shared_ptr<ColorMesh> applyMatrixToMesh(std::shared_ptr<ColorMesh> & mesh, glm::mat4 matrix);

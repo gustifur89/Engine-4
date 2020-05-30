@@ -126,6 +126,119 @@ std::vector<std::shared_ptr<MeshTriangle>> Mesh::getTrianglesFromMesh(glm::mat4 
 	return faces;
 }
 
+std::vector<std::shared_ptr<Poly>> Mesh::getPolygonsFromMesh(glm::mat4 transform)
+{
+	std::vector<std::shared_ptr<Poly>> polygons;
+
+	for (int i = 0; i < indexBuffer.size(); i += 3)
+	{
+		int i_vert0 = indexBuffer[i + 0];
+		int i_vert1 = indexBuffer[i + 1];
+		int i_vert2 = indexBuffer[i + 2];
+
+		glm::vec3 vert0(vertexBuffer[3 * i_vert0 + 0], vertexBuffer[3 * i_vert0 + 1], vertexBuffer[3 * i_vert0 + 2]);
+		glm::vec3 vert1(vertexBuffer[3 * i_vert1 + 0], vertexBuffer[3 * i_vert1 + 1], vertexBuffer[3 * i_vert1 + 2]);
+		glm::vec3 vert2(vertexBuffer[3 * i_vert2 + 0], vertexBuffer[3 * i_vert2 + 1], vertexBuffer[3 * i_vert2 + 2]);
+
+		std::vector<glm::vec3> pts = { vert0, vert1, vert2 };
+		glm::vec3 norm = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+		glm::vec4 plane = glm::vec4(norm, -glm::dot(norm, pts[0]));
+
+		std::shared_ptr<Poly> poly(new Poly(pts, norm, plane));
+
+		//std::cout << "make\n";
+
+		poly->applyMatrixSelf(transform, glm::transpose(glm::inverse(transform)));
+
+		polygons.push_back(poly);
+	}
+
+
+	return polygons;
+	/*
+	std::vector<std::shared_ptr<Poly>> polygons;
+
+	std::cout << "get the polys\n";
+
+	std::vector<glm::vec3> avgNorms; // for corners of shared pts.
+	std::vector<std::vector<glm::vec3>> normsList; // for corners of shared pts.
+	std::vector<glm::vec3> nonDupedVerts;
+	std::vector<int> normalIndex;// (indexBuffer.size(), 0);
+
+	for (int i = 0; i < vertexBuffer.size(); i += 3)
+	{
+		glm::vec3 vert(vertexBuffer[i + 0], vertexBuffer[i + 1], vertexBuffer[i + 2]);
+		glm::vec3 norm(normalBuffer[i + 0], normalBuffer[i + 1], normalBuffer[i + 2]);
+		std::cout << i << " : " << vertexBuffer.size() << " : verts\n";
+		bool unique = true;
+
+		for (int j = 0; j < nonDupedVerts.size(); j++)
+		{
+			if (vert == nonDupedVerts[j])
+			{
+				//this is the same...
+				unique = false;
+				//normalIndex[i] = j;
+				normalIndex.push_back(j);
+				normsList[j].push_back(norm);
+			}
+		}
+
+		if (unique)
+		{
+			//need to add.
+			nonDupedVerts.push_back(vert);
+			normsList.push_back(std::vector<glm::vec3>(1, norm));
+
+			//normalIndex[i] = normsList.size() - 1;// .push_back(normsList.size() - 1);
+			normalIndex.push_back(normsList.size() - 1);
+		}
+	}
+
+	avgNorms.resize(normsList.size());
+	for (int i = 0; i < normsList.size(); i++)
+	{
+		glm::vec3 avg(0.0);
+		std::cout << "norms\n";
+		for (int j = 0; j < normsList[i].size(); j++)
+		{
+			avg += normsList[i][j];
+		}
+		avg = glm::normalize((1.0f / normsList[i].size()) * avg);
+		avgNorms[i] = avg;
+	}
+
+	for (int i = 0; i < indexBuffer.size(); i += 3)
+	{
+		int i_vert0 = indexBuffer[i + 0];
+		int i_vert1 = indexBuffer[i + 1];
+		int i_vert2 = indexBuffer[i + 2];
+
+		int indx0 = normalIndex[i_vert0];
+		int indx1 = normalIndex[i_vert1];
+		int indx2 = normalIndex[i_vert2];
+
+		glm::vec3 vert0(vertexBuffer[3 * i_vert0 + 0], vertexBuffer[3 * i_vert0 + 1], vertexBuffer[3 * i_vert0 + 2]);
+		glm::vec3 vert1(vertexBuffer[3 * i_vert1 + 0], vertexBuffer[3 * i_vert1 + 1], vertexBuffer[3 * i_vert1 + 2]);
+		glm::vec3 vert2(vertexBuffer[3 * i_vert2 + 0], vertexBuffer[3 * i_vert2 + 1], vertexBuffer[3 * i_vert2 + 2]);
+
+		std::vector<glm::vec3> pts = {vert0, vert1, vert2};
+		glm::vec3 norm = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+		glm::vec4 plane = glm::vec4(norm, -glm::dot(norm, pts[0]));
+
+		std::shared_ptr<Poly> poly(new Poly(pts, norm, plane));
+
+		std::cout << "make\n";
+
+		poly->applyMatrixSelf(transform, glm::transpose(glm::inverse(transform)));
+
+		polygons.push_back(poly);
+	}
+
+	return polygons;
+	*/
+}
+
 void Mesh::bindVAO()
 {
 	glBindVertexArray(VertexArrayID);
@@ -650,6 +763,63 @@ std::shared_ptr<ColorMesh> ColorMesh::meshFromTriangles(std::vector<std::shared_
 	}
 	mesh->bindArrays();
 	mesh->recalculateBounds();	
+	return mesh;
+}
+
+std::shared_ptr<ColorMesh> ColorMesh::meshFromPolygons(std::vector<std::shared_ptr<Poly>> polygons, int r, int g, int b, float thickness)
+{
+	std::shared_ptr<ColorMesh> mesh(new ColorMesh());
+	float r_ = r / 255.f;
+	float g_ = g / 255.f;
+	float b_ = b / 255.f;
+
+	for (int i = 0; i < polygons.size(); i++)
+	{
+		//MeshTriangle temp = polygons[i]->getThicker(thickness);
+		std::shared_ptr<Poly> poly = polygons[i];
+
+		r_ = (rand() % 255) / 255.f;
+		g_ = (rand() % 255) / 255.f;
+		b_ = (rand() % 255) / 255.f;
+
+		//vert 0
+		mesh->vertexBuffer.push_back(poly->pts[0].x);
+		mesh->vertexBuffer.push_back(poly->pts[0].y);
+		mesh->vertexBuffer.push_back(poly->pts[0].z);
+		mesh->normalBuffer.push_back(poly->norm.x);
+		mesh->normalBuffer.push_back(poly->norm.y);
+		mesh->normalBuffer.push_back(poly->norm.z);
+		mesh->colorBuffer.push_back(r_);
+		mesh->colorBuffer.push_back(g_);
+		mesh->colorBuffer.push_back(b_);
+		mesh->indexBuffer.push_back(3 * i + 0);
+
+		//vert 1
+		mesh->vertexBuffer.push_back(poly->pts[1].x);
+		mesh->vertexBuffer.push_back(poly->pts[1].y);
+		mesh->vertexBuffer.push_back(poly->pts[1].z);
+		mesh->normalBuffer.push_back(poly->norm.x);
+		mesh->normalBuffer.push_back(poly->norm.y);
+		mesh->normalBuffer.push_back(poly->norm.z);
+		mesh->colorBuffer.push_back(r_);
+		mesh->colorBuffer.push_back(g_);
+		mesh->colorBuffer.push_back(b_);
+		mesh->indexBuffer.push_back(3 * i + 1);
+
+		//vert 2
+		mesh->vertexBuffer.push_back(poly->pts[2].x);
+		mesh->vertexBuffer.push_back(poly->pts[2].y);
+		mesh->vertexBuffer.push_back(poly->pts[2].z);
+		mesh->normalBuffer.push_back(poly->norm.x);
+		mesh->normalBuffer.push_back(poly->norm.y);
+		mesh->normalBuffer.push_back(poly->norm.z);
+		mesh->colorBuffer.push_back(r_);
+		mesh->colorBuffer.push_back(g_);
+		mesh->colorBuffer.push_back(b_);
+		mesh->indexBuffer.push_back(3 * i + 2);
+	}
+	mesh->bindArrays();
+	mesh->recalculateBounds();
 	return mesh;
 }
 

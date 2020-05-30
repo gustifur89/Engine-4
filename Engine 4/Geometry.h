@@ -740,3 +740,4 @@ public:
 	glm::mat4 frustum;
 
 };
+
