@@ -14,7 +14,7 @@ uniform float specular;
 
 void main()
 {
-	color = vec4((ColorMatrix * vec4(frg_color, 1.0)).rgb, specular);	
+	color = vec4((ColorMatrix * vec4(frg_color, 1.0)).rgb, specular);
 	depth = z/w;
 	gl_FragDepth = depth;
 }

@@ -1,9 +1,7 @@
 #include "Collision.h"
 
-
-
 // ==================== Legacy stuff ===============
-
+/*
 Capsule::Capsule(float radius, float height)
 {
     this->radius = radius;
@@ -165,7 +163,7 @@ void CollisionFunctions::getClosestPoints(glm::mat4 aToWorld, std::shared_ptr<Ca
           return thisB + s * u;
       }
       return glm::vec3();
-      */
+      * /
 }
 
 void CollisionFunctions::getClosestPointToSphere(glm::mat4 aToWorld, std::shared_ptr<Capsule> capA, glm::mat4 bToWorld, std::shared_ptr<Sphere> sphB, glm::vec3* pt)
@@ -195,4 +193,9 @@ void CollisionFunctions::getClosestPointToPoint(glm::mat4 aToWorld, std::shared_
 
     *outPt = A1 + h * ab;
 }
+*/
+
+
+
+
 

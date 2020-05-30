@@ -1,7 +1,7 @@
 #include "Physics.h"
 
 // ========================== Physics ==========================
-
+/*
 Physics::Physics()
 {
     gravity = glm::vec3(0.0);
@@ -311,7 +311,7 @@ collisionManifold Physics::collideCapsuleAABB(std::shared_ptr<GameObject> object
                 colInfo.normal = glm::vec3(0, 0, 1);
             colInfo.sepDepth = overlap.z;
         }
-       // */
+       // * /
 
        //need to see if colliding from the top or sides...
        //bool onTop = posA.x <= maxB.x && posA.x >= minB.x && posA.z <= maxB.z && posA.z >= maxB.z;
@@ -378,7 +378,7 @@ collisionManifold Physics::collideCapsuleAABB(std::shared_ptr<GameObject> object
             colInfo.contactPoint = boundaryPt;
             colInfo.sepDepth = capA->radius - dist;
         }
-        //*/
+        //* /
 
     }
 
@@ -669,7 +669,7 @@ bool Physics::killBoundary(std::shared_ptr<GameObject> object)
         object->toRemove = true;
         return true;
     }
-    */
+    * /
 
 
     if (pos.y < -boundary.y)
@@ -720,7 +720,7 @@ void Physics::physicsStep(float dt, int iterations)
                 i--;
                 continue;
             }
-            //*/
+            //* /
 
             if (object->mass > 0.0)
             {
@@ -734,4 +734,4 @@ void Physics::physicsStep(float dt, int iterations)
         }
     }
 }
-
+*/

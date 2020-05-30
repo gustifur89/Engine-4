@@ -35,7 +35,9 @@ std::shared_ptr<GameObjectColor> Primitive::makeCapsule(float radius, float heig
 	
 	capsule->shader = shader;
 
-	capsule->collider = std::shared_ptr<Capsule>(new Capsule(radius, height));
+	//capsule->collider = std::shared_ptr<Capsule>(new Capsule(radius, height));
+
+	capsule->collider = std::shared_ptr<Cylinder>(new Cylinder(radius, height));
 
 	return capsule;
 }
@@ -52,7 +54,7 @@ std::shared_ptr<GameObjectColor> Primitive::makeAABB(glm::vec3 size, std::shared
 	cube->transform.setScale(size);
 	cube->setFillColor(r, g, b);
 	cube->setShininess(specular);
-	cube->collider = std::shared_ptr<AABB>(new AABB(size));
+	//cube->collider = std::shared_ptr<AABB>(new AABB(size));
 
 //	object->addChild(cube);
 
@@ -84,7 +86,7 @@ std::shared_ptr<GameObjectColor> Primitive::makeEllipsoid(glm::vec3 axis, std::s
 	ellipsoid->setFillColor(r, g, b);
 	ellipsoid->transform.setScale(axis);
 	ellipsoid->setShininess(specular);
-	ellipsoid->collider = std::shared_ptr<Ellipsoid>(new Ellipsoid(axis));
+//	ellipsoid->collider = std::shared_ptr<Ellipsoid>(new Ellipsoid(axis));
 
 	return ellipsoid;
 }

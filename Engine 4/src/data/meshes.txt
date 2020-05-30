@@ -15,4 +15,5 @@ GenericMesh ply static figure figure2
 TextureMesh obj static shotgun shotgun
 GenericMesh ply static area area_collider
 ColorMesh ply static baseNine Base_Nine
+ColorMesh ply static testWorld test_world
 GenericMesh ply static aster aster

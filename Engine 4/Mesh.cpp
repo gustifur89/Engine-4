@@ -142,6 +142,7 @@ std::vector<std::shared_ptr<Poly>> Mesh::getPolygonsFromMesh(glm::mat4 transform
 
 		std::vector<glm::vec3> pts = { vert0, vert1, vert2 };
 		glm::vec3 norm = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+	//	std::cout << norm.x << " : " << norm.y << " : " << norm.z << "\n";
 		glm::vec4 plane = glm::vec4(norm, -glm::dot(norm, pts[0]));
 
 		std::shared_ptr<Poly> poly(new Poly(pts, norm, plane));
@@ -152,7 +153,6 @@ std::vector<std::shared_ptr<Poly>> Mesh::getPolygonsFromMesh(glm::mat4 transform
 
 		polygons.push_back(poly);
 	}
-
 
 	return polygons;
 	/*

@@ -25,7 +25,9 @@ glm::vec3 GrapplingHook::action(bool doAction, std::shared_ptr<CollisionStructur
 		//grappling hook is a line from startPt in the direction of dir at maxGrappleLength
 		glm::vec3 endPt = startPt + maxGrappleLength * dir;
 
-		if (collider->collide(0.0, startPt, endPt, &attachPt, &tempFace, 0))
+		std::shared_ptr<Sphere> temp_sphere(new Sphere(0.0));
+
+		if (collider->collide(temp_sphere, startPt, endPt, &attachPt, &tempFace, 0))
 		{
 			//we have a valid attach
 			attached = true;

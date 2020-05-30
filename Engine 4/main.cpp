@@ -37,7 +37,7 @@ float fov = 94.0;
 float playerSpeed = 10.0;
 float playerJump = 10.0;
 float playerSensitivity = 0.4;
-float playerHeight = 1.32;
+float playerHeight = 0.0; // 1.32
 float slipPercentPerSecond = 12.0;
 float slipRotPercentPerSecond = 12.0;
 std::string playerTex = "blankFigureTex";
@@ -431,9 +431,9 @@ void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, flo
 
 	bool didHitGround = false;
 
-	if (!object->noClip && collider->collide(object->radius, thisP, nextP, &nP, &faceNorm, 4))
+	if (!object->noClip && collider->collide(object->collider, thisP, nextP, &nP, &faceNorm, 4))
 	{
-		std::cout << "collide?\n";
+	//	std::cout << "IN SOLID?\n";
 
 		if (object->collisionReactEnabled)
 			object->velocity = collisionResolution(object->velocity, faceNorm, object->friction, object->elasticity);
@@ -549,13 +549,13 @@ int main()
 
 
 	
-	std::shared_ptr<GameObjectTexture> fakseBud = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	std::shared_ptr<GameObjectColor> fakseBud = std::shared_ptr<GameObjectColor>(new GameObjectColor);
 	fakseBud->transform.setPosition(0, -10, 0);
-	fakseBud->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
-	fakseBud->mesh = meshCollection["aster"];//bakedMesh; baked cargoHauler yellowRoomObj yellowRoomObj
-	fakseBud->texture = textureCollection["asterTex"];
-	std::cout << meshCollection["asterTex"] << "\n";
-	std::cout << fakseBud->mesh << "\n";
+	fakseBud->shader = std::static_pointer_cast<ColorShader>(shaderCollection["color"]);//textureShader;//textureShader autoTextureShader
+	fakseBud->mesh = meshCollection["testWorld"];//bakedMesh; baked cargoHauler yellowRoomObj yellowRoomObj aster
+//	fakseBud->texture = textureCollection["yellowRoom"];//asterTex
+	//std::cout << meshCollection["asterTex"] << "\n";
+	//std::cout << fakseBud->mesh << "\n";
 	//fakseBud->texture = textureCollection["yellowRoom"];//t_BakedRender; cargoHauler yellowRoom
 	//floor->visible = false;
 	//stage->addChild(fakseBud);
@@ -596,6 +596,7 @@ int main()
 	std::shared_ptr<GameObjectTexture> player = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	player->transform.setPosition(0, 6, -0.6);
 	player->transform.setRotation(glm::vec3(0, 140, 0));
+	player->collider = std::shared_ptr<Sphere>(new Sphere(playerRadius));
 	player->friction = playerFriction;
 	player->elasticity = playerElasticity;
 	player->radius = playerRadius;
@@ -612,7 +613,7 @@ int main()
 	   		
 	std::vector<std::shared_ptr<GameObject>> physicsList;
 	physicsList.push_back(player);
-	physicsList.push_back(figure);
+//	physicsList.push_back(figure);
 	float maxSpeed = 40.0;
 
 	glm::vec3 gravity = 30.0f * glm::vec3(0, -1, 0);
@@ -948,12 +949,18 @@ int main()
 		}
 		
 
-
 		cameraOrientation = player->transform.getRotationQuat();
 		camera->setRotation(cameraOrientation);
 		//camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));		
-		camera->setPosition(player->transform.getPosition() + glm::vec3(0, -player->radius + playerHeight, 0));
+		camera->setPosition(player->transform.getPosition());// +glm::vec3(0, -player->radius + playerHeight, 0));
 
+		//test bsp
+		/*
+		if (bspTest->inside(camera->getPosition()))
+			std::cout << "SOLID\n";
+		else
+			std::cout << "EMPTY\n";
+		*/
 
 		//animate meshes
 		std::string playerState, figureState;

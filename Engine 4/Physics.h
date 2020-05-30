@@ -2,6 +2,7 @@
 #include "Header.h"
 #include "GameObject.h"
 
+/*
 struct collisionManifold
 {
 public:
@@ -60,4 +61,4 @@ public:
 
 	void physicsStep(float dt, int iterations);
 };
-
+*/

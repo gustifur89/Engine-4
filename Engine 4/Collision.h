@@ -1,8 +1,46 @@
 #pragma once
 #include "Header.h"
 
+class Collider
+{
+public:
+	enum TYPE
+	{
+		SPHERE,
+		CYLINDER
+	};
+
+	int type;
+};
+
+class Sphere : public Collider
+{
+public:
+	Sphere(float radius)
+	{
+		this->radius = radius;
+		type = TYPE::SPHERE;
+	}
+
+	float radius;
+};
+
+class Cylinder : public Collider
+{
+public:
+	Cylinder(float radius, float hieght)
+	{
+		this->radius = radius;
+		this->hieght = hieght;
+		type = TYPE::CYLINDER;
+	}
+
+	float radius, hieght;
+};
+
 // ========== Legacy stuff ==========
 
+/*
 class Collider
 {
 public:
@@ -70,4 +108,4 @@ public:
 	static void getClosestPointToPoint(glm::mat4 aToWorld, std::shared_ptr<Capsule> capA, glm::vec3 pt, glm::vec3* outPt);
 
 };
-
+*/
