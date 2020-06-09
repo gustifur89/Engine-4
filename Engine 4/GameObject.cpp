@@ -55,9 +55,9 @@ void GameObject::updateAnimation(double time, std::string state)
 		std::cout << "invalid state " << state << ". Cannot render.\n";
 		return;
 	}
-	
 	currentFrame = (currentFrame + 1) % animation->numFrames;
-	
+//	std::cout << currentFrame << "\n";
+
 	this->mesh = animation->frames[currentFrame];
 }
 

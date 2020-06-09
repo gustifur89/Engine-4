@@ -154,7 +154,7 @@ bool Octree::Node::isTriangleInRegion(std::shared_ptr<MeshTriangle> triangle)
 	return false;
 }
 
-bool Octree::Node::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level)
+bool Octree::Node::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level)
 {
 	float radius = 0.0;
 	if (collider->type == Collider::TYPE::SPHERE)
@@ -257,9 +257,9 @@ Octree::Octree()
 	root = nullptr;
 }
 
-bool Octree::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level)
+bool Octree::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level)
 {
-	return root->collide(collider, v0, v1, out, faceNorm, level);
+	return root->collide(collider, v0, v1, out, faceNorms, level);
 
 	//return hitCheck(root, radius, v0, v1, out);
 }
@@ -355,7 +355,7 @@ void Octree::create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTra
 
 // ======================= TempSoup =======================
 
-bool TempSoup::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level)
+bool TempSoup::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level)
 {
 	float radius = 0.0;
 	if (collider->type == Collider::TYPE::SPHERE)
@@ -368,6 +368,7 @@ bool TempSoup::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::ve
 	float maxNegDot = 10.0;
 	int numCollided =0;
 	float t = 10.0;
+	glm::vec3 fNorm;
 
 	glm::vec3 vel = v1 - v0;
 
@@ -391,7 +392,7 @@ bool TempSoup::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::ve
 				gPt = gPt_;
 				norm = triangle->normal;
 				//maxNegDot = dot;
-				*faceNorm = triangle->normal;
+				fNorm = triangle->normal;
 				t = nt;
 			}
 			
@@ -401,7 +402,7 @@ bool TempSoup::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::ve
 	if (numCollided > 0)
 	{
 		glm::vec3 levDownPt;
-
+		faceNorms->push_back(fNorm);
 		if (level == 0)
 		{
 			//ground level, no more...
@@ -410,10 +411,10 @@ bool TempSoup::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::ve
 		}
 		else
 		{
-			glm::vec3 n_norm;
+			 //n_norm;
 
 			//not ground level. Collide the projected:
-			if (collide(collider, nPt, gPt, &levDownPt, &n_norm, level - 1))
+			if (collide(collider, nPt, gPt, &levDownPt, faceNorms, level - 1))
 			{
 				//there is a collision...
 				//but we know that levDownPt is the last pt we can touch...
@@ -471,26 +472,20 @@ void TempSoup::create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentT
 
 void BSP::appendObject(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform)
 {
-	std::cout << "append\n";
-	std::cout << worldObject->mesh << "\n";
 	if (worldObject->mesh)
 	{
-		std::cout << "in here?\n";
-
 		std::vector<std::shared_ptr<Poly>> meshTris = worldObject->mesh->getPolygonsFromMesh(parentTransform * worldObject->transform.getTransformMatrix());
-		std::cout << "insert? " << meshTris.size() << "\n";
 		polygons.insert(std::end(polygons), std::begin(meshTris), std::end(meshTris));
 	}
 	for (std::shared_ptr<GameObject> child :  worldObject->children)
 	{
-		std::cout << "child\n";
 		appendObject(child, parentTransform * worldObject->transform.getTransformMatrix());
 	}
 }
 
 glm::vec3 BSP::Node::impactNormal;
 
-bool BSP::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level)
+bool BSP::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level)
 {
 	//float t = 0.0;
 	if (root)
@@ -510,16 +505,17 @@ bool BSP::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1
 			radius = std::static_pointer_cast<Cylinder>(collider)->radius;
 			hieght = std::static_pointer_cast<Cylinder>(collider)->hieght;
 			hit = Node::collideCylinder(radius, hieght, root, v0, v1, out, norm);
+			//hit = Node::collideSphere(radius, root, v0, v1, out, norm);
 		}
 
 
 		if (hit)
 		{
 			//std::cout << "hit\n";
-			
-			*faceNorm = Node::impactNormal;
+			glm::vec3 fNorm = Node::impactNormal;
+			faceNorms->push_back(Node::impactNormal);
 			//std::cout << faceNorm->x << " : " << faceNorm->y << " : " << faceNorm->z << "\n";
-			if (glm::dot(v1 - v0, *faceNorm) >= 0)
+			if (glm::dot(v1 - v0, fNorm) >= 0)
 			{
 				*out = v1;
 				return false;
@@ -535,7 +531,7 @@ bool BSP::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1
 				glm::vec3 remainder = v1 - *out;
 
 				//glm::vec3 perp = glm::dot(remainder, norm) * norm;
-				glm::vec3 perp = glm::dot(remainder, *faceNorm) * (*faceNorm);
+				glm::vec3 perp = glm::dot(remainder, fNorm) * (fNorm);
 
 				glm::vec3 par = remainder - perp;
 
@@ -544,9 +540,9 @@ bool BSP::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1
 
 				glm::vec3 n_out;
 
-				glm::vec3 face;
+				//glm::vec3 face;
 			//	std::cout << "yeem\n";
-				if (this->collide(collider, n_v0, n_v1, &n_out, &face, level - 1))
+				if (this->collide(collider, n_v0, n_v1, &n_out, faceNorms, level - 1))
 				{
 					*out = n_out;
 					return true;
@@ -627,15 +623,8 @@ bool BSP::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1
 void BSP::create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform)
 {
 	if (!worldObject) return;
-	std::cout << " - " << worldObject << "\n";
-	std::cout << worldObject->mesh << "\n";
-	std::cout << "begin\n";
-	std::cout << worldObject << "\n";
 	appendObject(worldObject, parentTransform);
 	//now we have a list of triangles....
-
-	std::cout << "all polyogns......\n";
-
 	for (int i = 0; i < polygons.size(); i++)
 	{
 		std::shared_ptr<Poly> poly = polygons[i];
@@ -644,10 +633,7 @@ void BSP::create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransf
 	}
 
 	root = std::shared_ptr<Node>(new Node);
-	std::cout << "begin Creation\n";
 	root->create(polygons, 1, 0);
-
-	std::cout << "num of tree= " << BSP::Node::count << "\n";
 }
 
 bool BSP::inside(glm::vec3 pt)
@@ -1235,6 +1221,8 @@ bool BSP::Node::collideSphere(float radius, std::shared_ptr<Node> node, glm::vec
 		return true;
 	}
 
+	//std::cout << node->plane.x << " : " << node->plane.y << " : " << node->plane.z << "\n";
+
 	glm::vec3 w0, w1, nw0;
 	bool hit = false;
 	//if (segmentUnder(node->plane, v0, v1, nv0, &w0, &w1, &nw0))
@@ -1307,6 +1295,13 @@ bool BSP::Node::collideCylinder(float radius, float hieght, std::shared_ptr<Node
 		return true;
 	}
 
+	//std::cout << radius << " : " << hieght << "\n";
+
+	//std::cout << node->plane.x << " : " << node->plane.y << " : " << node->plane.z << "\n";
+	//std::cout << "2: " << -glm::dot(getTangentPointOnCylinder(radius, 2.0, -node->plane.xyz()), -node->plane.xyz()) << "\n";
+	//std::cout << "1: " << -glm::dot(getTangentPointOnCylinder(radius, 1.0, -node->plane.xyz()), -node->plane.xyz()) << "\n";
+	//std::cout << "0.5: " << -glm::dot(getTangentPointOnCylinder(radius, 0.5, -node->plane.xyz()), -node->plane.xyz()) << "\n";
+
 	float offset_up = -glm::dot(getTangentPointOnCylinder(radius, hieght, -node->plane.xyz()), -node->plane.xyz());
 	float offset_down = glm::dot(getTangentPointOnCylinder(radius, hieght, node->plane.xyz()), node->plane.xyz());
 
@@ -1315,12 +1310,12 @@ bool BSP::Node::collideCylinder(float radius, float hieght, std::shared_ptr<Node
 	//if (segmentUnder(node->plane, v0, v1, nv0, &w0, &w1, &nw0))
 	if (segmentUnder(glm::vec4(node->plane.xyz(), node->plane.w + offset_up), v0, v1, nv0, &w0, &w1, &nw0))
 	{
-		hit |= collideSphere(radius, node->back, w0, w1, &v1, nw0);
+		hit |= collideCylinder(radius, hieght, node->back, w0, w1, &v1, nw0);
 	}
 	//if (segmentOver(node->plane, v0, v1, nv0, &w0, &w1, &nw0))
 	if (segmentOver(glm::vec4(node->plane.xyz(), node->plane.w + offset_down), v0, v1, nv0, &w0, &w1, &nw0))
 	{
-		hit |= collideSphere(radius, node->front, w0, w1, &v1, nw0);
+		hit |= collideCylinder(radius, hieght, node->front, w0, w1, &v1, nw0);
 	}
 
 	if (hit)
@@ -1329,21 +1324,21 @@ bool BSP::Node::collideCylinder(float radius, float hieght, std::shared_ptr<Node
 	}
 
 	return hit;
-
 }
 
 glm::vec3 BSP::Node::getTangentPointOnCylinder(float radius, float hieght, const glm::vec3& normal)
 {
 	glm::vec3 pt;
-	float xyMag = sqrtf(normal.x * normal.x + normal.y * normal.y);
-	if (xyMag == 0.0f)
+	float xzMag = sqrtf(normal.x * normal.x + normal.z * normal.z);
+	if (xzMag == 0.0f)
 	{
-		xyMag = 1.0f;
+		xzMag = 1.0f;
 	}
 
-	pt.x = radius * normal.x / xyMag;
-	pt.y = radius * normal.y / xyMag;
-	pt.z = (normal.z > 0.0f) ? hieght / 2 : -hieght / 2;
+	pt.x = radius * normal.x / xzMag;
+	pt.z = radius * normal.z / xzMag;
+	pt.y = (normal.y > 0.0f) ? hieght : 0;
+	//pt.y = (normal.y > 0.0f) ? hieght / 2 : -hieght / 2;
 
 	return pt;
 }
@@ -1669,7 +1664,7 @@ void BSP::Node::create(std::vector<std::shared_ptr<Poly>> polygons, int maxPolys
 	//}
 	count++;
 	plane = root->plane;
-	//std::cout << plane.x << " : " << plane.y << " : " << plane.z << " : " << plane.w << "\n";
+//	std::cout << plane.x << " : " << plane.y << " : " << plane.z << " : " << plane.w << "\n";
 	polygons.push_back(root);
 	std::vector<std::shared_ptr<Poly>> frontList;
 	std::vector<std::shared_ptr<Poly>> backList;

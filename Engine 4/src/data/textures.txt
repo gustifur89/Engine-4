@@ -7,7 +7,8 @@ Texture cartTex carts2Blank.png GL_NEAREST false
 Texture shotgun shotgunTex.png GL_NEAREST false
 Texture shadowTex shadowBake.png GL_NEAREST false
 Texture asterTex asterTex.png GL_NEAREST false
-
+Texture redRoom red_room.png GL_NEAREST false
+Texture redRoomHi texBakeHighRes.png GL_NEAREST false
 Texture Yellow yellow.png GL_NEAREST false
 Texture Blue blue.png GL_NEAREST false
 Texture Leaf leaf.png GL_NEAREST false
@@ -16,14 +17,14 @@ Texture Brick brick.png GL_NEAREST false
 Texture Wood wood.png GL_NEAREST false
 Texture Green green.png GL_NEAREST false
 
-//SkyBoxTexture deepSpace
-//	test_1_right.png
-//	test_1_left.png
-//	test_1_top.png
-//	test_1_bottom.png
-//	test_1_front.png
-//	test_1_back.png
-//	GL_LINEAR_MIPMAP_LINEAR true
+SkyBoxTexture deepSpace
+	test_1_right.png
+	test_1_left.png
+	test_1_top.png
+	test_1_bottom.png
+	test_1_front.png
+	test_1_back.png
+	GL_LINEAR_MIPMAP_LINEAR true
 SkyBoxTexture blueSky 
 	BlueSky_right.png
 	BlueSky_left.png
@@ -32,19 +33,19 @@ SkyBoxTexture blueSky
 	BlueSky_front.png
 	BlueSky_back.png
 	GL_LINEAR_MIPMAP_LINEAR true
-//SkyBoxTexture redSky 
-//	skyMap_4.png
-//	skyMap_2.png
-//	skyMap_3.png
-//	skyMap_1.png
-//	skyMap_5.png
-//	skyMap_0.png
-//	GL_LINEAR_MIPMAP_LINEAR true
-//SkyBoxTexture purpleSky 
-//	s_right.png
-//	s_left.png
-//	s_top.png
-//	s_bottom.png
-//	s_front.png
-//	s_back.png
-//	GL_LINEAR_MIPMAP_LINEAR true
+SkyBoxTexture redSky 
+	skyMap_4.png
+	skyMap_2.png
+	skyMap_3.png
+	skyMap_1.png
+	skyMap_5.png
+	skyMap_0.png
+	GL_LINEAR_MIPMAP_LINEAR true
+SkyBoxTexture purpleSky 
+	s_right.png
+	s_left.png
+	s_top.png
+	s_bottom.png
+	s_front.png
+	s_back.png
+	GL_LINEAR_MIPMAP_LINEAR true

@@ -30,5 +30,5 @@ void main()
 	vec3 col = blend.x * xCol + blend.y * yCol + blend.z * zCol;
 	color = vec4((ColorMatrix * vec4(col, 1.0)).rgb, specular);
 	depth = z/w;
-	gl_FragDepth = depth;
+	//gl_FragDepth = depth;
 }

@@ -98,3 +98,32 @@ void SkyBox::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTrasform
       //  glDepthMask(GL_TRUE);
     }
 }
+
+//================= GameObjecTSky =================
+
+GameObjectSky::GameObjectSky()
+{
+    colorMatrix = glm::mat4(1.0);
+
+}
+
+//void SkyBox::render(std::shared_ptr<Camera> camera)
+void GameObjectSky::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTrasform)
+{
+
+    glm::mat4 MMatrix = parentTrasform * transform.getTransformMatrix();
+    glm::mat4 MVMatrix = camera->getTransformMatrix() * MMatrix;
+    glm::mat4 MVPmatrix = camera->getProjectionMatrix() * MVMatrix;
+    glm::mat4 skyMat = glm::mat4(glm::mat3(transform.getTransformMatrix()));
+    glm::mat4 NMmatrix = glm::transpose(glm::inverse(MMatrix));
+    glm::mat4 PVMatrix = camera->getProjectionMatrix() * glm::mat4(glm::mat3(camera->getTransformMatrix())) * skyMat;
+    glm::mat4 skyViewMat = glm::inverse(camera->getTranslationMatrix()) * MMatrix;
+
+    if (shader && mesh && texture)
+    {
+        shader->useShader();
+        shader->setSkyBoxTexture(texture);
+        shader->setMatrixes(MVPmatrix, PVMatrix, skyViewMat, colorMatrix);
+        mesh->render();
+    }
+}

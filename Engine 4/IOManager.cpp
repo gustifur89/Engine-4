@@ -21,7 +21,10 @@ bool IOManager::createWindow(int width, int height, std::string title, int fps)
 	this->title = title;
 	this->aspectRatio = (double) width / height;
 	this->fps = fps;
-	this->timeDelay = 1.0 / fps;
+	if (fps != 0)
+		this->timeDelay = 1.0 / fps;
+	else
+		this->timeDelay = 0.0;
 	lastFrameTime = 0.0;
 	glewExperimental = true;
 	if (!glfwInit())
@@ -145,11 +148,13 @@ void IOManager::delay(double timeDelay)
 	}
 	*/
 
-	while (glfwGetTime() - lastFrameTime < timeDelay)
+	if (timeDelay > 0.0)
 	{
+		while (glfwGetTime() - lastFrameTime < timeDelay)
+		{
 
+		}
 	}
-
 	lastFrameTime = glfwGetTime();
 }
 

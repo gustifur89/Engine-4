@@ -26,7 +26,7 @@ public:
 	glm::vec3 startPt;
 	glm::vec3 startDir;
 	glm::vec3 attachPt;
-	glm::vec3 tempFace;
+	std::vector<glm::vec3> tempFace;
 	bool missed;
 	bool attached;
 

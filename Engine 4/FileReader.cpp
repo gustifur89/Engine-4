@@ -180,6 +180,15 @@ std::map<std::string, std::shared_ptr<Shader>> FileReader::readShaderFile(std::s
 			std::shared_ptr<SkyBoxShader> shader = SkyBoxShader::loadShader(vertFile);
 			shaderCollection[name] = shader;
 		}
+		else if (line == "SkyTexShader")
+		{
+			std::string name;
+			std::string vertFile;
+			std::string fragFile;
+			file >> name >> vertFile >> fragFile;
+			std::shared_ptr<SkyTexShader> shader = SkyTexShader::loadShader(vertFile);
+			shaderCollection[name] = shader;
+		}
 	}
 
 	return shaderCollection;

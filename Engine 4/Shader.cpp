@@ -497,6 +497,35 @@ void SkyBoxShader::setMatrixes(glm::mat4 PVM, glm::mat4 colorMatrix)
 	loadMatrix(cm, colorMatrix);
 }
 
+// =============== SkyTexShader ============================
+
+std::shared_ptr<SkyTexShader> SkyTexShader::loadShader(std::string fileName)
+{
+	std::shared_ptr<SkyTexShader> out(new SkyTexShader());
+	out->Shader::loadShader_(fileName, fileName);
+	out->pvm = out->getUniformLocation("PVM");
+	out->mvp = out->getUniformLocation("MVP");
+	out->mvm = out->getUniformLocation("MV");
+	out->cm = out->getUniformLocation("ColorMatrix");
+	out->useShader();
+	out->loadMatrix(out->cm, glm::mat4(1.0));
+	out->skyBoxLoc = out->getUniformLocation("skybox");
+	return out;
+}
+
+void SkyTexShader::setSkyBoxTexture(std::shared_ptr<SkyBoxTexture> skyBoxTexture)
+{
+	loadCubeMap(skyBoxLoc, skyBoxTexture->textureID);
+}
+
+void SkyTexShader::setMatrixes(glm::mat4 MVP, glm::mat4 PVM, glm::mat4 MV, glm::mat4 colorMatrix)
+{
+	loadMatrix(mvp, MVP);
+	loadMatrix(pvm, PVM);
+	loadMatrix(mvm, MV);
+	loadMatrix(cm, colorMatrix);
+}
+
 // ========================================== PortalShader ================================
 
 std::shared_ptr<PortalShader> PortalShader::loadShader(std::string fileName)

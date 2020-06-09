@@ -1,4 +1,4 @@
 fov 94.0
 sensitivity 0.4
-speed 10.0
+speed 5.0
 playerTexture cartTex

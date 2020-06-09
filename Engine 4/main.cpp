@@ -31,16 +31,19 @@ bool cameraMode = true;
 Toggle movemodeToggle;
 float playerFriction = 0.8;
 float playerElasticity = 0.0;
-float playerRadius = 0.2;
 float teleportRange = 3.0; // this is the radius of uncertainty the network players can be in before it snaps
 float fov = 94.0;
 float playerSpeed = 10.0;
 float playerJump = 10.0;
 float playerSensitivity = 0.4;
+float playerRadius = 0.3;
 float playerHeight = 1.6;
 float eyeHeight = 1.32;
+float crouchEyeHeight = 0.46;
+float stepHieght = 0.15625;
 float slipPercentPerSecond = 12.0;
 float slipRotPercentPerSecond = 12.0;
+float maxSpeed = 40.0;
 std::string playerTex = "blankFigureTex";
 
 void move(IOManager& IO, std::shared_ptr<GameObject> player)
@@ -172,13 +175,14 @@ void move(IOManager& IO, std::shared_ptr<GameObject> player)
 
 void animatePlayer(std::shared_ptr<GameObject> player, std::shared_ptr<GameObject> playerMesh, float dt, std::string* state)
 {
+	//std::cout << player->onGround << "\n";
 	if (!player->onGround)
 	{
 		//jump
 		playerMesh->updateAnimation(dt, "jump");
 		*state = "jump";
 	}
-	else if (glm::length(player->velocity) != 0)
+	else if (glm::length(player->velocity) > 3.0)
 	{
 		//run
 		playerMesh->updateAnimation(dt, "run");
@@ -190,7 +194,7 @@ void animatePlayer(std::shared_ptr<GameObject> player, std::shared_ptr<GameObjec
 		playerMesh->updateAnimation(dt, "stand");
 		*state = "stand";
 	}
-	playerMesh->transform.setPosition(player->transform.getPosition() - glm::vec3(0, player->radius, 0));
+	playerMesh->transform.setPosition(player->transform.getPosition());
 	playerMesh->transform.setRotation(glm::vec3(0, player->transform.getRotation().y + 180, 0));
 
 }
@@ -198,7 +202,7 @@ void animatePlayer(std::shared_ptr<GameObject> player, std::shared_ptr<GameObjec
 void setAnimation(std::shared_ptr<GameObject> player, std::shared_ptr<GameObject> playerMesh, float dt, std::string state)
 {
 	playerMesh->updateAnimation(dt, state);
-	playerMesh->transform.setPosition(player->transform.getPosition() - glm::vec3(0, player->radius, 0));
+	playerMesh->transform.setPosition(player->transform.getPosition());
 	playerMesh->transform.setRotation(glm::vec3(0, player->transform.getRotation().y + 180, 0));
 }
 
@@ -212,6 +216,7 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 	bool q = IO.isKeyPressed(GLFW_KEY_LEFT_CONTROL);
 
 	bool slow = IO.isKeyPressed(GLFW_KEY_Q);
+	bool run = IO.isKeyPressed(GLFW_KEY_LEFT_SHIFT);
 
 	float speed = playerSpeed;
 	float jumpSpeed = playerJump;
@@ -340,32 +345,26 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 		//glm::vec3 directionVertical = player->transform.getTransformedY();
 		glm::vec3 vel = xSpeed * directionStrafe + zSpeed * directionForward + ySpeed * directionVertical;
 
-		float speedModifier = slow ? 0.5f : 1.0f;
+		float speedModifier = run ? 2.0f : 1.0f;
 
-		//std::cout << "fly\n";
-
-		//player->velocity = glm::vec3(0);
 		player->velocity = glm::vec3(0);
 		return speedModifier * vel;
-
 	}
 	else
 	{
 		//walk
-		//std::cout << "walk\n";
 		glm::vec3 directionForward = Transform::getTransformedZ(cameraOrientation);
 		glm::vec3 directionStrafe = Transform::getTransformedX(cameraOrientation);
 		glm::vec3 directionVertical = Transform::getTransformedY(cameraOrientation);
-		glm::vec3 vel = xSpeed * directionStrafe + zSpeed * directionForward;// +ySpeed * directionVertical;
+		glm::vec3 vel = xSpeed * directionStrafe + zSpeed * directionForward;
 		
-		//std::cout << vel.x << " : " << vel.y << " : " << vel.z << "\n";
 		float speed = glm::length(vel);
 		if(speed > 0)
 			vel = speed * glm::normalize(glm::vec3(vel.x, 0, vel.z));
 
-		float speedModifier = slow ? 0.5f : 1.0f;
+		float speedModifier = run ? 2.0f : 1.0f;
 
-		if (e)
+		if (e && player->onGround)
 		{
 			//vel.y = jumpSpeed;
 			player->velocity.y = jumpSpeed; // this works with physics..
@@ -373,7 +372,7 @@ glm::vec3 getControllerVelocity(IOManager& IO, std::shared_ptr<GameObject> playe
 		if (q)
 		{
 			//vel.y = -jumpSpeed;
-			player->velocity.y = -jumpSpeed; // this works with physics..
+			//player->velocity.y = -jumpSpeed; // this works with physics..
 		}
 
 		return speedModifier * vel;
@@ -418,7 +417,8 @@ void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, flo
 	glm::vec3 thisP = object->transform.getPosition();
 	glm::vec3 nextP = thisP + difference;
 
-	glm::vec3 faceNorm;
+	//glm::vec3 faceNorm;
+	std::vector<glm::vec3> faceNorms;
 	
 	glm::quat newRot = object->transform.getRotationQuat();//cameraOrientation;
 	bool didTeleport = false;
@@ -432,28 +432,126 @@ void tryMoveObject(std::shared_ptr<GameObject> object, glm::vec3 difference, flo
 
 	bool didHitGround = false;
 
-	if (!object->noClip && collider->collide(object->collider, thisP, nextP, &nP, &faceNorm, 4))
+	if (!object->noClip && collider->collide(object->collider, thisP, nextP, &nP, &faceNorms, 4))
 	{
 	//	std::cout << "IN SOLID?\n";
 
 		if (object->collisionReactEnabled)
-			object->velocity = collisionResolution(object->velocity, faceNorm, object->friction, object->elasticity);
+			object->velocity = collisionResolution(object->velocity, faceNorms[0], object->friction, object->elasticity);
 
-		float upVal = faceNorm.y;
+		float upVal = faceNorms[0].y;
 
-		if (faceNorm.y > 0.0)
+		if (faceNorms[0].y > 0.0)
 		{
 			object->onGround = true;
 			didHitGround = true;
 		}
 
 		//need to collide to stop.
-		if (glm::length(nP - thisP) < GameObject::stopSpeed)
+		if (glm::length(nP - thisP) < GameObject::stopSpeed && object->onGround)
 		{
 			object->physiceEnabled = false;
 		}
 	}
 
+	if (!didHitGround)
+	{
+		//if it didn't hit ground.. update coyote time
+		object->offgroundTime += dt;
+		if (object->offgroundTime > GameObject::coyoteTime)
+		{
+			object->onGround = false;
+		}
+	}
+
+	object->transform.setPosition(nP);
+}
+
+void tryMovePlayer(std::shared_ptr<GameObject> object, glm::vec3 difference, float dt, std::shared_ptr<CollisionStructure> collider, glm::vec3 gravity)
+{
+	//if (!object->physiceEnabled && !object->neverDisable) return;
+	if (object->gravityAffected)
+		object->velocity += gravity * dt;
+
+	if (glm::length(object->velocity) > maxSpeed)
+	{
+		object->velocity = maxSpeed * glm::normalize(object->velocity);
+	}
+
+	glm::vec3 thisP = object->transform.getPosition();
+	glm::vec3 nextP = thisP + difference;
+
+	float xzStepDistance = glm::length(glm::vec2(difference.x, difference.z));
+
+	std::vector<glm::vec3> faceNorms;
+
+	glm::quat newRot = object->transform.getRotationQuat();//cameraOrientation;
+	bool didTeleport = false;
+	for (std::shared_ptr<Portal> portal : Portal::portalList)
+	{
+		portal->action(object, difference, &didTeleport, &thisP, &nextP, &newRot);
+	}
+	object->transform.setRotation(newRot);
+
+	glm::vec3 nP = nextP;
+
+	bool didHitGround = false;
+
+	if (!object->noClip)
+	{
+		if (collider->collide(object->collider, thisP, nextP, &nP, &faceNorms, 4))
+		{
+
+			for (glm::vec3 norm : faceNorms)
+			{
+				if (norm.y > 0.0)
+				{
+					object->onGround = true;
+					object->offgroundTime = 0.0;
+					didHitGround = true;
+				}
+
+				if (abs(norm.y) > 0.1)
+				{
+					object->velocity.y = 0.0f;
+				}
+			}
+			
+			
+			glm::vec3 step = nP - thisP;
+			
+			float xzDidStepDistance = glm::length(glm::vec2(step.x, step.z));
+			
+			
+
+			if (xzDidStepDistance < xzStepDistance * 0.9 && object->onGround) // we consider hitting a wall if the step is 
+			{
+				//std::cout << "try step\n";
+				//to step...
+				// we try move up the step distance, try move forwards, then try move 
+				//step up...
+				glm::vec3 stepNextP = thisP + glm::vec3(0, stepHieght, 0);
+				glm::vec3 stepUp = stepNextP;
+				std::vector<glm::vec3> newNorm;
+
+				//try step up...
+				collider->collide(object->collider, thisP, stepNextP, &stepUp, &newNorm, 0);
+
+				glm::vec3 stepFor = stepUp + difference;
+				glm::vec3 n_step = stepFor;
+				collider->collide(object->collider, stepUp, stepFor, &n_step, &newNorm, 4);
+				//then try to step down..
+				glm::vec3 stepDown = n_step - glm::vec3(0, stepHieght, 0);
+				glm::vec3 finalStep = stepDown;
+
+				collider->collide(object->collider, n_step, stepDown, &finalStep, &newNorm, 0);
+				nP = finalStep;
+			}
+		}
+	}
+
+	//std::cout << object->onGround << "\n";
+	//std::cout << object->offgroundTime << " : " << GameObject::coyoteTime << "\n";
 	if (!didHitGround)
 	{
 		//if it didn't hit ground.. update coyote time
@@ -474,7 +572,7 @@ int main()
 	//1280,800
 	int WIDTH = 1000;
 	int HEIGHT = 800;
-	IO.createWindow(WIDTH, HEIGHT, "test", 30);
+	IO.createWindow(WIDTH, HEIGHT, "test", 30.0);
 	IO.setClearColor(0, 0, 0);
 	Primitive::init();
 
@@ -493,16 +591,34 @@ int main()
 
 	std::shared_ptr<GameObject> stage(new GameObject);
 	
-	
+
 	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	floor->transform.setPosition(0, 0, 0);
 	floor->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
-	floor->mesh = meshCollection["yellowRoom"];//bakedMesh; baked cargoHauler yellowRoomObj yellowRoomObj
-	floor->texture = textureCollection["yellowRoom"];//t_BakedRender; cargoHauler yellowRoom
+	floor->mesh = meshCollection["yellowRoom"]; // redRoom
+	floor->texture = textureCollection["yellowRoom"];//redRoomHi redRoom
+	//floor->mesh = meshCollection["redRoom"];//bakedMesh; baked cargoHauler yellowRoomObj yellowRoomObj yellowRoom
+	//floor->texture = textureCollection["redRoom"];//t_BakedRender; cargoHauler yellowRoom
 	//floor->multiMesh = true;
 	//floor->assignMultiTextures(textureCollection);//textureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
-	floor->visible = false;
+	floor->visible = true;
 	stage->addChild(floor);
+
+	std::shared_ptr<GameObjectSky> cover = std::shared_ptr<GameObjectSky>(new GameObjectSky);
+	cover->transform.setPosition(0, 0, 0);
+	cover->shader = std::static_pointer_cast<SkyTexShader>(shaderCollection["skyTex"]);
+	cover->mesh = meshCollection["yellowRoomCover"];
+	cover->texture = std::static_pointer_cast<SkyBoxTexture>(textureCollection["deepSpace"]);;
+	cover->visible = true;
+	stage->addChild(cover);
+
+	std::shared_ptr<BSP> bspTest = std::shared_ptr<BSP>(new BSP);
+	bspTest->create(stage, glm::mat4(1.0));
+	meshCollection["bsp"] = bspTest->getMesh();
+
+	int texSize;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);
+	std::cout << texSize << "\n";
 
 //	std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);
 	/*
@@ -513,13 +629,14 @@ int main()
 	empty->create(NULL, glm::mat4(1.0));
 	*/
 
+	/*//SKYBOX
 	std::shared_ptr<SkyBox> skyBox = std::shared_ptr<SkyBox>(new SkyBox());
 	skyBox->shader = std::static_pointer_cast<SkyBoxShader>(shaderCollection["skybox"]);
 	skyBox->transform.setRotation(180, 0, 0);
 	skyBox->texture = std::static_pointer_cast<SkyBoxTexture>(textureCollection["blueSky"]);;
 	skyBox->transform.setScale(0.1, 0.1, 0.1);
 	stage->addChild(skyBox);
-
+	*/
 
 	std::shared_ptr<GameObjectTexture> figure = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	figure->transform.setPosition(-4, 0.3, -6.5);
@@ -534,53 +651,13 @@ int main()
 	figure->velocity = glm::vec3(0, 0, 0);
 	figure->collisionReactEnabled = true;
 	figure->neverDisable = true;
+	figure->collider = std::shared_ptr<Cylinder>(new Cylinder(playerRadius, playerHeight));
 	//stage->addChild(figure);
 	std::shared_ptr<GameObjectTexture> figureMesh = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
 	figureMesh->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
 	figureMesh->texture = textureCollection["blankFigureTex"];
 	figureMesh->mesh = meshCollection["figure"];
 	stage->addChild(figureMesh);
-
-	std::shared_ptr<GameObjectTexture> shotgun = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
-	shotgun->transform.setPosition(glm::vec3(-2, 2, -6));
-	shotgun->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
-	shotgun->texture = textureCollection["shotgun"];
-	shotgun->mesh = meshCollection["shotgun"];
-	stage->addChild(shotgun);
-
-
-	
-	std::shared_ptr<GameObjectColor> fakseBud = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	fakseBud->transform.setPosition(0, -10, 0);
-	fakseBud->shader = std::static_pointer_cast<ColorShader>(shaderCollection["color"]);//textureShader;//textureShader autoTextureShader
-	fakseBud->mesh = meshCollection["testWorld"];//bakedMesh; baked cargoHauler yellowRoomObj yellowRoomObj aster
-//	fakseBud->texture = textureCollection["yellowRoom"];//asterTex
-	//std::cout << meshCollection["asterTex"] << "\n";
-	//std::cout << fakseBud->mesh << "\n";
-	//fakseBud->texture = textureCollection["yellowRoom"];//t_BakedRender; cargoHauler yellowRoom
-	//floor->visible = false;
-	//stage->addChild(fakseBud);
-	
-	std::cout << " - " << fakseBud << "\n";
-	std::shared_ptr<BSP> bspTest = std::shared_ptr<BSP>(new BSP);
-	bspTest->create(fakseBud, glm::mat4(1.0));
-	meshCollection["bsp"] = bspTest->getMesh();
-
-	//meshCollection["bsp"] = bspTest->getMeshTest(stage, glm::mat4(1.0));
-
-	std::shared_ptr<GameObjectColor> bspObject = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	//bspObject->transform.setPosition(0, 1, 0);
-	bspObject->shader = std::static_pointer_cast<ColorShader>(shaderCollection["color"]);
-	bspObject->mesh = meshCollection["bsp"];
-	stage->addChild(bspObject);
-
-
-	//std::shared_ptr<ColorMesh> nStage = ColorMesh::meshFromTriangles(tree->triangles, 100, 100, 100, 0.1);
-	//std::shared_ptr<GameObjectColor> nFloor = std::shared_ptr<GameObjectColor>(new GameObjectColor);
-	//nFloor->transform.setPosition(0, 0, 0);
-	//nFloor->shader = colorShader; 
-	//nFloor->mesh = nStage;
-	//stage->addChild(nFloor);
 
 	std::shared_ptr<Camera> camera(new Camera(fov, IO.aspectRatio, 0.1f, 100.0f));
 	
@@ -604,7 +681,20 @@ int main()
 	player->radius = playerRadius;
 	player->neverDisable = true;
 	player->collisionReactEnabled = true;
-//	stage->addChild(player);
+	//stage->addChild(player);
+	
+	std::shared_ptr<GameObject> hand = std::shared_ptr<GameObject>(new GameObject);
+	stage->addChild(hand);
+
+	std::shared_ptr<GameObjectTexture> shotgun = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	shotgun->transform.setScale(glm::vec3(0.4));
+	shotgun->transform.setPosition(glm::vec3(-0.18, -0.18, 0.28));
+	//shotgun->transform.setRotation(glm::vec3(0, 90, 0));
+	shotgun->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);
+	shotgun->texture = textureCollection["shotgun"];
+	shotgun->mesh = meshCollection["shotgun"];
+	hand->addChild(shotgun);
+	//stage->addChild(shotgun);
 
 	//player mesh
 	std::shared_ptr<GameObjectTexture> playerMesh = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
@@ -614,9 +704,8 @@ int main()
 	stage->addChild(playerMesh);
 	   		
 	std::vector<std::shared_ptr<GameObject>> physicsList;
-	physicsList.push_back(player);
-//	physicsList.push_back(figure);
-	float maxSpeed = 40.0;
+	//physicsList.push_back(player);
+	//physicsList.push_back(figure);
 
 	glm::vec3 gravity = 30.0f * glm::vec3(0, -1, 0);
 
@@ -649,14 +738,14 @@ int main()
 
 	checkGLError("setup");
 
-
 	std::shared_ptr<CollisionStructure> collider = bspTest;
-
 
 	networkClient->updateNametex("big boy", playerTex);
 	do
 	{
 		dt = IO.deltaTime;
+		//std::cout << 1.0 / dt << "\n";
+
 		if (mouseLockToggle.toggle(IO.isKeyPressed(GLFW_KEY_2)))
 		{
 			IO.toggleMouseState();
@@ -668,6 +757,26 @@ int main()
 		{
 			reloadTime = 0.0;
 			//spawn a fancy ball.
+
+			int r = rand() % 255;
+			int g = rand() % 255;
+			int b = rand() % 255;
+
+			float speed = 20.0f;
+
+
+			std::shared_ptr<GameObjectColor> ball = Primitive::makeSphere(0.1, std::static_pointer_cast<ColorShader>(shaderCollection["color"]), r, g, b, 3.0);
+			glm::mat4 rotMat = camera->getRotationMatrix();
+			glm::vec3 vel = speed * rotMat * glm::vec4(0, 0, 1, 0);
+
+			ball->friction = 0.1;
+			ball->elasticity = 0.90f;
+			ball->velocity = vel;
+			ball->transform.setPosition(camera->getPosition());
+			stage->addChild(ball);
+			physicsList.push_back(ball);
+
+			/*
 			for (int i = 0; i < 3; i++)
 			{
 				int r = rand() % 255;
@@ -696,6 +805,7 @@ int main()
 				stage->addChild(ball);
 				physicsList.push_back(ball);
 			}
+			*/
 		}
 		else
 		{
@@ -738,7 +848,6 @@ int main()
 		}
 
 
-
 		//now move character based on input.
 		glm::vec3 controlVelocity = getControllerVelocity(IO, player);
 		
@@ -747,7 +856,7 @@ int main()
 		camera->setRotation(cameraOrientation);
 		if (movemodeToggle.getState())
 		{
-			player->velocity -= gravity * dt;
+			//player->velocity -= gravity * dt;
 		}
 		else
 		{
@@ -950,11 +1059,18 @@ int main()
 			*/
 		}
 		
+		float gravityMult = (IO.isKeyPressed(GLFW_KEY_SPACE) && player->velocity.y > 0.0 && movemodeToggle.getState()) ? 1.0 : 2.0;
+		tryMovePlayer(player, dt* player->velocity, dt, collider, gravityMult * gravity);
+		tryMovePlayer(figure, dt* figure->velocity, dt, collider, gravity);
 
 		cameraOrientation = player->transform.getRotationQuat();
 		camera->setRotation(cameraOrientation);
-		//camera->setPosition(player->transform.getPosition());// +glm::vec3(0, 1, 0));		
-		camera->setPosition(player->transform.getPosition() + glm::vec3(0, -playerHeight/2.0f + eyeHeight, 0));
+		//camera->setPosition(player->transform.getPosition() + glm::vec3(0, -playerHeight/2.0f + eyeHeight, 0));
+		float eyes = (IO.isKeyPressed(GLFW_KEY_LEFT_CONTROL)) ? crouchEyeHeight : eyeHeight;
+		camera->setPosition(player->transform.getPosition() + glm::vec3(0, eyes, 0));
+
+		hand->transform.setPosition(camera->getPosition());
+		hand->transform.setRotation(cameraOrientation);
 
 		//test bsp
 		/*
@@ -962,7 +1078,7 @@ int main()
 			std::cout << "SOLID\n";
 		else
 			std::cout << "EMPTY\n";
-		*/
+		//*/
 
 		//animate meshes
 		std::string playerState, figureState;

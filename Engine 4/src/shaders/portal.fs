@@ -20,5 +20,5 @@ void main()
 	//gl_FragDepth = texture(depthTex, uv).r;
 	//depth = texture(depthTex, uv).r;
 	depth = z/w;
-	gl_FragDepth = depth;
+	//gl_FragDepth = depth;
 }

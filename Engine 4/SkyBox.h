@@ -28,3 +28,25 @@ public:
 
 };
 
+class GameObjectSky : public GameObject
+{
+private:
+	static const GLfloat skyboxVertices[];
+
+	GLuint skyboxVBO;
+	GLuint skyboxVAO;
+
+public:
+	glm::mat4 colorMatrix;
+	std::shared_ptr<SkyBoxTexture> texture;
+	std::shared_ptr<SkyTexShader> shader;
+	Transform transform;
+
+	GameObjectSky();
+
+	//void render(std::shared_ptr<Camera> camera);
+	void renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTrasform);
+
+	//TO work with portals, it disallows easy changing of skyboxes, since this is now an object and goes into the render pipeline as such...
+
+};

@@ -87,6 +87,16 @@ public:
 	void setMatrixes(glm::mat4 PVM, glm::mat4 colorMatrix = glm::mat4(1.0));
 };
 
+class SkyTexShader : public Shader
+{
+public:
+	int pvm, mvp, mvm, cm, skyBoxLoc;
+
+	static std::shared_ptr<SkyTexShader> loadShader(std::string fileName);
+	void setSkyBoxTexture(std::shared_ptr<SkyBoxTexture> skyBoxTexture);
+	void setMatrixes(glm::mat4 MVP, glm::mat4 PVM, glm::mat4 MV, glm::mat4 colorMatrix = glm::mat4(1.0));
+};
+
 class WindowShader : public Shader
 {
 protected:

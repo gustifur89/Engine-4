@@ -7,7 +7,7 @@
 class CollisionStructure
 {
 public:
-	virtual bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level) = 0;
+	virtual bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level) = 0;
 };
 
 class Octree : public CollisionStructure
@@ -29,7 +29,7 @@ private:
 		void getExtentsFromRegion(int region, glm::vec3*min_, glm::vec3*max_);
 		void create(int level, int minTris, std::vector<std::shared_ptr<MeshTriangle>>& trianglesIn);
 		bool isTriangleInRegion(std::shared_ptr<MeshTriangle> triangle);
-		bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level);
+		bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level);
 	};
 
 
@@ -43,7 +43,7 @@ public:
 
 	bool hitCheck(Node* node, float radius, glm::vec3 v0, glm::vec3 v1, glm::vec3* out);
 
-	bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level);
+	bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level);
 
 	void create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform);
 
@@ -54,7 +54,7 @@ public:
 class TempSoup : public CollisionStructure
 {
 public:
-	bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level);
+	bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level);
 	std::vector<std::shared_ptr<MeshTriangle>> triangles;
 
 	void create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform);
@@ -122,7 +122,7 @@ public:
 	std::vector<std::shared_ptr<Poly>> polygons;
 	std::shared_ptr<Node> root;
 
-	bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, int level);
+	bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level);
 	void create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform);
 	bool inside(glm::vec3 pt);
 

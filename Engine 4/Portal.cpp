@@ -574,13 +574,13 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int max
 	//https://stackoverflow.com/questions/48246302/writing-to-the-opengl-stencil-buffer
 	//glClear(GL_STENCIL_BUFFER_BIT);
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
-	glDepthMask(GL_FALSE);
+	glDepthMask(GL_FALSE); // no depth writing
 	glEnable(GL_STENCIL_TEST); // Enables testing AND writing functionalities
-	glStencilFunc(GL_EQUAL, drawDepth, 0xFF); // Do not test the current value in the stencil buffer, always accept any value on there for drawing
+	glStencilFunc(GL_EQUAL, drawDepth, 0xFF); // if the value of the stencil buffer is the level we draw the fragment. This is to increment portal depth.
 	glStencilMask(0xFF);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR); // Make every test succeed
 
-	drawStencil(camera);
+	drawStencil(camera);//draw the stencil..
 
 	glEnable(GL_STENCIL_TEST);
 
@@ -588,11 +588,11 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int max
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Make sure we draw on the backbuffer again.
 	glDepthMask(GL_TRUE);
 	glStencilFunc(GL_EQUAL, drawDepth + 1, 0xFF); // Now we will only draw pixels where the corresponding stencil buffer value equals 1
-	glStencilMask(0x00);
+	glStencilMask(0x00); // don't write to stencil
 
 	//clear the depth behind the portal. That way there is no overdraw from geometry 
 	glDepthFunc(GL_ALWAYS);
-	clearDepth(camera);
+	clearDepth(camera); 
 	glDepthFunc(GL_LEQUAL);
 
 	// ... here you render your image on the computer screen (or whatever) that should be limited by the previous geometry ...
@@ -630,8 +630,29 @@ void Portal::portalRender(std::shared_ptr<Camera> camera, int drawDepth, int max
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
 	drawStencil(camera);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Make sure we draw on the backbuffer again.
+												 
+	//need to undo the stencil
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
+	glDepthMask(GL_FALSE); // no depth writing
+	glEnable(GL_STENCIL_TEST); // Enables testing AND writing functionalities
+	glStencilFunc(GL_EQUAL, drawDepth + 1, 0xFF); // if the value of the stencil buffer is the level we draw the fragment. This is to increment portal depth.
+	glStencilMask(0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_DECR); // Make every test succeed
+
+	drawStencil(camera);//draw the stencil..
+
+	glEnable(GL_STENCIL_TEST);
+
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP); // Make sure you will no longer (over)write stencil values, even if any test succeeds
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Make sure we draw on the backbuffer again.
+	glDepthMask(GL_TRUE);
+
+
 
 	glDisable(GL_STENCIL_TEST);
+
+
+
 
 	//glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Do not draw any pixels on the back buffer
 	//drawStencil(camera);
