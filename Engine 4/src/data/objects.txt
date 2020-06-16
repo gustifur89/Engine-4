@@ -1,0 +1,4 @@
+// [gameobject type] [name] [shader] [mesh] [texture]
+// [gameobject type] [name] [shader] [mesh]
+GameObjectTexture campFire texture campFire DarkWood
+GameObjectTexture chair texture chair DarkWood

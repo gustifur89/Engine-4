@@ -169,6 +169,7 @@
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Network.cpp" />
     <ClCompile Include="Octree.cpp" />
+    <ClCompile Include="Particle.cpp" />
     <ClCompile Include="Physics.cpp" />
     <ClCompile Include="Portal.cpp" />
     <ClCompile Include="Primitives.cpp" />
@@ -194,9 +195,14 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Network.h" />
     <ClInclude Include="Octree.h" />
+    <ClInclude Include="Particle.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="Portal.h" />
     <ClInclude Include="Primitives.h" />
+    <ClInclude Include="rapidxml.hpp" />
+    <ClInclude Include="rapidxml_iterators.hpp" />
+    <ClInclude Include="rapidxml_print.hpp" />
+    <ClInclude Include="rapidxml_utils.hpp" />
     <ClInclude Include="RenderTexture.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SkyBox.h" />

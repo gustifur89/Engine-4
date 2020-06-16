@@ -2,6 +2,8 @@
 #include "Headers.h"
 #include "TempGeometry.h"
 #include "Geometry.h"
+#include "rapidxml.hpp"
+#include "rapidxml_print.hpp"
 
 class Mesh
 {
@@ -19,6 +21,8 @@ protected:
 	bool hasBound;
 
 	static std::vector<std::string> split(std::string str, std::string delim);
+	static std::vector<float> splitFloat(std::string str, std::string delim);
+	static std::vector<int> splitInt(std::string str, std::string delim);
 	static void parseOBJVert(std::string vert, int* vIndx, int* uvIndx, int* nIndx);
 
 public:
@@ -86,6 +90,7 @@ public:
 	static std::shared_ptr<TextureMesh> meshFromData(std::vector<GLfloat> vertexBuffer, std::vector<GLfloat> normalBuffer, std::vector<GLfloat> uvBuffer, std::vector<GLuint> indexBuffer);
 	static std::shared_ptr<TextureMesh> loadFromFilePLY(std::string fileName, bool dynamic = false);
 	static std::shared_ptr<TextureMesh> loadFromFileOBJ(std::string fileName);
+	static std::shared_ptr<TextureMesh> loadFromFileDAE(std::string fileName);
 };
 
 class GenericMesh : public Mesh
@@ -112,4 +117,3 @@ public:
 
 	static std::shared_ptr<AnimationData> loadFromFilePLY(std::string fileName, int numFrames);
 };
-

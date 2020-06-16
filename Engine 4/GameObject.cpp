@@ -243,12 +243,11 @@ void GameObjectTexture::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 par
 	glm::mat4 depMVPmatrix = camera->getDepthProjectionMatrix() * MVMatrix;
 //	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MVMatrix));
 	glm::mat4 NMmatrix = glm::transpose(glm::inverse(MMatrix));
+
 	if (shader && mesh && ((texture && !multiMesh)||(multiMesh && multiTextures.size() > 0)))
 	{
-		
 		if (multiMesh)
-		{
-			
+		{		
 			//std::cout << tMesh->subMeshes.size() << " yeow\n";
 			//std::cout << "yeow\n";
 			shader->useShader();
@@ -260,7 +259,6 @@ void GameObjectTexture::renderFunc(std::shared_ptr<Camera> camera, glm::mat4 par
 				shader->setTexture(multiTextures[i]);
 				tMesh->subMeshes[i]->render();
 			}
-
 		}
 		else
 		{

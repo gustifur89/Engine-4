@@ -3,8 +3,26 @@
 class Transform
 {
 private:
+	static glm::quat LookAt(glm::vec3 sourcePoint, glm::vec3 destPoint, glm::vec3 forwardsDir)
+	{
+		glm::vec3 forwardVector = glm::normalize(destPoint - sourcePoint);
+
+		glm::vec3 rotAxis = glm::cross(forwardsDir, forwardVector);
+		float dot = glm::dot(forwardsDir, forwardVector);
+
+		glm::quat q;
+		q.x = rotAxis.x;
+		q.y = rotAxis.y;
+		q.z = rotAxis.z;
+		q.w = dot + 1;
+
+		return glm::normalize(q);
+	}
+	
 	static glm::quat LookAt(glm::vec3 sourcePoint, glm::vec3 destPoint)
 	{
+		return LookAt(sourcePoint, destPoint, glm::vec3(0, 0, 1));
+		/*
 		glm::vec3 forwardVector = glm::normalize(destPoint - sourcePoint);
 
 		glm::vec3 rotAxis = glm::cross(glm::vec3(0,0,1), forwardVector);
@@ -17,6 +35,7 @@ private:
 		q.w = dot + 1;
 
 		return glm::normalize(q);
+		*/
 	}
 
 protected:
@@ -38,6 +57,7 @@ public:
 	void setRotation(Transform& transform);
 	void setRotation(glm::quat quat);
 	void setDirection(glm::vec3 direction);
+	void setDirection(glm::vec3 direction, glm::vec3 forwardsDir);
 
 	void setScale(float scaleX, float scaleY, float scaleZ);
 	void setScale(glm::vec3 scale);

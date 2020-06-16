@@ -9,13 +9,15 @@ private:
 	int dataPos;     // Position in the file where the actual data begins
 	int width, height;
 	int imageSize;   // = width*height*3
-	//unsigned char * data;	// Actual RGB data
-	std::vector<std::uint8_t> data;
+	bool alpha;
+	unsigned char* data;
 public:
 	Texture();
 	~Texture();
 
 	static std::shared_ptr<Texture> loadFromFile(std::string fileName, int blendMode, bool alpha);
+
+	glm::vec3 getColorFromPixel(glm::vec2 texel);
 
 	GLuint textureID;
 };

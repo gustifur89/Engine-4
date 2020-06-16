@@ -56,6 +56,19 @@ public:
 	void setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, glm::mat4 depthMVP, float shininess, glm::mat4 colorMatrix = glm::mat4(1.0));
 };
 
+class ColorParticleShader : public Shader
+{
+private:
+	GLuint mvp, mv, nm, cm, mm;
+	glm::mat4 colorMatrix;
+
+public:
+
+	static std::shared_ptr<ColorParticleShader> loadShader(std::string fileName);
+
+	void setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, glm::mat4 colorMatrix = glm::mat4(1.0));
+};
+
 class TextureShader : public Shader
 {
 public:

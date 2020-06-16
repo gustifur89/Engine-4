@@ -10,6 +10,7 @@
 #include "Portal.h"
 #include "Network.h"
 #include "FileReader.h"
+#include "Particle.h"
 
 void checkGLError(std::string tag)
 {
@@ -40,7 +41,7 @@ float playerRadius = 0.3;
 float playerHeight = 1.6;
 float eyeHeight = 1.32;
 float crouchEyeHeight = 0.46;
-float stepHieght = 0.15625;
+float stepHieght = 6.0f / 32.0f;//step hieght
 float slipPercentPerSecond = 12.0;
 float slipRotPercentPerSecond = 12.0;
 float maxSpeed = 40.0;
@@ -499,7 +500,9 @@ void tryMovePlayer(std::shared_ptr<GameObject> object, glm::vec3 difference, flo
 
 	if (!object->noClip)
 	{
-		if (collider->collide(object->collider, thisP, nextP, &nP, &faceNorms, 4))
+		int maxSlideFaces = (glm::length(difference.xz())) ? 4 : 0;
+
+		if (collider->collide(object->collider, thisP, nextP, &nP, &faceNorms, maxSlideFaces))
 		{
 
 			for (glm::vec3 norm : faceNorms)
@@ -565,6 +568,16 @@ void tryMovePlayer(std::shared_ptr<GameObject> object, glm::vec3 difference, flo
 	object->transform.setPosition(nP);
 }
 
+std::shared_ptr<GameObjectTexture> makeNewTexObject(std::string obj, std::map<std::string, std::shared_ptr<GameObject>> objectCollection)
+{
+	return std::make_shared<GameObjectTexture>(*std::static_pointer_cast<GameObjectTexture>(objectCollection[obj]));
+}
+
+std::shared_ptr<GameObjectColor> makeNewColObject(std::string obj, std::map<std::string, std::shared_ptr<GameObject>> objectCollection)
+{
+	return std::make_shared<GameObjectColor>(*std::static_pointer_cast<GameObjectColor>(objectCollection[obj]));
+}
+
 int main()
 {
 	srand(0);
@@ -579,6 +592,8 @@ int main()
 	std::map<std::string, std::shared_ptr<Shader>> shaderCollection = FileReader::readShaderFile("shaders.txt");
 	std::map<std::string, std::shared_ptr<Mesh>> meshCollection = FileReader::readMeshFile("meshes.txt");
 	std::map<std::string, std::shared_ptr<Texture>> textureCollection = FileReader::readTextureFile("textures.txt");
+	
+	std::map<std::string, std::shared_ptr<GameObject>> objectCollection = FileReader::readObjectFile("objects.txt", meshCollection, shaderCollection, textureCollection);
 	FileReader::setPlayerSettings("settings.txt", &fov, &playerSensitivity, &playerSpeed, &playerTex);
 
 
@@ -593,10 +608,12 @@ int main()
 	
 
 	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
+	
 	floor->transform.setPosition(0, 0, 0);
 	floor->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
-	floor->mesh = meshCollection["yellowRoom"]; // redRoom
-	floor->texture = textureCollection["yellowRoom"];//redRoomHi redRoom
+	floor->mesh = meshCollection["lvl_1ply"]; // redRoom yellowRoom
+	//floor->mesh = TextureMesh::loadFromFileDAE("level_1");
+	floor->texture = textureCollection["lvl_1"];//redRoomHi redRoom yellowRoom
 	//floor->mesh = meshCollection["redRoom"];//bakedMesh; baked cargoHauler yellowRoomObj yellowRoomObj yellowRoom
 	//floor->texture = textureCollection["redRoom"];//t_BakedRender; cargoHauler yellowRoom
 	//floor->multiMesh = true;
@@ -607,8 +624,8 @@ int main()
 	std::shared_ptr<GameObjectSky> cover = std::shared_ptr<GameObjectSky>(new GameObjectSky);
 	cover->transform.setPosition(0, 0, 0);
 	cover->shader = std::static_pointer_cast<SkyTexShader>(shaderCollection["skyTex"]);
-	cover->mesh = meshCollection["yellowRoomCover"];
-	cover->texture = std::static_pointer_cast<SkyBoxTexture>(textureCollection["deepSpace"]);;
+	cover->mesh = meshCollection["level_1_sky"];
+	cover->texture = std::static_pointer_cast<SkyBoxTexture>(textureCollection["blueSky"]);;
 	cover->visible = true;
 	stage->addChild(cover);
 
@@ -616,9 +633,14 @@ int main()
 	bspTest->create(stage, glm::mat4(1.0));
 	meshCollection["bsp"] = bspTest->getMesh();
 
-	int texSize;
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);
-	std::cout << texSize << "\n";
+	std::shared_ptr<GameObjectColor> bspObj = std::shared_ptr<GameObjectColor>(new GameObjectColor);
+	bspObj->shader = std::static_pointer_cast<ColorShader>(shaderCollection["color"]);
+	bspObj->mesh = meshCollection["bsp"];
+	//stage->addChild(bspObj);
+
+	//int texSize;
+	//glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);
+	//std::cout << texSize << "\n";
 
 //	std::shared_ptr<TempSoup> testStup = std::shared_ptr<TempSoup>(new TempSoup);
 	/*
@@ -664,6 +686,7 @@ int main()
 	Toggle mouseLockToggle;
 	Toggle shootToggle;
 	Toggle physicsToggle;
+	Toggle rayCastTestToggle;
 	Toggle toggleA;
 	Toggle noClip;
 	float shootDelay = 1.0f / 10.0f;
@@ -672,7 +695,8 @@ int main()
 	float dt = 1.0 / 30.0f;
 
 	std::shared_ptr<GameObjectTexture> player = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
-	player->transform.setPosition(0, 6, -0.6);
+	//player->transform.setPosition(0, 6, -0.6);
+	player->transform.setPosition(0, 3, -0.6);
 	player->transform.setRotation(glm::vec3(0, 140, 0));
 	//player->collider = std::shared_ptr<Sphere>(new Sphere(playerRadius));
 	player->collider = std::shared_ptr<Cylinder>(new Cylinder(playerRadius, playerHeight));
@@ -739,6 +763,14 @@ int main()
 	checkGLError("setup");
 
 	std::shared_ptr<CollisionStructure> collider = bspTest;
+	
+	std::shared_ptr<ParticleSystem> partSys = std::shared_ptr<ParticleSystem>(new ParticleSystem);
+	partSys->setAspectRatio(IO.aspectRatio);
+	partSys->shader = std::static_pointer_cast<ColorParticleShader>(shaderCollection["colorParticle"]);
+	stage->addChild(partSys);
+
+	//test fire stuff...
+	std::vector<std::shared_ptr<GameObject>> campFires;
 
 	networkClient->updateNametex("big boy", playerTex);
 	do
@@ -753,7 +785,7 @@ int main()
 
 		//if (shootToggle.toggle(IO.isMouseDown(GLFW_MOUSE_BUTTON_1)))
 		shootToggle.toggle(IO.isKeyPressed(GLFW_KEY_B));
-		if(shootToggle.getState() && IO.isMouseDown(GLFW_MOUSE_BUTTON_1) && shootDelay <= reloadTime)
+		if(false && shootToggle.getState() && IO.isMouseDown(GLFW_MOUSE_BUTTON_1) && shootDelay <= reloadTime)
 		{
 			reloadTime = 0.0;
 			//spawn a fancy ball.
@@ -812,6 +844,120 @@ int main()
 			reloadTime += dt;
 		}
 		
+		if (rayCastTestToggle.toggle(IO.isMouseDown(GLFW_MOUSE_BUTTON_1)))
+		{
+			//ray cast and spawn...
+			//pick a color
+
+			std::shared_ptr<Sphere> colliderSphere = std::shared_ptr<Sphere>(new Sphere(0.1));
+			glm::mat4 rotMat = camera->getRotationMatrix();
+			//glm::vec3 vel = speed * rotMat * glm::vec4(0, 0, 1, 0);
+			
+			glm::vec3 dir = rotMat * glm::vec4(0, 0, 1, 0);
+			float rayDist = 100.0;
+			glm::vec3 cPos = camera->getPosition();
+			glm::vec3 goalPos = cPos + rayDist * dir;
+			glm::vec3 sPos = goalPos;
+			//std::vector<glm::vec3> tFaces;
+			glm::vec3 norm;
+			//collider->collide(colliderSphere, cPos, goalPos, &sPos, &tFaces, 0);
+			
+			std::static_pointer_cast<BSP>(collider)->rayCast(cPos, goalPos, &sPos, &norm);
+			
+			if (sPos != goalPos)
+			{
+				std::shared_ptr<GameObjectTexture> campFire;
+				if (rand() % 2 == 0)
+				{
+					campFire = makeNewTexObject("campFire", objectCollection);
+					campFire->transform.setPosition(sPos);
+					stage->addChild(campFire);
+					campFires.push_back(campFire);
+				}
+				else
+				{
+					campFire = makeNewTexObject("chair", objectCollection);
+					campFire->transform.setPosition(sPos);
+					stage->addChild(campFire);		
+				}
+								
+				//get a bitanget matrix...
+				glm::vec3 normal = norm;
+				glm::mat3 TBN = Geometry::getTBN(normal);
+
+				glm::vec3 fr(0, 0, 1);
+				fr = TBN * fr;
+				campFire->transform.setDirection(fr, glm::normalize(glm::vec3(0.01,1,0.01)));
+				
+				for (int i = 0; i < 20; i++)
+				{
+					glm::vec3 sNorm = glm::normalize(glm::vec3(Random::getDouble(), Random::getDouble(), 2));
+					sNorm = TBN * sNorm;
+
+					float life = 0.75 * ((rand() % 1000) / 1000.0f) + 0.25;
+					float speed = 2.0f * (1.0f / life);
+
+					glm::vec3 vel = 10.0f * ((rand() % 1000) / 1000.0f) * sNorm;// glm::normalize(glm::vec3((rand() % 1000) / 1000.0 - 0.5, -(rand() % 1000) / 1000.0 + 0.2, (rand() % 1000) / 1000.0 - 0.5));
+					int r = rand() % (136 - 104) + 104;
+					int g = rand() % (114 - 89) + 89;
+					int b = rand() % (84 - 66) + 66;
+
+					glm::vec3 color = campFire->texture->getColorFromPixel(glm::vec2(Random::getDouble0_1(), Random::getDouble0_1()));
+
+					partSys->spawnParticle(sPos, 0.1, (1.0f / 255.f) * color, vel, gravity, life);
+				}
+			}
+		}
+		
+		for (std::shared_ptr<GameObject> campFire : campFires)
+		{
+			glm::vec3 normal = glm::vec3(0, 1, 0);
+			glm::mat3 TBN = Geometry::getTBN(normal);
+
+			for (int i = 0; i < 1; i++)
+			{
+				glm::vec3 sNorm = glm::normalize(glm::vec3(Random::getDouble(), Random::getDouble(), 6));
+				sNorm = TBN * sNorm;
+
+				glm::vec3 nPos = 0.1f * glm::vec3(Random::getDouble(), Random::getDouble0_1(), Random::getDouble());
+				//nPos = TBN * nPos;
+
+				float life = 0.75 * Random::getDouble0_1() + 0.25;
+				float speed = 1.0 * (8.0f / life);
+
+				glm::vec3 vel = 4.0f * (float) Random::getDouble0_1() * sNorm;// glm::normalize(glm::vec3((rand() % 1000) / 1000.0 - 0.5, -(rand() % 1000) / 1000.0 + 0.2, (rand() % 1000) / 1000.0 - 0.5));
+
+				int r = rand() % 100 + 155;
+				int g = rand() % 40 + 40;
+				int b = rand() % 40 + 40;
+
+				float size = 0.05 * Random::getDouble0_1() + 0.025;
+
+				partSys->spawnParticle(campFire->transform.getPosition() + nPos, size, (1.0f / 255.f) * glm::vec3(r, g, b), vel, glm::vec3(0), life);
+			}
+
+			if (rand() % 2 == 0)
+			{
+				glm::vec3 sNorm = glm::normalize(glm::vec3(Random::getDouble(), Random::getDouble(), 5));
+				sNorm = TBN * sNorm;
+
+				glm::vec3 nPos = 0.16f * glm::vec3(Random::getDouble(), Random::getDouble() + 1.6, Random::getDouble());
+				//nPos = TBN * nPos;
+
+				float life = 0.8 * ((rand() % 1000) / 1000.0f) + 0.6;
+				float speed = 0.4 * (8.0f / life);
+
+				glm::vec3 vel = 4.0f * ((rand() % 1000) / 1000.0f) * sNorm;// glm::normalize(glm::vec3((rand() % 1000) / 1000.0 - 0.5, -(rand() % 1000) / 1000.0 + 0.2, (rand() % 1000) / 1000.0 - 0.5));
+				int gray = rand() % 100 + 50;
+				int r = gray + 5;
+				int g = gray + 0;
+				int b = gray + 0;
+				float size = 0.05 * Random::getDouble0_1() + 0.075;
+				partSys->spawnParticle(campFire->transform.getPosition() + nPos, size, (1.0f / 255.f)* glm::vec3(r, g, b), vel, glm::vec3(0), life);
+			}
+
+		}
+
 		if (IO.isKeyPressed(GLFW_KEY_8))
 		{
 			player->transform.setPosition(0, 0.2, 0);
@@ -820,8 +966,6 @@ int main()
 
 		physicsToggle.toggle(IO.isKeyPressed(GLFW_KEY_P));
 		player->noClip = physicsToggle.getState();
-
-
 
 		//move figure
 		if (IO.isKeyPressed(GLFW_KEY_H))
@@ -1061,7 +1205,7 @@ int main()
 		
 		float gravityMult = (IO.isKeyPressed(GLFW_KEY_SPACE) && player->velocity.y > 0.0 && movemodeToggle.getState()) ? 1.0 : 2.0;
 		tryMovePlayer(player, dt* player->velocity, dt, collider, gravityMult * gravity);
-		tryMovePlayer(figure, dt* figure->velocity, dt, collider, gravity);
+		//tryMovePlayer(figure, dt* figure->velocity, dt, collider, gravity);
 
 		cameraOrientation = player->transform.getRotationQuat();
 		camera->setRotation(cameraOrientation);
@@ -1084,6 +1228,8 @@ int main()
 		std::string playerState, figureState;
 		animatePlayer(player, playerMesh, dt, &playerState);
 		animatePlayer(figure, figureMesh, dt, &figureState);		
+
+		partSys->updateParticles(dt);
 
 		networkClient->updateNetworkPosVel(player->transform.getPosition(), player->velocity, player->transform.getRotation().y, playerState);
 		playerMesh->visible = true;

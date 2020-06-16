@@ -27,7 +27,12 @@ std::shared_ptr<Texture> Texture::loadFromFile(std::string fileName, int blendMo
     }
 
 	std::shared_ptr<Texture> texture(new Texture());
-	
+    texture->alpha = alpha;
+    texture->width = width;
+    texture->height = height;
+    int stride = (alpha) ? 4 : 3;
+    texture->data = data;
+
     bool mipmap = false;
 
     int magBlendMode = blendMode;
@@ -81,6 +86,20 @@ std::shared_ptr<Texture> Texture::loadFromFile(std::string fileName, int blendMo
 	
 }
 
+glm::vec3 Texture::getColorFromPixel(glm::vec2 texel)
+{
+    int mode = (alpha) ? GL_RGBA : GL_RGB;
+    int stride = (alpha) ? 4 : 3;
+
+    int x = texel.x * width;
+    int y = texel.y * height;
+
+    int texelIndex = stride * (y * width + x);
+    
+    glm::vec3 color(data[texelIndex + 0], data[texelIndex + 1], data[texelIndex + 2]);
+
+    return color;
+}
 
 // ======================= SkyBoxTexture =====================
 

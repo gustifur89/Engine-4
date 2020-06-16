@@ -13,7 +13,6 @@ public:
 class Octree : public CollisionStructure
 {
 private:
-
 	class Node
 	{
 	public:
@@ -32,9 +31,7 @@ private:
 		bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level);
 	};
 
-
 	Node* root;
-
 public:
 	std::vector<std::shared_ptr<MeshTriangle>> triangles;
 	glm::vec3 min, max;
@@ -97,6 +94,7 @@ public:
 		bool rayUnder(glm::vec4 plane, float offset, glm::vec3 v0, glm::vec3 v1, glm::vec3* w0, glm::vec3* w1);
 		bool rayOver(glm::vec4 plane, float offset, glm::vec3 v0, glm::vec3 v1, glm::vec3* w0, glm::vec3* w1);
 		bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* faceNorm, float* t);
+		
 		bool inside(glm::vec3 pt);
 		//bool segmentUnder(glm::vec4 plane, glm::vec3 v0, glm::vec3 v1, glm::vec3 nv0, glm::vec3* w0, glm::vec3* w1, glm::vec3* nw0);
 		//bool segmentOver(glm::vec4 plane, glm::vec3 v0, glm::vec3 v1, glm::vec3 nv0, glm::vec3* w0, glm::vec3* w1, glm::vec3* nw0);
@@ -111,7 +109,7 @@ public:
 		static bool segmentUnder(const glm::vec4& plane, glm::vec3& v0, glm::vec3& v1, glm::vec3& nv0, glm::vec3* w0, glm::vec3* w1, glm::vec3* nw0);
 		static bool segmentOver(const glm::vec4 &plane, glm::vec3 &v0, glm::vec3 &v1, glm::vec3 &nv0, glm::vec3* w0, glm::vec3* w1, glm::vec3* nw0);
 		static bool collideSphere(float radius, std::shared_ptr<Node> node, glm::vec3 v0, glm::vec3 v1, glm::vec3* impactPt, glm::vec3& nv0);
-
+		static bool rayCastNode(std::shared_ptr<Node> node, glm::vec3 v0, glm::vec3 v1, glm::vec3* impactPt, glm::vec3* norm);
 		static bool collideCylinder(float radius, float hieght, std::shared_ptr<Node> node, glm::vec3 v0, glm::vec3 v1, glm::vec3* impactPt, glm::vec3& nv0);
 		static glm::vec3 getTangentPointOnCylinder(float radius, float hieght, const glm::vec3& normal);
 
@@ -125,9 +123,9 @@ public:
 	bool collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1, glm::vec3* out, std::vector<glm::vec3>* faceNorms, int level);
 	void create(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform);
 	bool inside(glm::vec3 pt);
+	bool rayCast(glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* norm);
 
 	void makeOnlyTris(std::vector<std::shared_ptr<Poly>>* polygons);
 	std::shared_ptr<ColorMesh> getMesh();
 	std::shared_ptr<ColorMesh> getMeshTest(std::shared_ptr<GameObject> worldObject, glm::mat4 parentTransform);
 };
-

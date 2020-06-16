@@ -10,8 +10,16 @@
 class GameObject
 {
 public:
+
+	enum TYPE
+	{
+		BASIC,
+		COLOR,
+		TEXTURE
+	};
+
 	GameObject(std::shared_ptr<Mesh> mesh, std::shared_ptr<Shader> shader);
-	GameObject() : GameObject(NULL, NULL) {}
+	GameObject() : GameObject(NULL, NULL) { type = TYPE::BASIC; }
 
 	void addChild(std::shared_ptr<GameObject> gameObject);
 
@@ -22,6 +30,7 @@ public:
 
 	std::vector<std::shared_ptr<GameObject>> children;
 	//Render stuff
+	int type;
 	bool visible;
 	bool persistentVisible;
 	Transform transform;
@@ -47,6 +56,7 @@ public:
 	static float coyoteTime;
 	float offgroundTime;
 	bool onGround;
+	
 
 	//animation stuff
 	std::map<std::string, std::shared_ptr<AnimationData>> animations;
@@ -72,7 +82,7 @@ class GameObjectColor : public GameObject
 {
 public:
 	GameObjectColor(std::shared_ptr<ColorMesh> mesh, std::shared_ptr<ColorShader> shader);
-	GameObjectColor() : GameObjectColor(NULL, NULL) {}
+	GameObjectColor() : GameObjectColor(NULL, NULL) { type = TYPE::COLOR; }
 	glm::mat4 colorMatrix;
 	float shininess;
 	std::shared_ptr<ColorShader> shader;
@@ -87,7 +97,7 @@ class GameObjectTexture : public GameObject
 {
 public:
 	GameObjectTexture(std::shared_ptr<TextureMesh> mesh, std::shared_ptr<TextureShader> shader);
-	GameObjectTexture() : GameObjectTexture(NULL, NULL) {}
+	GameObjectTexture() : GameObjectTexture(NULL, NULL) { type = TYPE::TEXTURE; }
 	bool multiMesh;
 	float shininess;
 	glm::mat4 colorMatrix;
@@ -99,6 +109,4 @@ public:
 	void setShininess(float shininess);
 	void setFillColor(int r, int g, int b);
 	void renderFunc(std::shared_ptr<Camera> camera, glm::mat4 parentTransform);
-
 };
-

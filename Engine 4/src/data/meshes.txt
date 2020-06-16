@@ -4,6 +4,7 @@ GenericMesh ply static sphere smoothSphere
 GenericMesh ply static arbit testGround
 GenericMesh ply static tris tris
 GenericMesh ply static grapplingHook GrapplingHook
+GenericMesh ply static lvl_0 lvl_0
 //this shouldn't be read....
 GenericMesh ply static portal portalMesh
 GenericMesh ply static texCube textCube
@@ -19,3 +20,9 @@ ColorMesh ply static baseNine Base_Nine
 ColorMesh ply static testWorld test_world
 GenericMesh ply static aster aster
 GenericMesh ply static redRoom red_room
+GenericMesh ply static campFire campFire
+GenericMesh ply static chair chair
+TextureMesh obj static lvl_1 level_1
+TextureMesh ply static lvl_1ply level_1
+TextureMesh dae static lvl_1dae level_1
+GenericMesh ply static level_1_sky level_1_sky

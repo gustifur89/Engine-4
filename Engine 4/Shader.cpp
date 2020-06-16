@@ -591,3 +591,28 @@ std::shared_ptr<WindowShader> WindowShader::loadShader(std::string vertName, std
 	out->ambientLoc = out->getUniformLocation("ambient");
 	return out;
 }
+
+// ==================================== ColorParticleShader ===========================
+
+std::shared_ptr<ColorParticleShader> ColorParticleShader::loadShader(std::string fileName)
+{
+	std::shared_ptr<ColorParticleShader> out(new ColorParticleShader());
+	out->Shader::loadShader_(fileName, fileName);
+	out->mvp = out->getUniformLocation("MVP");
+	out->mv = out->getUniformLocation("MV");
+	out->cm = out->getUniformLocation("ColorMatrix");
+	out->mm = out->getUniformLocation("MM");
+	out->nm = out->getUniformLocation("NM");
+	out->useShader();
+	out->loadMatrix(out->cm, glm::mat4(1.0));
+	return out;
+}
+
+void ColorParticleShader::setMatrixes(glm::mat4 MVP, glm::mat4 MV, glm::mat4 NM, glm::mat4 MM, glm::mat4 colorMatrix)
+{
+	loadMatrix(mvp, MVP);
+	loadMatrix(mv, MV);
+	loadMatrix(cm, colorMatrix);
+	loadMatrix(mm, MM);
+	loadMatrix(nm, NM);
+}

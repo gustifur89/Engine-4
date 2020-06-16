@@ -7,4 +7,5 @@ TextureShader autoTexture texture_tessalate texture_tessalate
 SkyBoxShader skybox skybox skybox
 SkyTexShader skyTex skyTex skyTex
 PortalShader portal portal portal
+ColorParticleShader colorParticle colorParticle colorParticle
 

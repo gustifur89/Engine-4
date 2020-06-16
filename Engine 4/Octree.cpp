@@ -474,8 +474,47 @@ void BSP::appendObject(std::shared_ptr<GameObject> worldObject, glm::mat4 parent
 {
 	if (worldObject->mesh)
 	{
-		std::vector<std::shared_ptr<Poly>> meshTris = worldObject->mesh->getPolygonsFromMesh(parentTransform * worldObject->transform.getTransformMatrix());
-		polygons.insert(std::end(polygons), std::begin(meshTris), std::end(meshTris));
+		if (worldObject->type == GameObject::TYPE::TEXTURE)
+		{
+			if (std::static_pointer_cast<GameObjectTexture>(worldObject)->multiMesh)
+			{
+				std::vector<std::shared_ptr<Poly>> meshTris;// = worldObject->mesh->getPolygonsFromMesh(parentTransform * worldObject->transform.getTransformMatrix());
+				//polygons.insert(std::end(polygons), std::begin(meshTris), std::end(meshTris));
+				std::shared_ptr<TextureMesh> tMesh = std::static_pointer_cast<TextureMesh>(worldObject->mesh);
+				for (int i = 0; i < tMesh->subMeshes.size(); i++)
+				{
+					meshTris = tMesh->subMeshes[i]->getPolygonsFromMesh(parentTransform * worldObject->transform.getTransformMatrix());
+					polygons.insert(std::end(polygons), std::begin(meshTris), std::end(meshTris));
+				}
+			}
+			else
+			{
+				std::vector<std::shared_ptr<Poly>> meshTris = worldObject->mesh->getPolygonsFromMesh(parentTransform * worldObject->transform.getTransformMatrix());
+				polygons.insert(std::end(polygons), std::begin(meshTris), std::end(meshTris));
+			}
+		}
+		else
+		{
+			std::vector<std::shared_ptr<Poly>> meshTris = worldObject->mesh->getPolygonsFromMesh(parentTransform * worldObject->transform.getTransformMatrix());
+			polygons.insert(std::end(polygons), std::begin(meshTris), std::end(meshTris));
+		}
+
+		//std::vector<std::shared_ptr<Poly>> meshTris = worldObject->mesh->getPolygonsFromMesh(parentTransform * worldObject->transform.getTransformMatrix());
+		//polygons.insert(std::end(polygons), std::begin(meshTris), std::end(meshTris));
+		/*
+		if (worldObject->type == GameObject::TYPE::TEXTURE)
+		{
+			if (std::static_pointer_cast<GameObjectTexture>(worldObject)->multiMesh)
+			{
+				std::shared_ptr<TextureMesh> tMesh = std::static_pointer_cast<TextureMesh>(worldObject->mesh);
+				for (int i = 0; i < tMesh->subMeshes.size(); i++)
+				{
+					tMesh->subMeshes[i]->render();
+					meshTris = tMesh->subMeshes[i]->getPolygonsFromMesh(parentTransform * worldObject->transform.getTransformMatrix());
+					polygons.insert(std::end(polygons), std::begin(meshTris), std::end(meshTris));
+				}
+			}
+		}*/
 	}
 	for (std::shared_ptr<GameObject> child :  worldObject->children)
 	{
@@ -514,17 +553,21 @@ bool BSP::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1
 			//std::cout << "hit\n";
 			glm::vec3 fNorm = Node::impactNormal;
 			faceNorms->push_back(Node::impactNormal);
-			//std::cout << faceNorm->x << " : " << faceNorm->y << " : " << faceNorm->z << "\n";
-			if (glm::dot(v1 - v0, fNorm) >= 0)
+			//std::cout << fNorm.x << " : " << fNorm.y << " : " << fNorm.z << "\n";
+			if (glm::dot(v1 - v0, fNorm) > 0)
 			{
-				*out = v1;
-				return false;
+				//*out = v1;
+				//return false;
 			}
 			/*if (!inside(*out))
 			{
 				*out = v1;
 				return false;
 			}*/
+
+			float epsilon = fmin(glm::length(v1 - v0), 0.001f);
+
+			*out -= epsilon * glm::normalize(v1 - v0);
 
 			if (level > 0)
 			{
@@ -643,6 +686,13 @@ bool BSP::inside(glm::vec3 pt)
 	return false;
 }
 
+bool BSP::rayCast(glm::vec3 v0, glm::vec3 v1, glm::vec3* out, glm::vec3* norm)
+{
+	if(root)
+		return Node::rayCastNode(root, v0, v1, out, norm);
+	return false;
+}
+
 void BSP::makeOnlyTris(std::vector<std::shared_ptr<Poly>>* polygons)
 { 
 	for (std::shared_ptr<Poly> poly : *polygons)
@@ -681,7 +731,7 @@ std::shared_ptr<ColorMesh> BSP::getMeshTest(std::shared_ptr<GameObject> worldObj
 
 // ======================= BSP - Node =======================
 
-const float BSP::Node::COINCIDENT_MARGAIN = 0.0001;
+const float BSP::Node::COINCIDENT_MARGAIN = 0.00001;
 int BSP::Node::count = 0;
 
 bool BSP::Node::rayUnder(glm::vec4 plane, float offset, glm::vec3 v0, glm::vec3 v1, glm::vec3* w0, glm::vec3* w1)
@@ -718,6 +768,11 @@ bool BSP::Node::rayUnder(glm::vec4 plane, float offset, glm::vec3 v0, glm::vec3 
 				*w1 = intPt;
 			}
 		}
+
+		if (glm::length(*w0 - *w1) < COINCIDENT_MARGAIN)
+			return false;
+
+
 		return true;
 	}
 	return false;
@@ -757,6 +812,10 @@ bool BSP::Node::rayOver(glm::vec4 plane, float offset, glm::vec3 v0, glm::vec3 v
 				*w1 = intPt;
 			}
 		}
+		
+		if (glm::length(*w0 - *w1) < COINCIDENT_MARGAIN)
+			return false;
+
 		return true;
 	}
 	return false;
@@ -1044,6 +1103,53 @@ bool BSP::Node::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::v
 	*/
 }
 
+bool BSP::Node::rayCastNode(std::shared_ptr<Node> node, glm::vec3 v0, glm::vec3 v1, glm::vec3* impactPt, glm::vec3* norm)
+{
+	if (node->leaf == LEAF::EMPTY)
+	{
+		return false;
+	}
+	if (node->leaf == LEAF::SOLID)
+	{
+		*impactPt = v0;
+		return true;
+	}
+
+	float d0, d1;
+	d0 = glm::dot(node->plane.xyz(), v0) + node->plane.w;
+	d1 = glm::dot(node->plane.xyz(), v1) + node->plane.w;
+
+	if (d0 <= 0.0f && d1 <= 0.0f)
+	{
+		return rayCastNode(node->back, v0, v1, impactPt, norm);
+	}
+	if (d0 > 0.0f && d1 > 0.0f)
+	{
+		return rayCastNode(node->front, v0, v1, impactPt, norm);
+	}
+
+	glm::vec3 midPt = Poly::getIntersection(v0, v1, node->plane);
+
+	if (d0 <= 0.0f)
+	{
+		if (rayCastNode(node->back, v0, midPt, impactPt, norm))
+		{
+			return true;
+		}
+
+		*norm = -node->plane.xyz();
+		return rayCastNode(node->front, midPt, v1, impactPt, norm);
+	}
+
+	if (rayCastNode(node->front, v0, midPt, impactPt, norm))
+	{
+		return true;
+	}
+
+	*norm = node->plane.xyz();
+	return rayCastNode(node->back, midPt, v1, impactPt, norm);
+}
+
 bool BSP::Node::inside(glm::vec3 pt)
 {
 	if (leaf == LEAF::EMPTY)
@@ -1076,11 +1182,12 @@ bool BSP::Node::inside(glm::vec3 pt)
 
 bool BSP::Node::segmentUnder(const glm::vec4& plane, glm::vec3& v0, glm::vec3& v1, glm::vec3& nv0, glm::vec3* w0, glm::vec3* w1, glm::vec3* nw0)
 {
+	/*
 	int s0 = getPtSide(v0, plane);
 	int s1 = getPtSide(v1, plane);
 
-	if (s0 == SIDE::COINCIDENT) s0 = SIDE::FRONT;
-	if (s1 == SIDE::COINCIDENT) s1 = SIDE::FRONT;
+	if (s0 == SIDE::COINCIDENT) s0 = SIDE::BACK;
+	if (s1 == SIDE::COINCIDENT) s1 = SIDE::BACK;
 
 	if (s0 == SIDE::FRONT && s1 == SIDE::FRONT)
 	{
@@ -1110,13 +1217,14 @@ bool BSP::Node::segmentUnder(const glm::vec4& plane, glm::vec3& v0, glm::vec3& v
 		*nw0 = nv0;
 		return true;
 	}
+	//*/
 
-	/*
+	///*
 	float d0, d1;
 	d0 = glm::dot(plane.xyz(), v0) + plane.w;
 	d1 = glm::dot(plane.xyz(), v1) + plane.w;
 
-	if (d0 >= 0.0f && d1 >= 0.0f)
+	if (d0 > 0.0f && d1 > 0.0f)
 	{
 		return false;
 	}
@@ -1143,7 +1251,7 @@ bool BSP::Node::segmentUnder(const glm::vec4& plane, glm::vec3& v0, glm::vec3& v
 		*w0 = v0;
 		*nw0 = nv0;
 		return true;
-	}*/
+	}//*/
 }
 
 bool BSP::Node::segmentOver(const glm::vec4& plane, glm::vec3& v0, glm::vec3& v1, glm::vec3& nv0, glm::vec3* w0, glm::vec3* w1, glm::vec3* nw0)
@@ -1153,7 +1261,17 @@ bool BSP::Node::segmentOver(const glm::vec4& plane, glm::vec3& v0, glm::vec3& v1
 
 bool BSP::Node::collideSphere(float radius, std::shared_ptr<Node> node, glm::vec3 v0, glm::vec3 v1, glm::vec3* impactPt, glm::vec3& nv0)
 {
+	/*
+	if (glm::length(v1 - v0) < COINCIDENT_MARGAIN)
+	{
+		if (node->leaf == LEAF::EMPTY)
+			std::cout << "EMPTY\n";
+		if (node->leaf == LEAF::SOLID)
+			std::cout << "SOLID\n";
 
+		return false;
+	}
+	*/
 	/*
 	if (node->leaf == LEAF::EMPTY)
 	{
@@ -1225,12 +1343,10 @@ bool BSP::Node::collideSphere(float radius, std::shared_ptr<Node> node, glm::vec
 
 	glm::vec3 w0, w1, nw0;
 	bool hit = false;
-	//if (segmentUnder(node->plane, v0, v1, nv0, &w0, &w1, &nw0))
 	if (segmentUnder(glm::vec4(node->plane.xyz(), node->plane.w - radius), v0, v1, nv0, &w0, &w1, &nw0))
 	{
 		hit |= collideSphere(radius, node->back, w0, w1, &v1, nw0);
 	}
-	//if (segmentOver(node->plane, v0, v1, nv0, &w0, &w1, &nw0))
 	if (segmentOver(glm::vec4(node->plane.xyz(), node->plane.w + radius), v0, v1, nv0, &w0, &w1, &nw0))
 	{
 		hit |= collideSphere(radius, node->front, w0, w1, &v1, nw0);
@@ -1243,7 +1359,6 @@ bool BSP::Node::collideSphere(float radius, std::shared_ptr<Node> node, glm::vec
 
 	return hit;
 	//*/
-
 
 	/*
 	if (node->leaf == LEAF::EMPTY)
@@ -1281,6 +1396,15 @@ bool BSP::Node::collideSphere(float radius, std::shared_ptr<Node> node, glm::vec
 
 bool BSP::Node::collideCylinder(float radius, float hieght, std::shared_ptr<Node> node, glm::vec3 v0, glm::vec3 v1, glm::vec3* impactPt, glm::vec3& nv0)
 {
+	//std::cout << "stert\n";
+	//std::cout << v0.x << ", " << v0.y << ", " << v0.z << "\n";
+	//std::cout << v1.x << ", " << v1.y << ", " << v1.z << "\n";
+
+	/*if (glm::length(v1 - v0) < COINCIDENT_MARGAIN)
+	{
+		return false;
+	}*/
+
 	//https://github.com/melax/sandbox/blob/master/testbsp/bspcollide.cpp
 	if (node->leaf == LEAF::EMPTY)
 	{
@@ -1665,7 +1789,7 @@ void BSP::Node::create(std::vector<std::shared_ptr<Poly>> polygons, int maxPolys
 	count++;
 	plane = root->plane;
 //	std::cout << plane.x << " : " << plane.y << " : " << plane.z << " : " << plane.w << "\n";
-	polygons.push_back(root);
+	this->polygons.push_back(root);
 	std::vector<std::shared_ptr<Poly>> frontList;
 	std::vector<std::shared_ptr<Poly>> backList;
 	leaf = LEAF::NOT_LEAF;
@@ -1712,7 +1836,14 @@ void BSP::Node::create(std::vector<std::shared_ptr<Poly>> polygons, int maxPolys
 		if (side == SIDE::COINCIDENT)
 		{
 			//if it is coincidnet, then just push it back...
+			// if it is pointed in the front, just add to this plane,
+			// if it is pointed behind, push it behind
+			std::cout << glm::dot(poly->plane.xyz(), plane.xyz()) << "\n";
 			this->polygons.push_back(poly);
+			//if (glm::dot(poly->plane.xyz(), plane.xyz()) >= 0)
+			////	this->polygons.push_back(poly);
+			//else
+			//	backList.push_back(poly);
 		}
 		else if (side == SIDE::FRONT)
 		{

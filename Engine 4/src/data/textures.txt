@@ -15,8 +15,23 @@ Texture Leaf leaf.png GL_NEAREST false
 Texture Concrete concrete.png GL_NEAREST false
 Texture Brick brick.png GL_NEAREST false
 Texture Wood wood.png GL_NEAREST false
+Texture DarkWood darkWood.png GL_NEAREST false
 Texture Green green.png GL_NEAREST false
+Texture Grass grass.png GL_NEAREST false
+Texture PlateFloor PlateFloor.png GL_NEAREST false
+Texture Masonry masonry_wall.png GL_NEAREST false
+Texture Masonry masonry_wall.png GL_NEAREST false
+Texture lvl_0 lvl0tex.png GL_NEAREST true
+Texture lvl_1 lvl1_tex.png GL_NEAREST true
 
+SkyBoxTexture saturnSpace
+	saturn_right1.png
+	saturn_left2.png
+	saturn_top3.png
+	saturn_bottom4.png
+	saturn_front5.png
+	saturn_back6.png
+	GL_LINEAR_MIPMAP_LINEAR true
 SkyBoxTexture deepSpace
 	test_1_right.png
 	test_1_left.png

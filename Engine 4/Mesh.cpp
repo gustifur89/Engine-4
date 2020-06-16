@@ -433,6 +433,38 @@ std::vector<std::string> Mesh::split(std::string str, std::string delim)
 	return out;
 }
 
+std::vector<float> Mesh::splitFloat(std::string str, std::string delim)
+{
+	std::vector<float> out;
+	size_t pos = 0;
+	std::string token;
+	while ((pos = str.find(delim)) != std::string::npos) {
+		token = str.substr(0, pos);
+		//std::cout << token << std::endl;
+		if (token.length() > 0)
+			out.push_back(std::stof(token));
+		str.erase(0, pos + delim.length());
+	}
+	out.push_back(std::stof(str));
+	return out;
+}
+
+std::vector<int> Mesh::splitInt(std::string str, std::string delim)
+{
+	std::vector<int> out;
+	size_t pos = 0;
+	std::string token;
+	while ((pos = str.find(delim)) != std::string::npos) {
+		token = str.substr(0, pos);
+		//std::cout << token << std::endl;
+		if (token.length() > 0)
+			out.push_back(std::stoi(token));
+		str.erase(0, pos + delim.length());
+	}
+	out.push_back(std::stoi(str));
+	return out;
+}
+
 void Mesh::parseOBJVert(std::string vert, int* vIndx, int* uvIndx, int* nIndx)
 {
 	std::vector<std::string> strs = Mesh::split(vert, "/");
@@ -778,9 +810,9 @@ std::shared_ptr<ColorMesh> ColorMesh::meshFromPolygons(std::vector<std::shared_p
 		//MeshTriangle temp = polygons[i]->getThicker(thickness);
 		std::shared_ptr<Poly> poly = polygons[i];
 
-		r_ = (rand() % 255) / 255.f;
-		g_ = (rand() % 255) / 255.f;
-		b_ = (rand() % 255) / 255.f;
+		r_ = (rand() % 155 + 100) / 255.f;
+		g_ = (rand() % 155 + 100) / 255.f;
+		b_ = (rand() % 155 + 100) / 255.f;
 
 		//vert 0
 		mesh->vertexBuffer.push_back(poly->pts[0].x);
@@ -1150,6 +1182,7 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
 			//extract the entire line. To find out if we are using quad or tri...
 			std::getline(file, line);
 			std::vector<std::string> vindx = Mesh::split(line, " ");
+
 			if (vindx.size() == 3)
 			{
 				//need to construct the buffers....
@@ -1320,9 +1353,7 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
 		mesh->subMeshes.push_back(TextureMesh::meshFromData(mesh->vertexBuffer, mesh->normalBuffer, mesh->uvBuffer, mesh->indexBuffer));
 	
 		//need to calculate the bounds....
-		mesh->recalculateBoundsSub();
-
-		
+		mesh->recalculateBoundsSub();		
 		mesh->vertexBuffer = vertexBufferTemp;
 		mesh->normalBuffer = normalBufferTemp;
 		mesh->uvBuffer = uvBufferTemp;
@@ -1339,6 +1370,160 @@ std::shared_ptr<TextureMesh> TextureMesh::loadFromFileOBJ(std::string fileName)
 		mesh->bindVertexAttribVBO(1, 3, mesh->normalBuffer);
 		mesh->bindVertexAttribVBO(2, 2, mesh->uvBuffer);
 		mesh->recalculateBounds();
+	}
+	return mesh;
+}
+
+std::shared_ptr<TextureMesh> TextureMesh::loadFromFileDAE(std::string fileName)
+{
+	fileName = std::string("src/meshes/") + fileName + std::string(".dae");
+	std::ifstream file;
+	file = std::ifstream(fileName);
+
+	if (file.fail())
+	{
+		fprintf(stderr, "failed to load file at : ");
+		fprintf(stderr, fileName.c_str());
+		fprintf(stderr, "\n");
+		return std::shared_ptr<TextureMesh>(NULL);
+	}
+	std::shared_ptr<TextureMesh> mesh(new TextureMesh());
+	mesh->multiMesh = true;
+
+	rapidxml::xml_document<> doc;
+	// Read the xml file into a vector
+	std::vector<char> buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	buffer.push_back('\0');
+	// Parse the buffer using the xml file parsing library into doc 
+	doc.parse<0>(&buffer[0]);
+
+	//std::cout << doc.name << "\n";
+
+	rapidxml::xml_node<>* root_node = doc.first_node("COLLADA");
+
+	rapidxml::xml_node<>* geometry_node = root_node->first_node("library_geometries")->first_node("geometry");
+	//std::cout << "geometry id = " << geometry_node->first_attribute("id")->name() << " value = " << geometry_node->first_attribute("id")->value() << "\n";
+	std::string meshName = geometry_node->first_attribute("id")->value();
+	rapidxml::xml_node<>* mesh_node = geometry_node->first_node("mesh");
+	//std::map<std::string, std::vector<float>> data;
+	std::map<std::string, int> offsets;
+	std::map<std::string, std::vector<int>> materials;
+
+	std::vector<glm::vec3> positionBuffer;
+	std::vector<glm::vec3> normalBuffer;
+	std::vector<std::vector<glm::vec2>> uvsBuffer;
+
+	//read from file
+	for (rapidxml::xml_node<>* source = mesh_node->first_node(); source; source = source->next_sibling())
+	{
+		if (!strcmp(source->name(), "source"))
+		{
+			std::string id = source->first_attribute("id")->value();
+			id = id.substr(meshName.length() + 1, id.length() + 1);
+			rapidxml::xml_node<>* float_array = source->first_node("float_array");
+			std::vector<float> arrayData = splitFloat(float_array->value(), " ");
+
+			if (id == "positions")
+			{
+				//y and z switch, -x
+				for (int i = 0; i < arrayData.size(); i += 3)
+				{
+					positionBuffer.push_back(glm::vec3(-arrayData[i + 0], arrayData[i + 2], arrayData[i + 1]));
+				}
+			}
+			else if (id == "normals")
+			{
+				//y and z switch, -x
+				for (int i = 0; i < arrayData.size(); i += 3)
+				{
+					normalBuffer.push_back(glm::vec3(-arrayData[i + 0], arrayData[i + 2], arrayData[i + 1]));
+				}
+			}
+			else
+			{
+				//maps... i.e. uv
+				uvsBuffer.push_back(std::vector<glm::vec2>());
+				for (int i = 0; i < arrayData.size(); i += 2)
+				{
+					uvsBuffer[uvsBuffer.size()-1].push_back(glm::vec2(arrayData[i + 0], arrayData[i + 1]));
+				}
+
+			}
+		}
+		else if (!strcmp(source->name(), "vertices"))
+		{
+			//this is nothing...
+		}
+		else if (!strcmp(source->name(), "triangles"))
+		{
+			//this is where we make stuff and split by material...
+			std::string material = source->first_attribute("material")->value();
+			material = material.substr(0, material.find("-"));
+
+			mesh->materialNames.push_back(material);
+
+			for (rapidxml::xml_node<>* triangleData = source->first_node(); triangleData; triangleData = triangleData->next_sibling())
+			{
+				if (!strcmp(triangleData->name(), "input"))
+				{
+					std::string name = triangleData->first_attribute("source")->value();
+					name = name.substr(meshName.length() + 1, name.length() + 1);
+					if (name == "vertices")
+					{
+						name = "positions";
+					}
+					int offset = std::stoi(triangleData->first_attribute("offset")->value());
+					offsets[name] = offset;
+				}
+				else if (!strcmp(triangleData->name(), "p"))
+				{
+					std::vector<int> arrayData = splitInt(triangleData->value(), " ");
+					materials[material] = arrayData;
+				}
+			}
+		}
+	}
+
+	//get mesh from data
+	for (auto const& material : materials)
+	{
+		mesh->materialNames.push_back(material.first);
+		std::vector<int> vertIndx = material.second;
+
+		std::vector<float> vBuf;
+		std::vector<float> nBuf;
+		std::vector<float> uvBuf;
+		std::vector<unsigned int> iBuf;
+
+		for (int i = 0; i < vertIndx.size(); i += 3)
+		{
+			int vi = vertIndx[i + 0];
+			float vx = positionBuffer[vi].x;
+			float vy = positionBuffer[vi].y;
+			float vz = positionBuffer[vi].z;
+
+			int ni = vertIndx[i + 1];
+			float nx = normalBuffer[ni].x;
+			float ny = normalBuffer[ni].y;
+			float nz = normalBuffer[ni].z;
+
+			int uvi = vertIndx[i + 2];
+			float u = uvsBuffer[0][uvi].x;
+			float v = uvsBuffer[0][uvi].y;
+
+			vBuf.push_back(vx);
+			vBuf.push_back(vy);
+			vBuf.push_back(vz);
+			nBuf.push_back(nx);
+			nBuf.push_back(ny);
+			nBuf.push_back(nz);
+			uvBuf.push_back(u);
+			uvBuf.push_back(v);
+			iBuf.push_back(iBuf.size());
+		}
+
+		mesh->subMeshes.push_back(TextureMesh::meshFromData(vBuf, nBuf, uvBuf, iBuf));
+		mesh->recalculateBoundsSub();
 	}
 	return mesh;
 }

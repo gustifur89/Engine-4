@@ -409,6 +409,19 @@ public:
 	}
 };
 
+class Random
+{
+public:
+	static double getDouble0_1()
+	{
+		return (rand() % 10000) / 10000.0;
+	}
+	static double getDouble()
+	{
+		return (rand() % 20000) / 10000.0 - 1.0;
+	}
+};
+
 class Geometry
 {
 public:
@@ -492,6 +505,15 @@ public:
 	static float lerpAngleDeg(float angle0, float angle1, float t)
 	{
 		return TO_DEG * lerpAngleRad(TO_RAD * angle0, TO_RAD * angle1, t);
+	}
+
+	static glm::mat3 getTBN(glm::vec3 normal)
+	{
+		glm::vec3 randomVec = glm::normalize(glm::vec3((rand() % 10000)/ 10000.0, (rand() % 10000) / 10000.0, (rand() % 10000) / 10000.0));
+		glm::vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
+		glm::vec3 bitangent = normalize(cross(normal, tangent));
+		glm::mat3 TBN = glm::mat3(tangent, bitangent, normal);
+		return TBN;
 	}
 };
 
