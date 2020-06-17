@@ -565,7 +565,7 @@ bool BSP::collide(std::shared_ptr<Collider> collider, glm::vec3 v0, glm::vec3 v1
 				return false;
 			}*/
 
-			float epsilon = fmin(glm::length(v1 - v0), 0.001f);
+			float epsilon = fmin(glm::length(*out - v0), 0.001f);
 
 			*out -= epsilon * glm::normalize(v1 - v0);
 
@@ -731,7 +731,7 @@ std::shared_ptr<ColorMesh> BSP::getMeshTest(std::shared_ptr<GameObject> worldObj
 
 // ======================= BSP - Node =======================
 
-const float BSP::Node::COINCIDENT_MARGAIN = 0.00001;
+const float BSP::Node::COINCIDENT_MARGAIN = 0.0001;
 int BSP::Node::count = 0;
 
 bool BSP::Node::rayUnder(glm::vec4 plane, float offset, glm::vec3 v0, glm::vec3 v1, glm::vec3* w0, glm::vec3* w1)
@@ -1616,6 +1616,10 @@ int BSP::Node::getPtSide(glm::vec3 pt, glm::vec4 plane)
 {
 	//float d = -glm::dot(plane.xyz(), pt);
 	float d = glm::dot(plane.xyz(), pt) + plane.w;
+	if (std::isnan(d) || !std::isfinite(d))
+	{
+		return SIDE::UNDEFINED;
+	}
 	if (fabs(d) < COINCIDENT_MARGAIN)
 	{
 		//coincident
@@ -1659,6 +1663,10 @@ int BSP::Node::getPolySide(std::shared_ptr<Poly> polygon, glm::vec4 plane)
 	for (glm::vec3 pt : polygon->pts)
 	{
 		int side = getPtSide(pt, plane);
+		if (side == SIDE::UNDEFINED)
+		{
+			return SIDE::UNDEFINED;
+		}
 		if (side == SIDE::COINCIDENT)
 		{
 			//coincident
@@ -1788,8 +1796,9 @@ void BSP::Node::create(std::vector<std::shared_ptr<Poly>> polygons, int maxPolys
 	//}
 	count++;
 	plane = root->plane;
-//	std::cout << plane.x << " : " << plane.y << " : " << plane.z << " : " << plane.w << "\n";
-	this->polygons.push_back(root);
+	//std::cout << plane.x << " : " << plane.y << " : " << plane.z << " : " << plane.w << "\n";
+	//this->polygons.push_back(root);
+	polygons.push_back(root);
 	std::vector<std::shared_ptr<Poly>> frontList;
 	std::vector<std::shared_ptr<Poly>> backList;
 	leaf = LEAF::NOT_LEAF;
@@ -1831,17 +1840,31 @@ void BSP::Node::create(std::vector<std::shared_ptr<Poly>> polygons, int maxPolys
 
 	for (std::shared_ptr<Poly> poly : polygons)
 	{
-	//	if (poly == root) continue;
+		//if (poly == root) continue;
 		int side = getPolySide(poly);
+
+		if (poly == root)
+		{
+		//	std::cout << side << "\n";
+		}
+
+		//std::cout << poly->plane.w << "\n";
+
 		if (side == SIDE::COINCIDENT)
 		{
 			//if it is coincidnet, then just push it back...
 			// if it is pointed in the front, just add to this plane,
 			// if it is pointed behind, push it behind
-			std::cout << glm::dot(poly->plane.xyz(), plane.xyz()) << "\n";
+			//this->polygons.push_back(poly);
+			//this->polygons.push_back(poly);
+			//this->polygons.push_back(poly);
 			this->polygons.push_back(poly);
-			//if (glm::dot(poly->plane.xyz(), plane.xyz()) >= 0)
-			////	this->polygons.push_back(poly);
+
+			//std::cout << poly->plane.x << " : " << poly->plane.y << " : " << poly->plane.z << " : " << poly->plane.w << "\n";
+			//std::cout << glm::dot(poly->plane.xyz(), plane.xyz()) << "\n";
+			////this->polygons.push_back(poly);
+			//if (glm::dot(poly->plane.xyz(), plane.xyz()) >= 0.0)
+			//	this->polygons.push_back(poly);
 			//else
 			//	backList.push_back(poly);
 		}
@@ -1853,7 +1876,7 @@ void BSP::Node::create(std::vector<std::shared_ptr<Poly>> polygons, int maxPolys
 		{
 			backList.push_back(poly);
 		}
-		else
+		else if(side == SIDE::SPANNING)
 		{
 			//spanning....
 			std::shared_ptr<Poly> frontPart, backPart;

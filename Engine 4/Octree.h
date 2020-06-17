@@ -73,7 +73,8 @@ public:
 			COINCIDENT,
 			FRONT,
 			BACK,
-			SPANNING
+			SPANNING,
+			UNDEFINED
 		};
 		enum LEAF
 		{

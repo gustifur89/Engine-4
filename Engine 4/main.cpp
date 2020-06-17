@@ -618,7 +618,7 @@ int main()
 	//floor->texture = textureCollection["redRoom"];//t_BakedRender; cargoHauler yellowRoom
 	//floor->multiMesh = true;
 	//floor->assignMultiTextures(textureCollection);//textureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
-	floor->visible = true;
+	floor->visible = false;
 	stage->addChild(floor);
 
 	std::shared_ptr<GameObjectSky> cover = std::shared_ptr<GameObjectSky>(new GameObjectSky);
@@ -626,7 +626,7 @@ int main()
 	cover->shader = std::static_pointer_cast<SkyTexShader>(shaderCollection["skyTex"]);
 	cover->mesh = meshCollection["level_1_sky"];
 	cover->texture = std::static_pointer_cast<SkyBoxTexture>(textureCollection["blueSky"]);;
-	cover->visible = true;
+	cover->visible = false;
 	stage->addChild(cover);
 
 	std::shared_ptr<BSP> bspTest = std::shared_ptr<BSP>(new BSP);
@@ -636,7 +636,7 @@ int main()
 	std::shared_ptr<GameObjectColor> bspObj = std::shared_ptr<GameObjectColor>(new GameObjectColor);
 	bspObj->shader = std::static_pointer_cast<ColorShader>(shaderCollection["color"]);
 	bspObj->mesh = meshCollection["bsp"];
-	//stage->addChild(bspObj);
+	stage->addChild(bspObj);
 
 	//int texSize;
 	//glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);

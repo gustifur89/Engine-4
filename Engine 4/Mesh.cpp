@@ -145,13 +145,33 @@ std::vector<std::shared_ptr<Poly>> Mesh::getPolygonsFromMesh(glm::mat4 transform
 	//	std::cout << norm.x << " : " << norm.y << " : " << norm.z << "\n";
 		glm::vec4 plane = glm::vec4(norm, -glm::dot(norm, pts[0]));
 
-		std::shared_ptr<Poly> poly(new Poly(pts, norm, plane));
+		//std::shared_ptr<Poly> poly(new Poly(pts, norm, plane));
 
-		//std::cout << "make\n";
+		//poly->applyMatrixSelf(transform, glm::transpose(glm::inverse(transform)));
 
-		poly->applyMatrixSelf(transform, glm::transpose(glm::inverse(transform)));
+		//polygons.push_back(poly);
+		//std::shared_ptr<Poly> poly(new Poly(pts, norm, plane));
 
-		polygons.push_back(poly);
+	//	poly->applyMatrixSelf(transform, glm::transpose(glm::inverse(transform)));
+
+	//	polygons.push_back(poly);
+		
+		//std::shared_ptr<Poly> poly(new Poly(pts, norm, plane));
+
+		//std::cout << plane.x << ", " << plane.y << ", " << plane.z << ", " << plane.w << "\n";
+
+		//poly->applyMatrixSelf(transform, glm::transpose(glm::inverse(transform)));
+
+		//polygons.push_back(poly);
+
+		if (true || !(std::isnan(plane.x) || !std::isfinite(plane.x)))
+		{
+			std::shared_ptr<Poly> poly(new Poly(pts, norm, plane));
+
+			poly->applyMatrixSelf(transform, glm::transpose(glm::inverse(transform)));
+
+			polygons.push_back(poly);
+		}
 	}
 
 	return polygons;
