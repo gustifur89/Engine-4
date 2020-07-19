@@ -596,7 +596,6 @@ int main()
 	std::map<std::string, std::shared_ptr<GameObject>> objectCollection = FileReader::readObjectFile("objects.txt", meshCollection, shaderCollection, textureCollection);
 	FileReader::setPlayerSettings("settings.txt", &fov, &playerSensitivity, &playerSpeed, &playerTex);
 
-
 	std::static_pointer_cast<WindowShader>(shaderCollection["window"])->setGlobalLight(glm::normalize(glm::vec3(-1, 1, -1)));
 	std::static_pointer_cast<WindowShader>(shaderCollection["window"])->setAmbient(1.0);
 	IO.setWindowShader(std::static_pointer_cast<WindowShader>(shaderCollection["window"]));
@@ -606,27 +605,25 @@ int main()
 
 	std::shared_ptr<GameObject> stage(new GameObject);
 	
-
-	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);
-	
+	std::shared_ptr<GameObjectTexture> floor = std::shared_ptr<GameObjectTexture>(new GameObjectTexture);	
 	floor->transform.setPosition(0, 0, 0);
 	floor->shader = std::static_pointer_cast<TextureShader>(shaderCollection["texture"]);//textureShader;//textureShader autoTextureShader
-	floor->mesh = meshCollection["lvl_1ply"]; // redRoom yellowRoom
+	floor->mesh = meshCollection["lvl_1ply"]; // redRoom yellowRoom lvl_1ply
 	//floor->mesh = TextureMesh::loadFromFileDAE("level_1");
-	floor->texture = textureCollection["lvl_1"];//redRoomHi redRoom yellowRoom
+	floor->texture = textureCollection["lvl_1"];//redRoomHi redRoom yellowRoom lvl_1
 	//floor->mesh = meshCollection["redRoom"];//bakedMesh; baked cargoHauler yellowRoomObj yellowRoomObj yellowRoom
 	//floor->texture = textureCollection["redRoom"];//t_BakedRender; cargoHauler yellowRoom
 	//floor->multiMesh = true;
 	//floor->assignMultiTextures(textureCollection);//textureCollection["shadowTex"];//t_BakedRender; cargoHauler yellowRoom
-	floor->visible = false;
+	floor->visible = true;
 	stage->addChild(floor);
 
 	std::shared_ptr<GameObjectSky> cover = std::shared_ptr<GameObjectSky>(new GameObjectSky);
 	cover->transform.setPosition(0, 0, 0);
 	cover->shader = std::static_pointer_cast<SkyTexShader>(shaderCollection["skyTex"]);
-	cover->mesh = meshCollection["level_1_sky"];
+	cover->mesh = meshCollection["level_1_sky"];// level_1_sky
 	cover->texture = std::static_pointer_cast<SkyBoxTexture>(textureCollection["blueSky"]);;
-	cover->visible = false;
+	cover->visible = true;
 	stage->addChild(cover);
 
 	std::shared_ptr<BSP> bspTest = std::shared_ptr<BSP>(new BSP);
@@ -636,7 +633,7 @@ int main()
 	std::shared_ptr<GameObjectColor> bspObj = std::shared_ptr<GameObjectColor>(new GameObjectColor);
 	bspObj->shader = std::static_pointer_cast<ColorShader>(shaderCollection["color"]);
 	bspObj->mesh = meshCollection["bsp"];
-	stage->addChild(bspObj);
+	//stage->addChild(bspObj);
 
 	//int texSize;
 	//glGetIntegerv(GL_MAX_TEXTURE_SIZE, &texSize);

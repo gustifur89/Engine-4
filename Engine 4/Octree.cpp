@@ -1858,8 +1858,14 @@ void BSP::Node::create(std::vector<std::shared_ptr<Poly>> polygons, int maxPolys
 			//this->polygons.push_back(poly);
 			//this->polygons.push_back(poly);
 			//this->polygons.push_back(poly);
-			this->polygons.push_back(poly);
 
+			/*
+			if (glm::dot(poly->plane.xyz(), plane.xyz()) >= 0.0)
+				this->polygons.push_back(poly); //std::cout << "front\n";
+			else
+				std::cout << "back !!!!!\n";
+			*/
+			this->polygons.push_back(poly);
 			//std::cout << poly->plane.x << " : " << poly->plane.y << " : " << poly->plane.z << " : " << poly->plane.w << "\n";
 			//std::cout << glm::dot(poly->plane.xyz(), plane.xyz()) << "\n";
 			////this->polygons.push_back(poly);
